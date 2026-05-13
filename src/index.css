@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;500;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-vazir: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  font-family: var(--font-vazir);
+  direction: rtl;
+}
+
+body {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+  @apply antialiased overflow-x-hidden;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
