@@ -26,3 +26,9 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+@layer utilities {
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded-lg;
+  }
+}

@@ -6,6 +6,9 @@ export interface Event {
   organizer: string;
   image: string;
   isFree?: boolean;
+  price?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Category {
