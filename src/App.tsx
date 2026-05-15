@@ -5,7 +5,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
+import * as LucideIcons from 'lucide-react';
 import { 
+  Check,
+  Ticket,
   Search, 
   Menu, 
   Bell, 
@@ -13,6 +16,7 @@ import {
   Calendar, 
   PlusCircle, 
   Plus,
+  Minus,
   X,
   ArrowRight,
   ChevronDown,
@@ -54,9 +58,21 @@ import {
   Send,
   Star,
   MessageCircle,
-  Check,
-  Inbox
+  Inbox,
+  AlertCircle,
+  Filter,
+  Bold,
+  Italic,
+  List,
+  Smile,
+  ShieldCheck
 } from 'lucide-react';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import Cropper, { Area, Point } from 'react-easy-crop';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { getCroppedImg } from './lib/utils';
 
 const NEARBY_EVENTS_DATA = [
   {
@@ -95,6 +111,7 @@ const EVENTS: Event[] = [
   {
     id: '1',
     title: 'کارگاه طراحی تجربه کاربری',
+    category: 'فنی',
     date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
     location: 'تهران، خیابان ولیعصر',
     organizer: 'آکادمی دیزاین',
@@ -107,6 +124,7 @@ const EVENTS: Event[] = [
   {
     id: '2',
     title: 'نشست استارتاپ‌های نوپا',
+    category: 'تجاری',
     date: 'سه‌شنبه، ۲۲ اردیبهشت - ۱۸:۳۰',
     location: 'اصفهان، شهرک علمی تحقیقاتی',
     organizer: 'شتاب‌دهنده هاب',
@@ -119,6 +137,7 @@ const EVENTS: Event[] = [
   {
     id: '3',
     title: 'شب نشینی مافیا',
+    category: 'بازی',
     date: 'چهارشنبه، ۲۳ اردیبهشت - ۲۰:۰۰',
     location: 'شیراز، کافه هنر',
     organizer: 'گروه بازی‌های دورهمی',
@@ -131,6 +150,7 @@ const EVENTS: Event[] = [
   {
     id: '4',
     title: 'نمایشگاه بین‌المللی کتاب',
+    category: 'آموزش',
     date: 'پنج‌شنبه، ۲۴ اردیبهشت - ۱۰:۰۰',
     location: 'تهران، مصلی امام خمینی',
     organizer: 'وزارت فرهنگ',
@@ -143,6 +163,7 @@ const EVENTS: Event[] = [
   {
     id: '5',
     title: 'کنسرت علی یاسینی',
+    category: 'کنسرت',
     date: 'جمعه، ۲۵ اردیبهشت - ۲۱:۰۰',
     location: 'تهران، برج میلاد',
     organizer: 'لیما کنسرت',
@@ -155,6 +176,7 @@ const EVENTS: Event[] = [
   {
     id: '6',
     title: 'تور دوچرخه‌سواری کوهستان',
+    category: 'ورزش',
     date: 'شنبه، ۲۶ اردیبهشت - ۰۷:۰۰',
     location: 'مازندران، نمک‌آبرود',
     organizer: 'باشگاه دوچرخه‌سواران',
@@ -167,6 +189,7 @@ const EVENTS: Event[] = [
   {
     id: '7',
     title: 'کارگاه آموزش پایتون',
+    category: 'فنی',
     date: 'یکشنبه، ۲۷ اردیبهشت - ۱۶:۰۰',
     location: 'تبریز، دانشگاه سراسری',
     organizer: 'انجمن علمی کامپیوتر',
@@ -179,6 +202,7 @@ const EVENTS: Event[] = [
   {
     id: '8',
     title: 'همایش بازاریابی دیجیتال',
+    category: 'تجاری',
     date: 'دوشنبه، ۲۸ اردیبهشت - ۰۹:۰۰',
     location: 'تهران، مرکز همایش‌های صدا و سیما',
     organizer: 'دی‌ام بورد',
@@ -191,6 +215,7 @@ const EVENTS: Event[] = [
   {
     id: '9',
     title: 'جشنواره غذای خیابانی',
+    category: 'سفر',
     date: 'سه‌شنبه، ۲۹ اردیبهشت - ۱۸:۰۰',
     location: 'مشهد، بوستان ملت',
     organizer: 'شهرداری مشهد',
@@ -203,6 +228,7 @@ const EVENTS: Event[] = [
   {
     id: '10',
     title: 'شب شعر معاصر',
+    category: 'هنر',
     date: 'چهارشنبه، ۳۰ اردیبهشت - ۱۹:۳۰',
     location: 'شیراز، حافظیه',
     organizer: 'انجمن ادبی حافظ',
@@ -447,11 +473,37 @@ export default function App() {
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState('تهران');
   const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+
+  // Helper to open create event page uniquely
+  const openCreateEvent = () => {
+    setSelectedEventId(null);
+    setIsCreateEventOpen(true);
+  };
+
+  const navigateToTab = (tab: string) => {
+    setActiveTab(tab);
+    setSelectedEventId(null);
+    setIsCreateEventOpen(false);
+  };
+
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [visibleEventsCount, setVisibleEventsCount] = useState(4);
   const [isFetching, setIsFetching] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('closest');
+  const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const filteredEvents = searchQuery 
+    ? EVENTS.filter(e => {
+        const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+        const searchableText = `${e.title} ${e.location} ${e.category || ''} ${e.organizer}`.toLowerCase();
+        return words.every(word => searchableText.includes(word));
+      })
+    : EVENTS;
 
   useEffect(() => {
     // Initial loading simulation
@@ -480,21 +532,29 @@ export default function App() {
       <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
         
         <AnimatePresence mode="wait">
-          {selectedEventId ? (
+          {isCreateEventOpen ? (
+            <CreateEventPage 
+              key="create-event"
+              onBack={() => setIsCreateEventOpen(false)}
+            />
+          ) : selectedEventId ? (
             <EventDetailsPage 
               key="event-details"
               eventId={selectedEventId}
               onBack={() => setSelectedEventId(null)}
               isLoggedIn={isLoggedIn}
               onOpenAuth={() => setIsAuthDrawerOpen(true)}
+              registeredEventIds={registeredEventIds}
+              onRegister={(id) => setRegisteredEventIds(prev => [...prev, id])}
+              onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
             />
           ) : activeTab === 'profile' ? (
             <ProfilePage 
               key="profile" 
-              onBack={() => setActiveTab('home')} 
+              onBack={() => navigateToTab('home')} 
               onLogout={() => {
                 setIsLoggedIn(false);
-                setActiveTab('home');
+                navigateToTab('home');
               }}
             />
           ) : (
@@ -522,16 +582,55 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="relative group">
-                  <input 
-                    type="text" 
-                    placeholder="جستجو در رویدادها..." 
-                    className="w-full bg-gray-100 border-none rounded-full py-4 pr-14 pl-6 focus:ring-2 focus:ring-[#ED1C24] transition-all outline-none text-base"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-[#1a1a1a] rounded-full">
-                    <Search className="w-5 h-5 text-white" />
+                {activeTab !== 'my-events' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative group">
+                        <input 
+                          type="text" 
+                          placeholder="جستجو در رویدادها..." 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-gray-100 border-none rounded-xl py-4 pr-14 pl-6 focus:ring-2 focus:ring-gray-900/5 transition-all outline-none text-base"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-[#1a1a1a] rounded-full">
+                          <Search className="w-5 h-5 text-white" />
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setIsFilterDrawerOpen(true)}
+                        className="flex items-center gap-2 group active:scale-95 transition-all flex-shrink-0 h-[60px]"
+                      >
+                        <Filter className="w-5 h-5 text-gray-500 group-hover:text-[#ED1C24] transition-colors" />
+                        <span className="text-xs font-black text-gray-500 group-hover:text-[#ED1C24]">فیلتر</span>
+                      </button>
+                    </div>
+
+                    {/* Sorting Pills */}
+                    <div className="flex items-center pb-2">
+                      <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+                        {[
+                          { id: 'closest', label: 'نزدیک‌ترین' },
+                          { id: 'cheapest', label: 'ارزان‌ترین' },
+                          { id: 'best', label: 'برترین' }
+                        ].map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => setSortBy(item.id)}
+                            className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                              sortBy === item.id 
+                              ? 'bg-gray-800 text-white shadow-sm' 
+                              : 'text-gray-400 hover:bg-gray-50'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </header>
 
               {activeTab === 'home' ? (
@@ -546,38 +645,6 @@ export default function App() {
                   {/* Enhanced Hero Slider Section */}
                   <section>
                     <EnhancedHeroSlider banners={HERO_BANNERS} isLoading={isInitialLoading} />
-                  </section>
-
-                  {/* Nearby Events Section */}
-                  <section className="py-8 bg-white" dir="rtl">
-                    <div className="px-6 flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-black text-gray-900 font-vazir">رویدادهای اطراف شما</h2>
-                      <button className="text-[#ED1C24] font-black text-xs">مشاهده همه</button>
-                    </div>
-                    
-                    <div className="relative overflow-hidden cursor-grab active:cursor-grabbing">
-                      {isInitialLoading ? (
-                        <div className="flex gap-4 px-6">
-                          <div className="w-52 h-64 bg-gray-100 rounded-2xl animate-pulse" />
-                          <div className="w-52 h-64 bg-gray-100 rounded-2xl animate-pulse" />
-                        </div>
-                      ) : NEARBY_EVENTS_DATA.length > 0 ? (
-                        <motion.div 
-                          className="flex gap-4 px-6 pb-4"
-                          drag="x"
-                          dragConstraints={{ left: 0, right: 650 }}
-                          dragElastic={0.1}
-                        >
-                          {NEARBY_EVENTS_DATA.map((item) => (
-                            <NearbyEventCard key={item.id} item={item} />
-                          ))}
-                        </motion.div>
-                      ) : (
-                        <div className="px-6">
-                          <EmptyState message="رویدادی در نزدیکی شما یافت نشد" />
-                        </div>
-                      )}
-                    </div>
                   </section>
 
                   {/* Category Grid Section */}
@@ -613,8 +680,8 @@ export default function App() {
                           <EventCardSkeleton />
                           <EventCardSkeleton />
                         </>
-                      ) : EVENTS.length > 0 ? (
-                        EVENTS.slice(0, visibleEventsCount).map((event) => (
+                      ) : filteredEvents.length > 0 ? (
+                        filteredEvents.slice(0, visibleEventsCount).map((event) => (
                           <motion.div 
                             key={event.id}
                             initial={{ opacity: 0, y: 10 }}
@@ -716,49 +783,64 @@ export default function App() {
                   {/* Consultant Slider Section */}
                   <ConsultantSlider isLoading={isInitialLoading} />
                 </motion.main>
+              ) : activeTab === 'my-events' ? (
+                <MyEventsPage 
+                  key="my-events" 
+                  onSelectEvent={(id) => setSelectedEventId(id)} 
+                  registeredEventIds={registeredEventIds}
+                  onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
+                  onNavigate={navigateToTab}
+                  onCreateEvent={openCreateEvent}
+                />
               ) : (
-                <EventsPage key="eventsPage" onSelectEvent={(id) => setSelectedEventId(id)} isInitialLoading={isInitialLoading} />
+                <EventsPage 
+                  key="eventsPage" 
+                  onSelectEvent={(id) => setSelectedEventId(id)} 
+                  isInitialLoading={isInitialLoading} 
+                  events={filteredEvents}
+                />
               )}
             </>
           )}
         </AnimatePresence>
 
         {/* Footer Navigation */}
-        <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/80 backdrop-blur-md border-t border-gray-100 px-4 py-3 flex items-center justify-around z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+        <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
           <FooterItem 
-            icon={<Home className="w-7 h-7" />} 
+            icon={<Home className="w-9 h-9" />} 
             label="خانه" 
             isActive={activeTab === 'home'} 
-            onClick={() => setActiveTab('home')} 
+            onClick={() => navigateToTab('home')} 
           />
           <FooterItem 
-            icon={<Calendar className="w-7 h-7" />} 
-            label="رویدادها" 
+            icon={<Calendar className="w-9 h-9" />} 
+            label="روندهها" 
             isActive={activeTab === 'events'} 
-            onClick={() => setActiveTab('events')} 
+            onClick={() => navigateToTab('events')} 
           />
-          <div className="relative -top-8 px-1">
+          <div className="relative -top-7 flex-shrink-0">
             <motion.button 
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
-              className="w-16 h-16 bg-gradient-to-br from-[#ED1C24] to-[#c4151b] rounded-full shadow-lg shadow-[#ED1C24]/40 flex items-center justify-center text-white border-4 border-white"
+              onClick={openCreateEvent}
+              className="w-16 h-16 bg-gradient-to-br from-[#ED1C24] to-[#c4151b] rounded-full shadow-2xl shadow-[#ED1C24]/40 flex items-center justify-center text-white border-[6px] border-white active:shadow-inner transition-shadow"
             >
               <Plus className="w-9 h-9" />
             </motion.button>
           </div>
           <FooterItem 
-            icon={<Bell className="w-7 h-7" />} 
-            label="پیام‌ها" 
-            isActive={activeTab === 'messages'} 
-            onClick={() => setActiveTab('messages')} 
+            icon={<Ticket className="w-9 h-9" />} 
+            label="رویدادهای من" 
+            isActive={activeTab === 'my-events'} 
+            onClick={() => navigateToTab('my-events')} 
           />
           <FooterItem 
-            icon={<User className="w-7 h-7" />} 
-            label="پروفایل" 
+            icon={<User className="w-9 h-9" />} 
+            label="بروغایل" 
             isActive={activeTab === 'profile'} 
             onClick={() => {
               if (isLoggedIn) {
-                setActiveTab('profile');
+                navigateToTab('profile');
               } else {
                 setIsAuthDrawerOpen(true);
               }
@@ -766,6 +848,11 @@ export default function App() {
           />
         </footer>
       </div>
+
+      <FilterDrawer 
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+      />
 
       <CitySelectionDrawer 
         isOpen={isCityDrawerOpen} 
@@ -782,7 +869,7 @@ export default function App() {
         onClose={() => setIsAuthDrawerOpen(false)} 
         onLoginSuccess={() => {
           setIsLoggedIn(true);
-          setActiveTab('profile');
+          navigateToTab('profile');
           setIsAuthDrawerOpen(false);
         }}
       />
@@ -790,25 +877,1516 @@ export default function App() {
   );
 }
 
+const API_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || '';
+const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
+
+function RichTextEditor({ 
+  value, 
+  onChange, 
+  placeholder, 
+  error 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  placeholder?: string;
+  error?: string;
+}) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: placeholder || 'شروع به نوشتن کنید...',
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojis = ['😊', '😂', '😍', '🤔', '🙌', '🎉', '🔥', '✨', '📍', '💡', '✅', '❌'];
+
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-2">
+        <label className="text-xs font-black text-gray-500">توضیحات</label>
+        {error && (
+          <motion.span 
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-[10px] font-bold text-[#ED1C24]"
+          >
+            {error}
+          </motion.span>
+        )}
+      </div>
+
+      <div className={`bg-gray-100 border rounded-2xl overflow-hidden transition-all focus-within:ring-2 focus-within:ring-gray-900/5 ${error ? 'border-[#ED1C24]' : 'border-gray-100'}`}>
+        {/* Toolbar */}
+        <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50">
+          <button
+            onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }}
+            className={`p-2 rounded-lg transition-colors ${editor.isActive('bold') ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+          >
+            <Bold className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }}
+            className={`p-2 rounded-lg transition-colors ${editor.isActive('italic') ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+          >
+            <Italic className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-gray-300 mx-1" />
+          <button
+            onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }}
+            className={`p-2 rounded-lg transition-colors ${editor.isActive('bulletList') ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-gray-300 mx-1" />
+          <div className="relative">
+            <button
+              onClick={(e) => { e.preventDefault(); setShowEmojiPicker(!showEmojiPicker); }}
+              className={`p-2 rounded-lg transition-colors ${showEmojiPicker ? 'bg-white text-amber-500 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+            <AnimatePresence>
+              {showEmojiPicker && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 grid grid-cols-4 gap-1 min-w-[120px]"
+                  >
+                    {emojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          editor.chain().focus().insertContent(emoji).run();
+                          setShowEmojiPicker(false);
+                        }}
+                        className="text-lg p-1 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="p-4 min-h-[160px] text-sm font-bold text-gray-900 focus:outline-none description-editor">
+          <EditorContent editor={editor} />
+        </div>
+      </div>
+      
+      <style>{`
+        .description-editor .ProseMirror {
+          min-height: 120px;
+          outline: none;
+        }
+        .description-editor .ProseMirror p {
+           margin-bottom: 0.5rem;
+           line-height: 1.6;
+        }
+        .description-editor .ProseMirror ul {
+          list-style-type: disc;
+          padding-right: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .description-editor .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: right;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function InterestsDrawer({ 
+  isOpen, 
+  onClose, 
+  selectedInterests, 
+  onToggle 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  selectedInterests: string[]; 
+  onToggle: (interest: string) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filteredInterests = INTERESTS_DATA.filter(interest => 
+    interest.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={onClose} 
+            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
+          />
+          <motion.div 
+            initial={{ y: "100%", x: "-50%" }} 
+            animate={{ y: 0, x: "-50%" }} 
+            exit={{ y: "100%", x: "-50%" }} 
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
+            
+            <div className="flex items-center justify-between shrink-0">
+               <div className="space-y-1">
+                 <h3 className="text-xl font-black text-gray-900">انتخاب علاقه‌مندی‌ها</h3>
+                 <p className="text-sm font-bold text-gray-400">یک یا چند مورد را انتخاب کنید</p>
+               </div>
+               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                 <X className="w-5 h-5 text-gray-400" />
+               </button>
+            </div>
+
+            <div className="relative shrink-0">
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="جستجوی علاقه‌مندی..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
+              />
+            </div>
+            
+            <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+              <div className="flex flex-wrap gap-2">
+                {filteredInterests.length > 0 ? (
+                  filteredInterests.map(interest => (
+                    <button
+                      key={interest}
+                      onClick={() => onToggle(interest)}
+                      className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all border ${
+                        selectedInterests.includes(interest)
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-md shadow-gray-900/10'
+                        : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'
+                      }`}
+                    >
+                      {interest}
+                    </button>
+                  ))
+                ) : (
+                  <div className="w-full py-10 text-center text-gray-400 font-bold text-sm">موردی یافت نشد</div>
+                )}
+              </div>
+            </div>
+
+            <button 
+              onClick={onClose}
+              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg transition-all shrink-0 active:scale-[0.98]"
+            >
+              تایید انتخاب‌ها
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function MapPickerDrawer({ 
+  isOpen, 
+  onClose, 
+  onSelect 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSelect: (location: { lat: number, lng: number }, address: string) => void;
+}) {
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [address, setAddress] = useState('');
+  
+  const handleMapClick = (e: any) => {
+    const lat = e.detail.latLng.lat;
+    const lng = e.detail.latLng.lng;
+    setSelectedLocation({ lat, lng });
+    // In a real app, you'd use a geocoding service here
+    setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+  };
+
+  const handleConfirm = () => {
+    if (selectedLocation) {
+      onSelect(selectedLocation, address);
+      onClose();
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" />
+          <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[110] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" dir="rtl">
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+               <h3 className="text-xl font-black text-gray-900">انتخاب لوکیشن</h3>
+               <button onClick={onClose} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                  <X className="w-5 h-5" />
+               </button>
+            </div>
+            
+            <div className="flex-1 relative">
+              {!hasValidKey ? (
+                <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center p-10 text-center gap-4">
+                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-amber-500">
+                    <AlertCircle className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-black text-gray-900">اتصال به نقشه برقرار نشد</h4>
+                  <p className="text-sm font-bold text-gray-400">لطفا تنظیمات کلید API نقشه گوگل را بررسی کنید.</p>
+                  <button onClick={() => {
+                    setSelectedLocation({ lat: 35.6892, lng: 51.3890 });
+                    setAddress("تهران، میدان آزادی (دمو)");
+                  }} className="mt-4 px-6 py-3 bg-gray-900 text-white rounded-xl text-xs font-black">انتخاب لوکیشن فرضی (دمو)</button>
+                </div>
+              ) : (
+                <APIProvider apiKey={API_KEY} version="weekly">
+                  <Map
+                    defaultCenter={{ lat: 35.6892, lng: 51.3890 }}
+                    defaultZoom={13}
+                    mapId="DEMO_MAP_ID"
+                    onClick={handleMapClick}
+                    internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    {selectedLocation && (
+                      <AdvancedMarker position={selectedLocation}>
+                        <Pin background="#ED1C24" borderColor="#fff" glyphColor="#fff" />
+                      </AdvancedMarker>
+                    )}
+                  </Map>
+                </APIProvider>
+              )}
+              
+              {address && (
+                <div className="absolute bottom-24 left-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="w-8 h-8 bg-[#ED1C24]/10 rounded-lg flex flex-shrink-0 items-center justify-center text-[#ED1C24]">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-[10px] font-black text-gray-400 uppercase block mb-0.5">آدرس انتخاب شده</span>
+                    <p className="text-xs font-bold text-gray-900 leading-relaxed">{address}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="absolute bottom-6 left-6 right-6">
+                <button 
+                  disabled={!selectedLocation}
+                  onClick={handleConfirm}
+                  className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all ${
+                    selectedLocation 
+                    ? 'bg-[#ED1C24] text-white shadow-[#ED1C24]/20 hover:opacity-90' 
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  تایید این موقعیت
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function ImageCropperDrawer({
+  image,
+  isOpen,
+  onClose,
+  onCropComplete
+}: {
+  image: string | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onCropComplete: (croppedImage: string) => void;
+}) {
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const onCropChange = (crop: Point) => {
+    setCrop(crop);
+  };
+
+  const onZoomChange = (zoom: number) => {
+    setZoom(zoom);
+  };
+
+  const onCropCompleteInternal = (croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleDone = async () => {
+    if (image && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(image, croppedAreaPixels);
+        onCropComplete(croppedImage);
+        onClose();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && image && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/80 z-[200] backdrop-blur-md" />
+          <motion.div 
+            initial={{ y: "100%", x: "-50%" }} 
+            animate={{ y: 0, x: "-50%" }} 
+            exit={{ y: "100%", x: "-50%" }} 
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[210] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" 
+            dir="rtl"
+          >
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+               <h3 className="text-xl font-black text-gray-900">برش تصویر</h3>
+               <button onClick={onClose} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                  <X className="w-5 h-5" />
+               </button>
+            </div>
+            
+            <div className="flex-1 relative bg-gray-900">
+              <Cropper
+                image={image}
+                crop={crop}
+                zoom={zoom}
+                aspect={16 / 9}
+                onCropChange={onCropChange}
+                onCropComplete={onCropCompleteInternal}
+                onZoomChange={onZoomChange}
+              />
+            </div>
+            
+            <div className="p-6 space-y-6 bg-white">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-gray-500">میزان زوم</span>
+                  <span className="text-xs font-bold text-gray-900">{Math.round(zoom * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#ED1C24]"
+                />
+              </div>
+              
+              <button 
+                onClick={handleDone}
+                className="w-full py-4 bg-[#ED1C24] text-white rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all hover:opacity-90"
+              >
+                تایید و برش
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function CategoryDrawer({ 
+  isOpen, 
+  onClose, 
+  selectedCategory, 
+  onSelect 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  selectedCategory: string; 
+  onSelect: (category: string) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filteredCategories = CATEGORIES.filter(cat => 
+    cat.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={onClose} 
+            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
+          />
+          <motion.div 
+            initial={{ y: "100%", x: "-50%" }} 
+            animate={{ y: 0, x: "-50%" }} 
+            exit={{ y: "100%", x: "-50%" }} 
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
+            
+            <div className="flex items-center justify-between shrink-0">
+               <div className="space-y-1">
+                 <h3 className="text-xl font-black text-gray-900">انتخاب دسته‌بندی</h3>
+                 <p className="text-xs font-bold text-gray-400">یک دسته‌بندی برای رویداد خود انتخاب کنید</p>
+               </div>
+               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                 <X className="w-5 h-5 text-gray-400" />
+               </button>
+            </div>
+
+            <div className="relative shrink-0">
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="جستجوی دسته‌بندی..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
+              />
+            </div>
+            
+            <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+              <div className="grid grid-cols-2 gap-4">
+                {filteredCategories.map(cat => {
+                  const IconComponent = (LucideIcons as any)[cat.icon];
+                  const isSelected = selectedCategory === cat.title;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        onSelect(cat.title);
+                        onClose();
+                      }}
+                      className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all gap-3 ${
+                        isSelected 
+                        ? 'bg-gray-900/5 border-gray-900 shadow-sm' 
+                        : 'bg-gray-50 border-transparent hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center bg-white ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {IconComponent && <IconComponent className="w-6 h-6" />}
+                      </div>
+                      <span className={`text-xs font-black ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{cat.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button 
+              onClick={onClose}
+              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg transition-all shrink-0 active:scale-[0.98]"
+            >
+              بستن
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SelectionDrawer({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  options,
+  selectedValue,
+  onSelect,
+  showSearch = false
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  options: { label: string; value: string }[];
+  selectedValue: string;
+  onSelect: (value: string) => void;
+  showSearch?: boolean;
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
+          />
+          <motion.div 
+            initial={{ y: "100%", x: "-50%" }} 
+            animate={{ y: 0, x: "-50%" }} 
+            exit={{ y: "100%", x: "-50%" }}
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
+            
+            <div className="flex items-center justify-between shrink-0">
+               <div className="space-y-1">
+                 <h3 className="text-xl font-black text-gray-900">{title}</h3>
+                 {subtitle && <p className="text-xs font-bold text-gray-400">{subtitle}</p>}
+               </div>
+               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                 <X className="w-5 h-5 text-gray-400" />
+               </button>
+            </div>
+
+            {showSearch && (
+              <div className="relative shrink-0">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="جستجو..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
+                />
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt) => {
+                  const isSelected = selectedValue === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => { onSelect(opt.value); onClose(); }}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group border-b border-gray-50 last:border-0 ${
+                        isSelected ? 'bg-gray-100 shadow-sm' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={`text-sm font-bold transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                        {opt.label}
+                      </span>
+                      {isSelected && (
+                        <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-gray-900/20 animate-in zoom-in-50 duration-300">
+                          <Check className="w-4 h-4" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="py-20 text-center space-y-3">
+                   <div className="w-16 h-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex items-center justify-center mx-auto text-gray-200">
+                      <Search className="w-8 h-8" />
+                   </div>
+                   <p className="text-xs font-bold text-gray-400">موردی یافت نشد</p>
+                </div>
+              )}
+            </div>
+
+            <button 
+              onClick={onClose}
+              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-xl shadow-gray-900/10 transition-all shrink-0 active:scale-[0.98]"
+            >
+              تایید و بازگشت
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const PROVINCES_DATA = [
+  { id: '1', name: 'تهران', cities: ['تهران', 'بومهن', 'پردیس', 'دماوند', 'فیروزکوه'] },
+  { id: '2', name: 'شیراز', cities: ['شیراز', 'مرودشت', 'کازرون', 'جهرم', 'لار'] },
+  { id: '3', name: 'اصفهان', cities: ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر'] },
+  { id: '4', name: 'مازندران', cities: ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'بهشهر'] },
+];
+
+const INTERESTS_DATA = [
+  'چای', 'پیاده روی', 'کتابخوانی', 'موسیقی', 'سینما', 'بازی', 'کوهنوردی', 'عکاسی', 'برنامه‌نویسی', 'آشپزی'
+];
+
+function CreateEventPage({ onBack }: { onBack: () => void; key?: React.Key }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    interests: [] as string[],
+    address: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    isPaid: false,
+    price: '',
+    minCapacity: '',
+    maxCapacity: '',
+    hasWaitlist: false,
+    minAge: '',
+    maxAge: '',
+    provinceId: '',
+    city: '',
+    isOnline: false,
+    onlineLink: '',
+    image: null as string | null,
+    location: null as { lat: number; lng: number } | null,
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isConfirmDrawerOpen, setIsConfirmDrawerOpen] = useState(false);
+  const [isInterestsOpen, setIsInterestsOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isProvinceOpen, setIsProvinceOpen] = useState(false);
+  const [isCityOpen, setIsCityOpen] = useState(false);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const categories = CATEGORIES.map(c => c.title);
+  const selectedProvince = PROVINCES_DATA.find(p => p.id === formData.provinceId);
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.title) newErrors.title = 'عنوان الزامی است';
+    if (!formData.description) newErrors.description = 'توضیحات الزامی است';
+    if (!formData.category) newErrors.category = 'دسته‌بندی الزامی است';
+    
+    if (formData.isOnline) {
+      if (!formData.onlineLink) newErrors.onlineLink = 'لینک رویداد الزامی است';
+    } else {
+      if (!formData.address) newErrors.address = 'آدرس الزامی است';
+    }
+
+    if (!formData.date) newErrors.date = 'تاریخ الزامی است';
+    if (!formData.startTime) newErrors.startTime = 'زمان شروع الزامی است';
+    if (!formData.endTime) newErrors.endTime = 'زمان پایان الزامی است';
+    
+    // Time validation: End time must be after start time
+    if (formData.startTime && formData.endTime) {
+      if (formData.endTime <= formData.startTime) {
+        newErrors.endTime = 'زمان پایان باید بعد از زمان شروع باشد';
+      }
+    }
+
+    if (formData.isPaid) {
+      if (!formData.price) newErrors.price = 'مبلغ الزامی است';
+      else if (Number(formData.price) <= 0) newErrors.price = 'مبلغ باید معتبر باشد';
+    }
+
+    if (!formData.minCapacity) newErrors.minCapacity = 'حداقل ظرفیت الزامی است';
+    if (!formData.maxCapacity) newErrors.maxCapacity = 'حداکثر ظرفیت الزامی است';
+    
+    // Capacity validation: Max must be >= Min
+    if (formData.minCapacity && formData.maxCapacity) {
+      if (Number(formData.maxCapacity) < Number(formData.minCapacity)) {
+        newErrors.maxCapacity = 'حداکثر ظرفیت نباید کمتر از حداقل باشد';
+      }
+    }
+
+    if (!formData.minAge) newErrors.minAge = 'حداقل سن الزامی است';
+    if (!formData.maxAge) newErrors.maxAge = 'حداکثر سن الزامی است';
+
+    // Age validation: Max must be >= Min
+    if (formData.minAge && formData.maxAge) {
+      if (Number(formData.maxAge) < Number(formData.minAge)) {
+        newErrors.maxAge = 'حداکثر سن نباید کمتر از حداقل باشد';
+      }
+    }
+
+    if (!formData.provinceId) newErrors.provinceId = 'استان الزامی است';
+    if (!formData.city) newErrors.city = 'شهر الزامی است';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleInterest = (interest: string) => {
+    setFormData(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest]
+    }));
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImage(reader.result as string);
+        setIsCropperOpen(true);
+      });
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const isFormValid = validate; // Updated logic below in button
+
+  const handleSubmit = () => {
+    if (validate()) {
+      setIsConfirmDrawerOpen(true);
+    }
+  };
+
+  const handleConfirm = () => {
+    setIsConfirmDrawerOpen(false);
+    setIsLoading(true);
+    // Simulate server request
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsSuccess(true);
+      setTimeout(() => {
+        onBack();
+      }, 2000);
+    }, 2000);
+  };
+
+  if (isSuccess) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-10 text-center space-y-6 bg-white overflow-hidden" dir="rtl">
+        <motion.div 
+          initial={{ scale: 0 }} 
+          animate={{ scale: 1 }} 
+          className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 shadow-inner"
+        >
+          <Check className="w-12 h-12" />
+        </motion.div>
+        <h2 className="text-2xl font-black text-gray-900">رویداد با موفقیت ایجاد شد!</h2>
+        <p className="text-gray-500 font-bold leading-relaxed">
+          رویداد شما تایید شد و به زودی در لیست رویدادها نمایش داده خواهد شد.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col bg-white overflow-hidden relative" dir="rtl">
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 sticky top-0 bg-white z-20">
+        <div className="flex items-center gap-3">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={onBack}
+            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700"
+          >
+            <ArrowRight className="w-6 h-6" />
+          </motion.button>
+          <h1 className="text-xl font-black text-gray-900">ایجاد دورهمی جدید</h1>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
+        <div className="px-6 py-6 space-y-6">
+          
+          {/* Image Picker */}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-500 mr-2">تصویر رویداد</label>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={onFileChange} 
+            />
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className={`relative w-full aspect-[2.2/1] rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden group ${formData.image ? 'border-transparent bg-gray-900 shadow-inner' : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#ED1C24]/30'}`}
+            >
+              {formData.image ? (
+                <>
+                  <img 
+                    src={formData.image} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                    <span className="bg-white px-5 py-2.5 rounded-2xl text-[10px] font-black text-gray-900 shadow-2xl flex items-center gap-2">
+                       <Plus className="w-4 h-4 text-[#ED1C24]" />
+                       تغییر تصویر
+                    </span>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setFormData({...formData, image: null}); }}
+                    className="absolute top-4 right-4 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-md hover:bg-[#ED1C24] transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-gray-300 group-hover:text-[#ED1C24] transition-colors">
+                    <Plus className="w-8 h-8" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <span className="text-sm font-black text-gray-900 block">افزودن پوستر رویداد</span>
+                    <span className="text-[10px] font-bold text-gray-400 block px-10">یک تصویر جذاب با نسبت ۱۶:۹ انتخاب کنید</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <FormInput 
+            label="عنوان رویداد" 
+            placeholder="مثلا: شب نشینی مهندسین" 
+            value={formData.title} 
+            onChange={(val) => { setFormData({...formData, title: val}); if(errors.title) setErrors({...errors, title: ''}); }} 
+            error={errors.title}
+          />
+
+          <RichTextEditor 
+            placeholder="درباره رویداد بنویسید..." 
+            value={formData.description} 
+            onChange={(val) => { setFormData({...formData, description: val}); if(errors.description) setErrors({...errors, description: ''}); }}
+            error={errors.description}
+          />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <label className="text-xs font-black text-gray-500">انتخاب دسته‌بندی</label>
+              {errors.category && (
+                <motion.span 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-[10px] font-bold text-[#ED1C24]"
+                >
+                   {errors.category}
+                </motion.span>
+              )}
+            </div>
+            
+            <button 
+              onClick={(e) => { e.preventDefault(); setIsCategoryOpen(true); }}
+              className={`w-full p-4 rounded-3xl border-2 transition-all flex items-center justify-between group ${
+                formData.category 
+                ? 'bg-gray-900/5 border-gray-900 shadow-sm' 
+                : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center bg-white ${formData.category ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {formData.category ? (
+                    <LucideIcons.Check className="w-6 h-6" />
+                  ) : (
+                    <LucideIcons.LayoutGrid className="w-6 h-6" />
+                  )}
+                </div>
+                <div className="flex flex-col text-right">
+                  <span className={`text-[10px] font-black ${formData.category ? 'text-gray-900' : 'text-gray-500'}`}>
+                    {formData.category || 'یک دسته‌بندی انتخاب کنید'}
+                  </span>
+                  <span className="text-[9px] font-bold text-gray-400">برای فیلتر بهتر رویداد</span>
+                </div>
+              </div>
+              <LucideIcons.ChevronLeft className={`w-5 h-5 transition-transform ${formData.category ? 'text-gray-900' : 'text-gray-300 group-hover:-translate-x-1'}`} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500 mr-2">علاقه‌مندی‌ها (برچسب‌ها)</label>
+              <button 
+                onClick={() => setIsInterestsOpen(true)}
+                className="text-xs font-black text-[#ED1C24] hover:opacity-80 transition-opacity"
+              >
+                {formData.interests.length > 0 ? 'ویرایش لیست' : 'انتخاب از لیست'}
+              </button>
+            </div>
+            
+            {formData.interests.length > 0 ? (
+              <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2">
+                {formData.interests.map(interest => (
+                  <div
+                    key={interest}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ED1C24]/10 text-[#ED1C24] border border-[#ED1C24]/20 flex items-center gap-2"
+                  >
+                    {interest}
+                    <button onClick={() => toggleInterest(interest)}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div 
+                onClick={() => setIsInterestsOpen(true)}
+                className="w-full py-4 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-200 hover:bg-gray-50 transition-all"
+              >
+                <Plus className="w-5 h-5 text-gray-300" />
+                <span className="text-[10px] font-bold text-gray-400">موردی انتخاب نشده است</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+             <div className="flex gap-4">
+                <FormInput 
+                  label="استان" 
+                  isSelect 
+                  onSelectClick={() => setIsProvinceOpen(true)}
+                  value={selectedProvince?.name || ''} 
+                  onChange={() => {}} 
+                  error={errors.provinceId}
+                  className="flex-1"
+                />
+                <FormInput 
+                  label="شهر" 
+                  isSelect 
+                  onSelectClick={() => formData.provinceId ? setIsCityOpen(true) : null}
+                  value={formData.city} 
+                  onChange={() => {}} 
+                  error={errors.city}
+                  className="flex-1"
+                  disabled={!formData.provinceId}
+                />
+             </div>
+          </div>
+          
+          <div className="space-y-4 bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500">نحوه برگزاری</label>
+              <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+                <button 
+                  onClick={() => setFormData({...formData, isOnline: false})}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isOnline ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400'}`}
+                >حضوری</button>
+                <button 
+                  onClick={() => setFormData({...formData, isOnline: true})}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isOnline ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400'}`}
+                >آنلاین</button>
+              </div>
+            </div>
+            {formData.isOnline && (
+               <FormInput 
+                 label="لینک رویداد آنلاین" 
+                 placeholder="https://..." 
+                 value={formData.onlineLink} 
+                 onChange={(val) => { setFormData({...formData, onlineLink: val}); if(errors.onlineLink) setErrors({...errors, onlineLink: ''}); }} 
+                 error={errors.onlineLink}
+               />
+            )}
+          </div>
+
+          {!formData.isOnline && (
+            <>
+              <FormInput 
+                label="آدرس دقیق" 
+                placeholder="نام خیابان، کوچه، پلاک..." 
+                value={formData.address} 
+                onChange={(val) => { setFormData({...formData, address: val}); if(errors.address) setErrors({...errors, address: ''}); }} 
+                error={errors.address}
+              />
+
+              {/* Map Picker */}
+              <button 
+                onClick={() => setIsMapOpen(true)}
+                className={`w-full border rounded-2xl p-4 flex items-center justify-between group transition-all ${formData.location ? 'bg-emerald-50 border-emerald-100' : 'bg-blue-50 border-blue-100'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl shadow-sm flex items-center justify-center transition-colors ${formData.location ? 'bg-white text-emerald-500' : 'bg-white text-blue-500'}`}>
+                    {formData.location ? <Check className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs font-black text-gray-900 leading-none mb-1">
+                      {formData.location ? 'لوکیشن ثبت شد' : 'انتخاب لوکیشن از روی نقشه'}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400">
+                      {formData.location ? 'موقعیت دقیق روی نقشه مشخص گردید' : 'برای دقت بیشتر، لوکیشن خود را مشخص کنید'}
+                    </span>
+                  </div>
+                </div>
+                <ChevronLeft className={`w-5 h-5 transition-colors ${formData.location ? 'text-emerald-300' : 'text-gray-300 group-hover:text-blue-500'}`} />
+              </button>
+            </>
+          )}
+
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <FormInput 
+                label="تاریخ رویداد" 
+                type="date" 
+                value={formData.date} 
+                onChange={(val) => { setFormData({...formData, date: val}); if(errors.date) setErrors({...errors, date: ''}); }} 
+                error={errors.date}
+                className="flex-1"
+              />
+            </div>
+            <div className="flex gap-4">
+              <FormInput 
+                label="از ساعت" 
+                type="time" 
+                value={formData.startTime} 
+                onChange={(val) => { setFormData({...formData, startTime: val}); if(errors.startTime) setErrors({...errors, startTime: ''}); }} 
+                error={errors.startTime}
+                className="flex-1"
+              />
+              <FormInput 
+                label="تا ساعت" 
+                type="time" 
+                value={formData.endTime} 
+                onChange={(val) => { setFormData({...formData, endTime: val}); if(errors.endTime) setErrors({...errors, endTime: ''}); }} 
+                error={errors.endTime}
+                className="flex-1"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500">نوع رویداد</label>
+              <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+                <button 
+                  onClick={() => setFormData({...formData, isPaid: false})}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
+                >رایگان</button>
+                <button 
+                  onClick={() => setFormData({...formData, isPaid: true})}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
+                >هزینه‌دار</button>
+              </div>
+            </div>
+            {formData.isPaid && (
+               <FormInput 
+                 label="مبلغ به ازای هر نفر (تومان)" 
+                 type="number" 
+                 placeholder="مثلا: ۵۰,۰۰۰" 
+                 value={formData.price} 
+                 onChange={(val) => { setFormData({...formData, price: val}); if(errors.price) setErrors({...errors, price: ''}); }} 
+                 error={errors.price}
+               />
+            )}
+          </div>
+
+      <div className="space-y-4">
+            <label className="text-xs font-black text-gray-500 mr-2">ظرفیت رویداد (نفر)</label>
+            <div className="flex gap-4">
+              <StepperInput 
+                label="حداقل" 
+                value={formData.minCapacity} 
+                onChange={(val) => { setFormData({...formData, minCapacity: val}); if(errors.minCapacity) setErrors({...errors, minCapacity: ''}); }} 
+                error={errors.minCapacity}
+                className="flex-1"
+                min={1}
+              />
+              <StepperInput 
+                label="حداکثر" 
+                value={formData.maxCapacity} 
+                onChange={(val) => { setFormData({...formData, maxCapacity: val}); if(errors.maxCapacity) setErrors({...errors, maxCapacity: ''}); }} 
+                error={errors.maxCapacity}
+                className="flex-1"
+                min={Number(formData.minCapacity) || 1}
+              />
+            </div>
+            <div className="space-y-3 px-2 pt-2">
+              <div className="flex items-center justify-between">
+                 <span className="text-xs font-black text-gray-700">فعال کردن لیست انتظار</span>
+                 <button 
+                  onClick={() => setFormData({...formData, hasWaitlist: !formData.hasWaitlist})}
+                  className={`w-12 h-6 rounded-full transition-all relative ${formData.hasWaitlist ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                 >
+                   <motion.div 
+                     animate={{ x: formData.hasWaitlist ? -24 : 0 }}
+                     className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                   />
+                 </button>
+              </div>
+              <p className="text-[10px] font-bold text-gray-400 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                با فعال‌سازی این گزینه، در صورت تکمیل ظرفیت رویداد، ثبت‌نام‌های جدید وارد لیست انتظار شده و در صورت انصراف دیگران، به‌صورت خودکار جایگزین خواهند شد.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-xs font-black text-gray-500 mr-2">بازه سنی</label>
+            <div className="flex gap-4">
+              <StepperInput 
+                label="از سن" 
+                value={formData.minAge} 
+                onChange={(val) => { setFormData({...formData, minAge: val}); if(errors.minAge) setErrors({...errors, minAge: ''}); }} 
+                error={errors.minAge}
+                className="flex-1"
+                min={1}
+                max={120}
+              />
+              <StepperInput 
+                label="تا سن" 
+                value={formData.maxAge} 
+                onChange={(val) => { setFormData({...formData, maxAge: val}); if(errors.maxAge) setErrors({...errors, maxAge: ''}); }} 
+                error={errors.maxAge}
+                className="flex-1"
+                min={Number(formData.minAge) || 1}
+                max={120}
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Sticky Submit Button */}
+      <div className="absolute bottom-0 left-0 w-full px-6 py-6 bg-gradient-to-t from-white via-white to-transparent pt-10 pointer-events-none">
+        <motion.button 
+          whileTap={{ scale: 0.98 }}
+          onClick={handleSubmit}
+          className="w-full h-12 rounded-2xl font-black text-sm shadow-xl bg-gray-900 text-white shadow-gray-900/20 transition-all flex items-center justify-center gap-3 pointer-events-auto"
+        >
+          {isLoading ? (
+            <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <span>ایجاد دورهمی</span>
+          )}
+        </motion.button>
+      </div>
+
+      <InterestsDrawer 
+        isOpen={isInterestsOpen} 
+        onClose={() => setIsInterestsOpen(false)} 
+        selectedInterests={formData.interests} 
+        onToggle={toggleInterest} 
+      />
+
+      <MapPickerDrawer 
+        isOpen={isMapOpen} 
+        onClose={() => setIsMapOpen(false)} 
+        onSelect={(location, address) => {
+          setFormData({...formData, location, address});
+          if(errors.address) setErrors({...errors, address: ''});
+        }} 
+      />
+
+      <CategoryDrawer
+        isOpen={isCategoryOpen}
+        onClose={() => setIsCategoryOpen(false)}
+        selectedCategory={formData.category}
+        onSelect={(category) => {
+          setFormData({...formData, category});
+          if(errors.category) setErrors({...errors, category: ''});
+        }}
+      />
+
+      <SelectionDrawer
+        isOpen={isProvinceOpen}
+        onClose={() => setIsProvinceOpen(false)}
+        title="انتخاب استان"
+        subtitle="استان مورد نظر خود را انتخاب کنید"
+        showSearch
+        options={PROVINCES_DATA.map(p => ({ label: p.name, value: p.id }))}
+        selectedValue={formData.provinceId}
+        onSelect={(val) => {
+          setFormData({...formData, provinceId: val, city: ''});
+          if(errors.provinceId) setErrors({...errors, provinceId: ''});
+        }}
+      />
+
+      <SelectionDrawer
+        isOpen={isCityOpen}
+        onClose={() => setIsCityOpen(false)}
+        title="انتخاب شهر"
+        subtitle="شهر مورد نظر خود را انتخاب کنید"
+        showSearch
+        options={selectedProvince ? selectedProvince.cities.map(c => ({ label: c, value: c })) : []}
+        selectedValue={formData.city}
+        onSelect={(val) => {
+          setFormData({...formData, city: val});
+          if(errors.city) setErrors({...errors, city: ''});
+        }}
+      />
+
+      <ImageCropperDrawer
+        image={tempImage}
+        isOpen={isCropperOpen}
+        onClose={() => { setIsCropperOpen(false); setTempImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+        onCropComplete={(croppedImage) => setFormData({...formData, image: croppedImage})}
+      />
+
+      {/* Validation Warning */}
+      {!isFormValid && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gray-900/90 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] font-bold z-30 shadow-xl border border-white/10 opacity-70">
+          لطفا تمامی فیلدهای الزامی را پر کنید
+        </div>
+      )}
+
+      {/* Final Confirmation Drawer */}
+      <AnimatePresence>
+        {isConfirmDrawerOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsConfirmDrawerOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" />
+            <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto" />
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-black text-gray-900">آیا از ایجاد این رویداد مطمئن هستید؟</h3>
+                <p className="text-sm font-bold text-gray-500 leading-relaxed">پس از تایید، رویداد شما در برنامه نمایش داده میشود.</p>
+              </div>
+              <div className="flex gap-4 pt-2">
+                 <button onClick={() => setIsConfirmDrawerOpen(false)} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black transition-all">انصراف</button>
+                 <button onClick={handleConfirm} className="flex-1 bg-[#ED1C24] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all">تایید و ایجاد</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function StepperInput({ 
+  label, 
+  value, 
+  onChange, 
+  min = 0, 
+  max = 1000, 
+  error,
+  className = ''
+}: { 
+  label: string, 
+  value: string | number, 
+  onChange: (val: string) => void, 
+  min?: number, 
+  max?: number, 
+  error?: string,
+  className?: string
+}) {
+  const numValue = Number(value) || 0;
+  
+  const handleIncrement = () => {
+    if (numValue < max) onChange(String(numValue + 1));
+  };
+  
+  const handleDecrement = () => {
+    if (numValue > min) onChange(String(numValue - 1));
+  };
+
+  return (
+    <div className={`space-y-2 ${className}`}>
+      <div className="flex items-center justify-between px-2">
+        <label className="text-xs font-black text-gray-500">{label}</label>
+        {error && (
+          <motion.span initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] font-bold text-[#ED1C24]">
+            {error}
+          </motion.span>
+        )}
+      </div>
+      <div className={`flex items-center bg-gray-100 rounded-2xl p-1 border transition-all ${error ? 'border-[#ED1C24]' : 'border-gray-100 focus-within:border-gray-200 focus-within:bg-gray-200'}`}>
+        <button 
+          onClick={(e) => { e.preventDefault(); handleDecrement(); }}
+          className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 active:scale-95 transition-all outline-none"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <div className="flex-1 text-center">
+          <input 
+            type="number" 
+            value={value} 
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full bg-transparent text-center text-sm font-black text-gray-900 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+        </div>
+        <button 
+          onClick={(e) => { e.preventDefault(); handleIncrement(); }}
+          className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 active:scale-95 transition-all outline-none"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FormInput({ 
+  label, 
+  placeholder, 
+  isTextarea, 
+  type = 'text', 
+  value, 
+  onChange, 
+  className = '',
+  isSelect,
+  onSelectClick,
+  disabled = false,
+  error
+}: { 
+  label: string; 
+  placeholder?: string; 
+  isTextarea?: boolean; 
+  type?: string; 
+  value: string; 
+  onChange: (val: string) => void;
+  className?: string;
+  isSelect?: boolean;
+  onSelectClick?: () => void;
+  disabled?: boolean;
+  error?: string;
+}) {
+  return (
+    <div className={`space-y-2 ${className}`}>
+      <div className="flex items-center justify-between px-2">
+        <label className="text-xs font-black text-gray-500">{label}</label>
+        {error && (
+          <motion.span 
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-[10px] font-bold text-[#ED1C24]"
+          >
+            {error}
+          </motion.span>
+        )}
+      </div>
+      <div className={`relative transition-all ${disabled ? 'opacity-50' : ''}`}>
+        {isSelect ? (
+          <button
+            onClick={(e) => { e.preventDefault(); if(!disabled) onSelectClick?.(); }}
+            disabled={disabled}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold flex items-center justify-between transition-all outline-none text-right ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}
+          >
+            <span className={value ? 'text-gray-900' : 'text-gray-400'}>{value || placeholder || 'انتخاب کنید'}</span>
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          </button>
+        ) : isTextarea ? (
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none min-h-[120px] resize-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'}`}
+          />
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'}`}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FormSelect({ 
+  label, 
+  options, 
+  value, 
+  onChange, 
+  error,
+  placeholder = 'انتخاب کنید'
+}: { 
+  label: string, 
+  options: string[], 
+  value: string, 
+  onChange: (val: string) => void, 
+  error?: string,
+  placeholder?: string
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-2">
+          <label className="text-xs font-black text-gray-500">{label}</label>
+          {error && (
+            <motion.span 
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-[10px] font-bold text-[#ED1C24]"
+            >
+              {error}
+            </motion.span>
+          )}
+        </div>
+        <button 
+          onClick={(e) => { e.preventDefault(); setIsOpen(true); }}
+          className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold flex items-center justify-between transition-all outline-none text-right ${error ? 'border-[#ED1C24]' : 'border-gray-100'} hover:bg-gray-200 cursor-pointer`}
+        >
+          <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+            {value || placeholder}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      <SelectionDrawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={label}
+        options={options.map(opt => ({ label: opt, value: opt }))}
+        selectedValue={value}
+        onSelect={onChange}
+      />
+    </>
+  );
+}
+
 function EventDetailsPage({ 
   eventId, 
   onBack, 
   isLoggedIn, 
-  onOpenAuth 
+  onOpenAuth,
+  registeredEventIds = [],
+  onRegister,
+  onUnregister
 }: { 
   eventId: string; 
   onBack: () => void; 
   isLoggedIn: boolean; 
   onOpenAuth: () => void;
+  registeredEventIds?: string[];
+  onRegister?: (id: string) => void;
+  onUnregister?: (id: string) => void;
   key?: React.Key 
 }) {
   const event = EVENTS.find(e => e.id === eventId) || EVENTS[0];
+  const isRegistered = registeredEventIds.includes(event.id);
   const [isReportDrawerOpen, setIsReportDrawerOpen] = useState(false);
   const [isConfirmDrawerOpen, setIsConfirmDrawerOpen] = useState(false);
   const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
 
   const handleShare = async () => {
     const shareData = {
@@ -1144,11 +2722,17 @@ function EventDetailsPage({
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setIsConfirmDrawerOpen(true)}
-              className="w-full h-14 bg-gradient-to-r from-[#ED1C24] to-[#c4151b] text-white rounded-2xl font-black text-lg shadow-[#ED1C24]/20 transition-all flex items-center justify-center gap-3"
+              onClick={() => isRegistered ? null : setIsConfirmDrawerOpen(true)}
+              disabled={isRegistered}
+              className={`w-full h-14 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 ${
+                isRegistered 
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-none' 
+                : 'bg-gradient-to-r from-[#ED1C24] to-[#c4151b] text-white shadow-[#ED1C24]/20 shadow-lg'
+              }`}
             >
-              <span>شرکت در دورهمی</span>
-              <ArrowRight className="w-5 h-5 rotate-180" />
+              <span>{isRegistered ? 'قبلاً ثبت‌نام کرده‌اید' : 'شرکت در دورهمی'}</span>
+              {!isRegistered && <ArrowRight className="w-5 h-5 rotate-180" />}
+              {isRegistered && <Check className="w-5 h-5" />}
             </motion.button>
           </div>
 
@@ -1188,7 +2772,7 @@ function EventDetailsPage({
             )}
 
             {/* Rating Section */}
-            <div className="mt-8">
+            <div className="mt-12">
                <RatingSection onSubmit={(rating, text) => {
                  const newComment = {
                    id: Date.now(),
@@ -1216,7 +2800,27 @@ function EventDetailsPage({
           isOpen={isConfirmDrawerOpen}
           onClose={() => setIsConfirmDrawerOpen(false)}
           event={event}
+          onConfirm={() => {
+            onRegister?.(event.id);
+            setIsConfirmDrawerOpen(false);
+            setIsRegistrationSuccess(true);
+            setTimeout(() => setIsRegistrationSuccess(false), 3000);
+          }}
         />
+
+        <AnimatePresence>
+          {isRegistrationSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, x: "-50%" }}
+              animate={{ opacity: 1, y: 0, x: "-50%" }}
+              exit={{ opacity: 0, y: 50, x: "-50%" }}
+              className="fixed bottom-24 left-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-xl z-50 font-black flex items-center gap-3 whitespace-nowrap"
+            >
+              <Check className="w-5 h-5" />
+              <span>ثبت‌نام شما با موفقیت انجام شد</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <ParticipantsDrawer 
           isOpen={isParticipantsDrawerOpen}
@@ -1480,11 +3084,13 @@ function ParticipantsDrawer({
 function ConfirmationDrawer({ 
   isOpen, 
   onClose, 
-  event 
+  event,
+  onConfirm
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   event: any;
+  onConfirm?: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -1540,7 +3146,7 @@ function ConfirmationDrawer({
               <div className="flex flex-col gap-3">
                 <motion.button 
                   whileTap={{ scale: 0.98 }}
-                  onClick={onClose}
+                  onClick={onConfirm}
                   className="w-full bg-[#ED1C24] text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-[#ED1C24]/20 transition-all"
                 >
                   تایید و ثبت نام
@@ -1670,7 +3276,7 @@ function ReportDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="اگر جزئیات بیشتری دارید، اینجا بنویسید..."
-                        className="w-full bg-gray-50/80 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all min-h-[120px] resize-none"
+                        className="w-full bg-gray-50/80 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-gray-900/5 transition-all min-h-[120px] resize-none"
                       />
                     </div>
                   </div>
@@ -1912,6 +3518,183 @@ function NavigationDrawer({
   );
 }
 
+function FilterDrawer({ 
+  isOpen, 
+  onClose 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+}) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [selectedAgeRange, setSelectedAgeRange] = useState<string | null>(null);
+  const [activeGender, setActiveGender] = useState('مختلط');
+  const [isFreeOnly, setIsFreeOnly] = useState(false);
+
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests(prev => 
+      prev.includes(interest) 
+        ? prev.filter(i => i !== interest) 
+        : [...prev, interest]
+    );
+  };
+
+  const clearAll = () => {
+    setSelectedCategory(null);
+    setSelectedInterests([]);
+    setSelectedAgeRange(null);
+    setActiveGender('مختلط');
+    setIsFreeOnly(false);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]"
+          />
+          <motion.div
+            initial={{ y: "100%", x: "-50%" }}
+            animate={{ y: 0, x: "-50%" }}
+            exit={{ y: "100%", x: "-50%" }}
+            transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-3xl shadow-2xl flex flex-col max-h-[85vh]"
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+            
+            <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-8 no-scrollbar">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-gray-900">فیلترها</h2>
+                <button 
+                  onClick={clearAll}
+                  className="text-sm font-bold text-[#ED1C24]"
+                >
+                  پاک کردن همه
+                </button>
+              </div>
+
+              {/* Filter Sections */}
+              <div className="space-y-6">
+                {/* Category */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-gray-900">دسته‌بندی</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['ورزشی', 'آموزشی', 'هنری', 'تکنولوژی'].map(cat => (
+                      <button 
+                        key={cat} 
+                        onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                        className={`px-4 py-3 rounded-2xl border text-xs font-bold text-right transition-all ${
+                          selectedCategory === cat 
+                          ? 'bg-gray-900/5 border-gray-900 text-gray-900' 
+                          : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interest */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-gray-900">علاقه‌مندی‌ها</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['یوگا', 'نقاشی', 'برنامه‌نویسی', 'عکاسی', 'آشپزی'].map(int => (
+                      <button 
+                        key={int} 
+                        onClick={() => toggleInterest(int)}
+                        className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
+                          selectedInterests.includes(int) 
+                          ? 'bg-gray-900/5 border-gray-900 text-gray-900' 
+                          : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {int}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-gray-900">جنسیت</h3>
+                  <div className="flex gap-2">
+                    {['آقا', 'خانم', 'مختلط'].map(gen => (
+                      <button 
+                        key={gen} 
+                        onClick={() => setActiveGender(gen)}
+                        className={`flex-1 py-3 rounded-2xl border text-xs font-bold transition-all ${
+                          activeGender === gen 
+                          ? 'bg-gray-900/5 border-gray-900 text-gray-900' 
+                          : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {gen}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Age Range */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-gray-900">رده سنی</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['کودک (۵ تا ۱۲)', 'نوجوان (۱۲ تا ۱۸)', 'جوان (۱۸ تا ۳۵)', 'بزرگسال (+۳۵)'].map(age => (
+                      <button 
+                        key={age} 
+                        onClick={() => setSelectedAgeRange(selectedAgeRange === age ? null : age)}
+                        className={`px-4 py-3 rounded-2xl border text-xs font-bold text-right transition-all ${
+                          selectedAgeRange === age 
+                          ? 'bg-gray-900/5 border-gray-900 text-gray-900' 
+                          : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {age}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Free Events Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-black text-gray-900">رویدادهای رایگان</h3>
+                    <p className="text-[10px] font-bold text-gray-400">نمایش فقط رویدادهای بدون هزینه</p>
+                  </div>
+                  <div 
+                    onClick={() => setIsFreeOnly(!isFreeOnly)}
+                    className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${isFreeOnly ? 'bg-gray-900' : 'bg-gray-200'}`}
+                  >
+                    <motion.div 
+                      animate={{ x: isFreeOnly ? -24 : 0 }}
+                      className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <motion.button 
+                whileTap={{ scale: 0.98 }}
+                onClick={onClose}
+                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-base shadow-xl mt-8"
+              >
+                اعمال فیلترها
+              </motion.button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function CitySelectionDrawer({ 
   isOpen, 
   onClose, 
@@ -2107,16 +3890,16 @@ function StepPhoneNumber({ onClose, onContinue }: { onClose: () => void; onConti
               setError('');
             }}
             placeholder="0912 123 4567"
-            className={`w-full border ${error ? 'border-red-500' : 'border-blue-200'} rounded-2xl py-4 px-6 text-lg font-black tracking-[0.1em] focus:ring-2 focus:ring-blue-100 outline-none transition-all`}
+            className={`w-full border ${error ? 'border-red-500' : 'border-blue-200'} rounded-xl py-3 px-6 text-lg font-black tracking-[0.1em] focus:ring-2 focus:ring-blue-100 outline-none transition-all`}
           />
           {error && <p className="text-red-500 text-[10px] font-bold mt-2 mr-2">{error}</p>}
         </div>
       </div>
         
-      <div className="mt-auto">
+      <div>
         <button 
           onClick={handleContinue}
-          className="w-full bg-[#00A1F1] hover:bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-blue-200 active:scale-[0.98] transition-all"
+          className="w-full mt-4 bg-[#00A1F1] hover:bg-blue-600 text-white py-3 rounded-xl font-black text-sm shadow-blue-200 active:scale-[0.98] transition-all"
         >
           ادامه
         </button>
@@ -2189,7 +3972,7 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: { phoneNumber: string; onBa
             {code.map((digit, idx) => (
               <input
                 key={idx}
-                ref={el => inputRefs.current[idx] = el}
+                ref={(el) => { inputRefs.current[idx] = el; }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -2236,7 +4019,7 @@ function FooterItem({ icon, label, isActive, onClick }: { icon: React.ReactNode,
       >
         {icon}
       </motion.div>
-      <span className="text-[10px] whitespace-nowrap">{label}</span>
+      <span className="text-[10px] font-black whitespace-nowrap">{label}</span>
     </button>
   );
 }
@@ -2615,7 +4398,16 @@ function EventCardSkeleton() {
   );
 }
 
-function EventsPage({ onSelectEvent, isInitialLoading }: { onSelectEvent: (id: string) => void; isInitialLoading: boolean; key?: React.Key }) {
+function EventsPage({ 
+  onSelectEvent, 
+  isInitialLoading,
+  events 
+}: { 
+  onSelectEvent: (id: string) => void; 
+  isInitialLoading: boolean; 
+  events: Event[];
+  key?: React.Key 
+}) {
   const [visibleEventsCount, setVisibleEventsCount] = useState(4);
   const [isFetching, setIsFetching] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2623,12 +4415,12 @@ function EventsPage({ onSelectEvent, isInitialLoading }: { onSelectEvent: (id: s
   const handleScroll = (e: React.UIEvent<HTMLElement>) => {
     const target = e.currentTarget;
     if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
-      if (visibleEventsCount < 10 && !isFetching) {
+      if (visibleEventsCount < events.length && !isFetching) {
         setIsFetching(true);
         setTimeout(() => {
-          setVisibleEventsCount(prev => Math.min(prev + 2, 10));
+          setVisibleEventsCount(prev => Math.min(prev + 4, events.length));
           setIsFetching(false);
-        }, 1200); // Simulate network lag with visual feedback
+        }, 1000); // Simulate network lag with visual feedback
       }
     }
   };
@@ -2696,12 +4488,13 @@ function EventsPage({ onSelectEvent, isInitialLoading }: { onSelectEvent: (id: s
         <h2 className="text-xl font-black mb-6">لیست رویدادها</h2>
         <div className="flex flex-col gap-6">
           {isInitialLoading ? (
-            <>
+            <div className="flex flex-col gap-8 animate-in fade-in duration-500">
               <EventCardSkeleton />
               <EventCardSkeleton />
-            </>
-          ) : EVENTS.length > 0 ? (
-            EVENTS.slice(0, visibleEventsCount).map((event) => (
+              <EventCardSkeleton />
+            </div>
+          ) : events.length > 0 ? (
+            events.slice(0, visibleEventsCount).map((event) => (
               <motion.div 
                 key={event.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -2735,20 +4528,24 @@ function EventsPage({ onSelectEvent, isInitialLoading }: { onSelectEvent: (id: s
                 </div>
               </motion.div>
             ))
+
           ) : (
             <EmptyState message="رویدادی یافت نشد" />
           )}
           
           {isFetching && (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 py-4">
               <EventCardSkeleton />
               <EventCardSkeleton />
             </div>
           )}
           
-          {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && EVENTS.length > 0 && (
+          {!isFetching && !isInitialLoading && visibleEventsCount >= events.length && events.length > 0 && (
             <div className="py-10 text-center">
-              <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-8 h-1 bg-gray-100 rounded-full" />
+                <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
+              </div>
             </div>
           )}
         </div>
@@ -2959,5 +4756,230 @@ function OfferCard({ item }: { item: any; key?: React.Key }) {
         <p className="text-[11px] font-bold text-gray-400 truncate">{item.description}</p>
       </div>
     </motion.div>
+  );
+}
+
+function MyEventsPage({ 
+  onSelectEvent,
+  registeredEventIds = [],
+  onUnregister,
+  onNavigate,
+  onCreateEvent
+}: { 
+  onSelectEvent: (id: string) => void;
+  registeredEventIds?: string[];
+  onUnregister?: (id: string) => void;
+  onNavigate: (tab: string) => void;
+  onCreateEvent: () => void;
+}) {
+  const [activeSubTab, setActiveSubTab] = useState<'registered' | 'hosted'>('registered');
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [eventToCancel, setEventToCancel] = useState<string | null>(null);
+
+  const registeredEvents = EVENTS.filter(e => registeredEventIds.includes(e.id));
+
+  return (
+    <motion.main 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="flex-1 overflow-y-auto no-scrollbar pb-24"
+      dir="rtl"
+    >
+      <header className="px-6 pt-8 pb-4">
+        <h1 className="text-2xl font-black text-gray-900 mb-2">رویدادهای من</h1>
+        <p className="text-sm font-bold text-gray-400">تاریخچه و مدیریت فعالیت‌های شما</p>
+      </header>
+
+      {/* Modern Tab Switcher */}
+      <div className="px-6 mb-8">
+        <div className="bg-gray-100 p-1.5 rounded-[2rem] flex items-center shadow-inner">
+          <button
+            onClick={() => setActiveSubTab('registered')}
+            className={`flex-1 py-3.5 rounded-full text-sm font-black transition-all flex items-center justify-center gap-2 ${
+              activeSubTab === 'registered' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Ticket className={`w-4 h-4 ${activeSubTab === 'registered' ? 'text-[#ED1C24]' : ''}`} />
+            تجارب من
+          </button>
+          <button
+            onClick={() => setActiveSubTab('hosted')}
+            className={`flex-1 py-3.5 rounded-full text-sm font-black transition-all flex items-center justify-center gap-2 ${
+              activeSubTab === 'hosted' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 ${activeSubTab === 'hosted' ? 'text-[#ED1C24]' : ''}`} />
+            میزبانی
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeSubTab === 'registered' ? (
+          <motion.div
+            key="registered"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-6 space-y-4"
+          >
+            {registeredEvents.length > 0 ? (
+              registeredEvents.map(event => (
+                <div key={event.id} className="group relative">
+                  <div 
+                    className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-gray-100 transition-all cursor-pointer"
+                    onClick={() => onSelectEvent(event.id)}
+                  >
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                      <img src={event.image} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                      <p className="text-[10px] font-bold text-gray-400 mt-1">{event.date}</p>
+                      <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                        <MapPin className="w-3 h-3" />
+                        <span>{event.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEventToCancel(event.id);
+                      setIsCancelConfirmOpen(true);
+                    }}
+                    className="absolute top-2 left-2 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
+                  <Ticket className="w-12 h-12" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black text-gray-900">هنوز خاطره‌ای نساخته‌اید!</h3>
+                  <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                    در میان رویدادهای جذاب جستجو کنید و اولین تجربه خود را ثبت کنید.
+                  </p>
+                </div>
+                <button className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all">
+                  مشاهده رویدادهای پرطرفدار
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="hosted"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-6 flex flex-col items-center justify-center py-20 text-center gap-6"
+          >
+            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
+              <Plus className="w-12 h-12" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-gray-900">هنوز میزبان نبوده‌اید؟</h3>
+              <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                همین حالا رویداد منحصر به فرد خودتان را بسازید و جامعه خود را دور هم جمع کنید.
+              </p>
+            </div>
+            <button 
+              onClick={onCreateEvent}
+              className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
+            >
+              ساخت اولین رویداد
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <CancellationConfirmDrawer 
+        isOpen={isCancelConfirmOpen}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={() => {
+          if (eventToCancel) {
+            onUnregister?.(eventToCancel);
+            setIsCancelConfirmOpen(false);
+            setEventToCancel(null);
+          }
+        }}
+      />
+    </motion.main>
+  );
+}
+
+function CancellationConfirmDrawer({ 
+  isOpen, 
+  onClose, 
+  onConfirm 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onConfirm: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]"
+          />
+          <motion.div
+            initial={{ y: "100%", x: "-50%" }}
+            animate={{ y: 0, x: "-50%" }}
+            exit={{ y: "100%", x: "-50%" }}
+            transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-3xl shadow-2xl flex flex-col pt-2"
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
+            
+            <div className="px-8 pb-10 space-y-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+                  <AlertCircle className="w-10 h-10" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-black text-gray-900">لغو ثبت نام</h2>
+                  <p className="text-sm font-bold text-gray-400 leading-relaxed">
+                    آیا از لغو ثبت‌نام در این رویداد اطمینان دارید؟ این عمل قابل بازگشت نیست.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <motion.button 
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onConfirm}
+                  className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-base shadow-lg transition-all"
+                >
+                  بله، لغو ثبت‌نام
+                </motion.button>
+                <button 
+                  onClick={onClose}
+                  className="w-full bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-base active:scale-[0.98] transition-all"
+                >
+                  انصراف
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

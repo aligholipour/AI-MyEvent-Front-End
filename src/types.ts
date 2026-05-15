@@ -9,6 +9,7 @@ export interface Event {
   price?: string;
   lat?: number;
   lng?: number;
+  category?: string;
 }
 
 export interface Category {
