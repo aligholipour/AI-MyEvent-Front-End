@@ -20,7 +20,7 @@ import {
   X,
   ArrowRight,
   ChevronDown,
-  User, 
+  User as UserIcon, 
   ChevronLeft, 
   ChevronRight, 
   MapPin, 
@@ -38,6 +38,16 @@ import {
   Music,
   GraduationCap,
   Image,
+  Camera,
+  Smile,
+  Bold,
+  Italic,
+  AlertCircle,
+  ShieldCheck,
+  Phone,
+  Play,
+  Pause,
+  List,
   Cpu,
   Moon,
   Flame,
@@ -59,13 +69,7 @@ import {
   Star,
   MessageCircle,
   Inbox,
-  AlertCircle,
-  Filter,
-  Bold,
-  Italic,
-  List,
-  Smile,
-  ShieldCheck
+  Filter
 } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import Cropper, { Area, Point } from 'react-easy-crop';
@@ -104,10 +108,9 @@ const NEARBY_EVENTS_DATA = [
   }
 ];
 
-import { type Event, type Category } from './types';
+import { type AppEvent, type AppCategory, type AppUser } from './types';
 
-// Mock Data
-const EVENTS: Event[] = [
+const EVENTS: AppEvent[] = [
   {
     id: '1',
     title: 'کارگاه طراحی تجربه کاربری',
@@ -119,7 +122,63 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 35.7152,
-    lng: 51.4043
+    lng: 51.4043,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false,
+    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۷:۰۰',
+    minAge: '۱۸',
+    maxAge: '۴۵',
+    maxCapacity: '۳۰',
+    isOnline: false
+  },
+  {
+    id: '11',
+    title: 'سمینار هوش مصنوعی در پزشکی',
+    category: 'علمی',
+    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
+    location: 'تهران، دانشگاه علوم پزشکی',
+    organizer: 'انجمن علمی هوش مصنوعی',
+    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۵۰,۰۰۰ تومان',
+    isConfirmed: false,
+    status: 'pending',
+    isDisabled: true,
+    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۰:۰۰',
+    minAge: '۲۰',
+    maxAge: '۶۰',
+    maxCapacity: '۱۵۰',
+    isOnline: false
+  },
+  {
+    id: '12',
+    title: 'کارگاه عکاسی غیرحرفه‌ای',
+    category: 'آموزش',
+    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
+    location: 'اصفهان، بوستان ملت',
+    organizer: 'کانون عکاسان',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    isConfirmed: false,
+    status: 'rejected',
+    rejectionReason: 'کیفیت تصاویر بارگذاری شده مناسب نیست و توضیحات رویداد ناقص است.',
+    isDisabled: true,
+    description: 'آموزش عکاسی با موبایل برای علاقمندان به ثبت لحظات روزمره.',
+    city: 'اصفهان',
+    provinceId: '3',
+    startTime: '۱۶:۰۰',
+    minAge: '۱۲',
+    maxAge: '۹۹',
+    maxCapacity: '۲۰',
+    isOnline: false
   },
   {
     id: '2',
@@ -132,7 +191,10 @@ const EVENTS: Event[] = [
     isFree: false,
     price: '۱۵۰,۰۰۰ تومان',
     lat: 32.7214,
-    lng: 51.5222
+    lng: 51.5222,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '3',
@@ -145,7 +207,10 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 29.6264,
-    lng: 52.5295
+    lng: 52.5295,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '4',
@@ -158,7 +223,10 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 35.7339,
-    lng: 51.4243
+    lng: 51.4243,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '5',
@@ -171,7 +239,10 @@ const EVENTS: Event[] = [
     isFree: false,
     price: '۴۵۰,۰۰۰ تومان',
     lat: 35.7448,
-    lng: 51.3753
+    lng: 51.3753,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '6',
@@ -184,7 +255,10 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 36.6713,
-    lng: 51.3061
+    lng: 51.3061,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '7',
@@ -197,7 +271,10 @@ const EVENTS: Event[] = [
     isFree: false,
     price: '۲۰۰,۰۰۰ تومان',
     lat: 38.0667,
-    lng: 46.3333
+    lng: 46.3333,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '8',
@@ -210,7 +287,10 @@ const EVENTS: Event[] = [
     isFree: false,
     price: '۹۸۰,۰۰۰ تومان',
     lat: 35.7767,
-    lng: 51.4117
+    lng: 51.4117,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '9',
@@ -223,7 +303,10 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 36.3150,
-    lng: 59.5390
+    lng: 59.5390,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   },
   {
     id: '10',
@@ -236,11 +319,88 @@ const EVENTS: Event[] = [
     isFree: true,
     price: 'رایگان',
     lat: 29.6258,
-    lng: 52.5586
+    lng: 52.5586,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
   }
 ];
 
-const CATEGORIES: Category[] = [
+const USERS_DATA: AppUser[] = [
+  { 
+    id: '1', 
+    name: 'علی احمدی', 
+    email: 'ali@example.com', 
+    phone: '09121234567', 
+    joinDate: '۱۴۰۲/۰۲/۱۵', 
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۷۵/۰۵/۱۰',
+    maritalStatus: 'single',
+    gender: 'male',
+    occupation: 'برنامه‌نویس ارشد',
+    about: 'علاقمند به سفرهای ماجراجویانه و یادگیری تکنولوژی‌های جدید.',
+    interests: ['کوه نوردی', 'طراحی', 'سینما'],
+    invitationLink: 'https://events-app.com/invite/ali-123'
+  },
+  { 
+    id: '2', 
+    name: 'سارا رضایی', 
+    email: 'sara@example.com', 
+    phone: '09192345678', 
+    joinDate: '۱۴۰۲/۰۳/۱۰', 
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۸۰/۱۲/۲۲',
+    maritalStatus: 'married',
+    gender: 'female',
+    occupation: 'مدیر محصول',
+    about: 'عاشق دنیای کسب‌وکار و شبکه‌سازی در رویدادهای تخصصی.',
+    interests: ['عکاسی', 'شطرنج', 'سفر'],
+    invitationLink: 'https://events-app.com/invite/sara-456'
+  },
+  { 
+    id: '3', 
+    name: 'محمد محمدی', 
+    email: 'm.m@example.com', 
+    phone: '09353456789', 
+    joinDate: '۱۴۰۲/۰۴/۰۵', 
+    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=200',
+    isVerified: false,
+    birthDate: '۱۳۷۰/۰۱/۰۱',
+    maritalStatus: 'married',
+    gender: 'male',
+    occupation: 'فعال حوزه تکنولوژی',
+    invitationLink: 'https://events-app.com/invite/mmo-789'
+  },
+  { 
+    id: '4', 
+    name: 'مریم حسینی', 
+    email: 'maryam@example.com', 
+    phone: '09104567890', 
+    joinDate: '۱۴۰۲/۰۵/۲۰', 
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۷۸/۰۷/۱۵',
+    maritalStatus: 'single',
+    gender: 'female',
+    occupation: 'طراح گرافیکی',
+    invitationLink: 'https://events-app.com/invite/mary-321'
+  },
+  { 
+    id: '5', 
+    name: 'امیر قاسمی', 
+    email: 'amir@example.com', 
+    phone: '09125678901', 
+    joinDate: '۱۴۰۲/۰۶/۱۲', 
+    avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۸۲/۰۹/۰۵',
+    invitationLink: 'https://events-app.com/invite/amir-654'
+  },
+];
+
+const CATEGORIES: AppCategory[] = [
   { id: '1', title: 'علمی', icon: 'Atom', color: 'text-purple-600' },
   { id: '2', title: 'کنسرت', icon: 'Music', color: 'text-rose-600' },
   { id: '3', title: 'هنر', icon: 'Palette', color: 'text-amber-600' },
@@ -337,6 +497,17 @@ const EVENT_BANNERS = [
     buttonText: 'اطلاعات بیشتر',
     image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=80&w=800'
   }
+];
+
+const PROVINCES_DATA = [
+  { id: '1', name: 'تهران', cities: ['تهران', 'بومهن', 'پردیس', 'دماوند', 'فیروزکوه'] },
+  { id: '2', name: 'فارس', cities: ['شیراز', 'مرودشت', 'کازرون', 'جهرم', 'لار'] },
+  { id: '3', name: 'اصفهان', cities: ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر'] },
+  { id: '4', name: 'مازندران', cities: ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'بهشهر'] },
+];
+
+const INTERESTS_DATA = [
+  'چای', 'پیاده روی', 'کتابخوانی', 'موسیقی', 'سینما', 'بازی', 'کوهنوردی', 'عکاسی', 'برنامه‌نویسی', 'آشپزی'
 ];
 
 const MOST_VISITED = [
@@ -470,7 +641,10 @@ const IconMap: Record<string, any> = {
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [isRegisterPageOpen, setIsRegisterPageOpen] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState('');
   const [selectedCity, setSelectedCity] = useState('تهران');
   const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -497,13 +671,18 @@ export default function App() {
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
+  const [allUsers, setAllUsers] = useState<AppUser[]>(USERS_DATA);
+
   const filteredEvents = searchQuery 
-    ? EVENTS.filter(e => {
+    ? allEvents.filter(e => {
         const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
         const searchableText = `${e.title} ${e.location} ${e.category || ''} ${e.organizer}`.toLowerCase();
         return words.every(word => searchableText.includes(word));
       })
-    : EVENTS;
+    : allEvents;
+
+  const publicEvents = filteredEvents.filter(e => e.isConfirmed && !e.isDisabled);
 
   useEffect(() => {
     // Initial loading simulation
@@ -529,18 +708,41 @@ export default function App() {
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen font-vazir" dir="rtl">
       {/* Mobile Container Wraps */}
-      <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
+      <div className={`w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col ${isRegisterPageOpen || isCreateEventOpen || selectedEventId || activeTab === 'profile' || activeTab === 'admin' ? '' : 'pb-20'} overflow-x-hidden`}>
         
         <AnimatePresence mode="wait">
           {isCreateEventOpen ? (
             <CreateEventPage 
               key="create-event"
               onBack={() => setIsCreateEventOpen(false)}
+              onSave={(newEvent) => setAllEvents(prev => [newEvent, ...prev])}
+            />
+          ) : isRegisterPageOpen ? (
+            <RegisterPage 
+              phone={pendingPhone}
+              onBack={() => setIsRegisterPageOpen(false)}
+              onComplete={(userData) => {
+                const newUser: AppUser = {
+                  ...userData,
+                  id: Math.random().toString(36).substr(2, 9),
+                  phone: pendingPhone,
+                  joinDate: '۱۴۰۳/۰۲/۲۶',
+                  avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+                  isVerified: false,
+                  invitationLink: `https://events-app.com/invite/user-${Math.floor(Math.random() * 1000)}`
+                };
+                setAllUsers(prev => [...prev, newUser]);
+                setCurrentUser(newUser);
+                setIsLoggedIn(true);
+                setIsRegisterPageOpen(false);
+                navigateToTab('profile');
+              }}
             />
           ) : selectedEventId ? (
             <EventDetailsPage 
               key="event-details"
               eventId={selectedEventId}
+              events={allEvents}
               onBack={() => setSelectedEventId(null)}
               isLoggedIn={isLoggedIn}
               onOpenAuth={() => setIsAuthDrawerOpen(true)}
@@ -551,11 +753,14 @@ export default function App() {
           ) : activeTab === 'profile' ? (
             <ProfilePage 
               key="profile" 
+              user={currentUser}
               onBack={() => navigateToTab('home')} 
               onLogout={() => {
                 setIsLoggedIn(false);
+                setCurrentUser(null);
                 navigateToTab('home');
               }}
+              onUpdateUser={(updatedUser) => setCurrentUser(updatedUser)}
             />
           ) : (
             <>
@@ -570,19 +775,31 @@ export default function App() {
                   </div>
 
                   {/* Province/City Selector */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-gray-400">استان/شهر</span>
+                  <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => setIsCityDrawerOpen(true)}
-                      className="flex items-center gap-1 group"
+                      onClick={() => navigateToTab('admin')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                        activeTab === 'admin' 
+                        ? 'bg-gray-800 text-white shadow-sm' 
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
                     >
-                      <span className="text-sm font-black text-gray-800 group-hover:text-[#ED1C24] transition-colors">{selectedCity}</span>
-                      <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-[#ED1C24] transition-colors" />
+                      مدیر سایت
                     </button>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-gray-400">استان/شهر</span>
+                      <button 
+                        onClick={() => setIsCityDrawerOpen(true)}
+                        className="flex items-center gap-1 group"
+                      >
+                        <span className="text-sm font-black text-gray-800 group-hover:text-[#ED1C24] transition-colors">{selectedCity}</span>
+                        <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-[#ED1C24] transition-colors" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {activeTab !== 'my-events' && (
+                {(activeTab === 'home' || activeTab === 'events') && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 relative group">
@@ -593,7 +810,7 @@ export default function App() {
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full bg-gray-100 border-none rounded-xl py-4 pr-14 pl-6 focus:ring-2 focus:ring-gray-900/5 transition-all outline-none text-base"
                         />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-[#1a1a1a] rounded-full">
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-[#ED1C24] rounded-full">
                           <Search className="w-5 h-5 text-white" />
                         </div>
                       </div>
@@ -608,27 +825,29 @@ export default function App() {
                     </div>
 
                     {/* Sorting Pills */}
-                    <div className="flex items-center pb-2">
-                      <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
-                        {[
-                          { id: 'closest', label: 'نزدیک‌ترین' },
-                          { id: 'cheapest', label: 'ارزان‌ترین' },
-                          { id: 'best', label: 'برترین' }
-                        ].map(item => (
-                          <button
-                            key={item.id}
-                            onClick={() => setSortBy(item.id)}
-                            className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                              sortBy === item.id 
-                              ? 'bg-gray-800 text-white shadow-sm' 
-                              : 'text-gray-400 hover:bg-gray-50'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
+                    {activeTab === 'events' && (
+                      <div className="flex items-center pb-2">
+                        <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+                          {[
+                            { id: 'closest', label: 'نزدیک‌ترین' },
+                            { id: 'cheapest', label: 'ارزان‌ترین' },
+                            { id: 'best', label: 'برترین' }
+                          ].map(item => (
+                            <button
+                              key={item.id}
+                              onClick={() => setSortBy(item.id)}
+                              className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                                sortBy === item.id 
+                                ? 'bg-gray-800 text-white shadow-sm' 
+                                : 'text-gray-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </header>
@@ -673,15 +892,17 @@ export default function App() {
 
                   {/* Latest Events Page List */}
                   <section className="px-6 py-4">
-                    <h2 className="text-xl font-black mb-6">لیست رویدادها</h2>
-                    <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-black">لیست رویدادها</h2>
+                    </div>
+                    <div className="flex flex-col gap-3">
                       {isInitialLoading ? (
                         <>
                           <EventCardSkeleton />
                           <EventCardSkeleton />
                         </>
-                      ) : filteredEvents.length > 0 ? (
-                        filteredEvents.slice(0, visibleEventsCount).map((event) => (
+                      ) : publicEvents.length > 0 ? (
+                        publicEvents.slice(0, visibleEventsCount).map((event) => (
                           <motion.div 
                             key={event.id}
                             initial={{ opacity: 0, y: 10 }}
@@ -689,28 +910,40 @@ export default function App() {
                             className="group cursor-pointer"
                             onClick={() => setSelectedEventId(event.id)}
                           >
-                            <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
-                              <img 
-                                src={event.image} 
-                                alt={event.title} 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                referrerPolicy="no-referrer"
-                              />
-                              {event.isFree && (
-                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black">
-                                  رایگان
-                                </div>
-                              )}
-                            </div>
-                            <div className="space-y-1">
-                              <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors">{event.title}</h3>
-                              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                <Clock className="w-4 h-4" />
-                                <span>{event.date}</span>
+                            <div className="flex gap-4 p-3 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] border border-transparent hover:border-gray-100">
+                              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                                <img 
+                                  src={event.image} 
+                                  alt={event.title} 
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  referrerPolicy="no-referrer"
+                                />
                               </div>
-                              <div className="flex items-center gap-2 text-gray-400 text-xs">
-                                <MapPin className="w-4 h-4" />
-                                <span>{event.location}</span>
+                              <div className="flex flex-col justify-between py-0.5 flex-1 min-w-0">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-black text-gray-900 group-hover:text-[#ED1C24] transition-colors line-clamp-1">{event.title}</h3>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
+                                      <Clock className="w-3 h-3 text-[#ED1C24]" />
+                                      <span>{event.date}</span>
+                                    </div>
+                                    {event.isFree && (
+                                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/50">رایگان</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                    <MapPin className="w-3 h-3" />
+                                    <span className="truncate max-w-[120px]">{event.location}</span>
+                                  </div>
+                                  <div className="text-[10px] font-black text-gray-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                                    مشاهده جزییات
+                                    <ChevronLeft className="w-3 h-3" />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </motion.div>
@@ -726,7 +959,7 @@ export default function App() {
                         </div>
                       )}
                       
-                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && EVENTS.length > 0 && (
+                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && publicEvents.length > 0 && (
                         <div className="py-10 text-center">
                           <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
                         </div>
@@ -787,17 +1020,29 @@ export default function App() {
                 <MyEventsPage 
                   key="my-events" 
                   onSelectEvent={(id) => setSelectedEventId(id)} 
+                  events={allEvents}
                   registeredEventIds={registeredEventIds}
                   onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
                   onNavigate={navigateToTab}
                   onCreateEvent={openCreateEvent}
+                  onReRequestApproval={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'pending', isConfirmed: false, rejectionReason: '' } : e))}
+                />
+              ) : activeTab === 'admin' ? (
+                <AdminPage 
+                  key="admin"
+                  events={allEvents}
+                  users={allUsers}
+                  onConfirm={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isConfirmed: true, status: 'approved', isDisabled: false } : e))}
+                  onReject={(id, reason) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isConfirmed: false, status: 'rejected', rejectionReason: reason, isDisabled: true } : e))}
+                  onDisable={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isDisabled: !e.isDisabled } : e))}
+                  onBack={() => navigateToTab('home')}
                 />
               ) : (
                 <EventsPage 
                   key="eventsPage" 
                   onSelectEvent={(id) => setSelectedEventId(id)} 
                   isInitialLoading={isInitialLoading} 
-                  events={filteredEvents}
+                  events={publicEvents}
                 />
               )}
             </>
@@ -805,48 +1050,50 @@ export default function App() {
         </AnimatePresence>
 
         {/* Footer Navigation */}
-        <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
-          <FooterItem 
-            icon={<Home className="w-9 h-9" />} 
-            label="خانه" 
-            isActive={activeTab === 'home'} 
-            onClick={() => navigateToTab('home')} 
-          />
-          <FooterItem 
-            icon={<Calendar className="w-9 h-9" />} 
-            label="روندهها" 
-            isActive={activeTab === 'events'} 
-            onClick={() => navigateToTab('events')} 
-          />
-          <div className="relative -top-7 flex-shrink-0">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={openCreateEvent}
-              className="w-16 h-16 bg-gradient-to-br from-[#ED1C24] to-[#c4151b] rounded-full shadow-2xl shadow-[#ED1C24]/40 flex items-center justify-center text-white border-[6px] border-white active:shadow-inner transition-shadow"
-            >
-              <Plus className="w-9 h-9" />
-            </motion.button>
-          </div>
-          <FooterItem 
-            icon={<Ticket className="w-9 h-9" />} 
-            label="رویدادهای من" 
-            isActive={activeTab === 'my-events'} 
-            onClick={() => navigateToTab('my-events')} 
-          />
-          <FooterItem 
-            icon={<User className="w-9 h-9" />} 
-            label="بروغایل" 
-            isActive={activeTab === 'profile'} 
-            onClick={() => {
-              if (isLoggedIn) {
-                navigateToTab('profile');
-              } else {
-                setIsAuthDrawerOpen(true);
-              }
-            }} 
-          />
-        </footer>
+        {!(isRegisterPageOpen || isCreateEventOpen || selectedEventId || activeTab === 'profile' || activeTab === 'admin') && (
+          <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+            <FooterItem 
+              icon={<Home className="w-9 h-9" />} 
+              label="خانه" 
+              isActive={activeTab === 'home'} 
+              onClick={() => navigateToTab('home')} 
+            />
+            <FooterItem 
+              icon={<Calendar className="w-9 h-9" />} 
+              label="رویدادها" 
+              isActive={activeTab === 'events'} 
+              onClick={() => navigateToTab('events')} 
+            />
+            <div className="relative -top-7 flex-shrink-0">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={openCreateEvent}
+                className="w-16 h-16 bg-gradient-to-br from-[#ED1C24] to-[#c4151b] rounded-full shadow-2xl shadow-[#ED1C24]/40 flex items-center justify-center text-white border-[6px] border-white active:shadow-inner transition-shadow"
+              >
+                <Plus className="w-9 h-9" />
+              </motion.button>
+            </div>
+            <FooterItem 
+              icon={<Ticket className="w-9 h-9" />} 
+              label="رویدادهای من" 
+              isActive={activeTab === 'my-events'} 
+              onClick={() => navigateToTab('my-events')} 
+            />
+            <FooterItem 
+              icon={<UserIcon className="w-9 h-9" />} 
+              label="پروفایل" 
+              isActive={activeTab === 'profile'} 
+              onClick={() => {
+                if (isLoggedIn) {
+                  navigateToTab('profile');
+                } else {
+                  setIsAuthDrawerOpen(true);
+                }
+              }} 
+            />
+          </footer>
+        )}
       </div>
 
       <FilterDrawer 
@@ -867,17 +1114,37 @@ export default function App() {
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 
         onClose={() => setIsAuthDrawerOpen(false)} 
-        onLoginSuccess={() => {
-          setIsLoggedIn(true);
-          navigateToTab('profile');
+        onLoginSuccess={(phone) => {
           setIsAuthDrawerOpen(false);
-        }}
+          if (phone === '09119658224') {
+            const existingUser = allUsers.find(u => u.phone === phone);
+            if (existingUser) {
+              setCurrentUser(existingUser);
+            } else {
+              // Fallback for the special mock user if not in allUsers
+              setCurrentUser({
+                id: 'special-1',
+                name: 'علی قلی پور',
+                phone: '۰۹۱۱۹۶۵۸۲۲۴',
+                email: 'ali@example.com',
+                joinDate: '۱۴۰۱/۰۸/۱۲',
+                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+                isVerified: true
+              });
+            }
+            setIsLoggedIn(true);
+            navigateToTab('profile');
+          } else {
+            setPendingPhone(phone);
+            setIsRegisterPageOpen(true);
+          }
+        }} 
       />
     </div>
   );
 }
 
-const API_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY = (typeof process !== 'undefined' ? process.env?.GOOGLE_MAPS_PLATFORM_KEY : (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY) || '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 function RichTextEditor({ 
@@ -1220,12 +1487,14 @@ function ImageCropperDrawer({
   image,
   isOpen,
   onClose,
-  onCropComplete
+  onCropComplete,
+  aspectRatio = 16 / 9
 }: {
   image: string | null;
   isOpen: boolean;
   onClose: () => void;
   onCropComplete: (croppedImage: string) => void;
+  aspectRatio?: number;
 }) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -1279,7 +1548,7 @@ function ImageCropperDrawer({
                 image={image}
                 crop={crop}
                 zoom={zoom}
-                aspect={16 / 9}
+                aspect={aspectRatio}
                 onCropChange={onCropChange}
                 onCropComplete={onCropCompleteInternal}
                 onZoomChange={onZoomChange}
@@ -1531,18 +1800,374 @@ function SelectionDrawer({
   );
 }
 
-const PROVINCES_DATA = [
-  { id: '1', name: 'تهران', cities: ['تهران', 'بومهن', 'پردیس', 'دماوند', 'فیروزکوه'] },
-  { id: '2', name: 'شیراز', cities: ['شیراز', 'مرودشت', 'کازرون', 'جهرم', 'لار'] },
-  { id: '3', name: 'اصفهان', cities: ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر'] },
-  { id: '4', name: 'مازندران', cities: ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'بهشهر'] },
-];
+function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: () => void; onComplete: (data: any) => void }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    birthDate: '',
+    gender: 'male' as 'male' | 'female',
+    maritalStatus: 'single' as 'single' | 'married',
+    occupation: '',
+    provinceId: '',
+    city: '',
+    interests: [] as string[],
+    avatar: ''
+  });
 
-const INTERESTS_DATA = [
-  'چای', 'پیاده روی', 'کتابخوانی', 'موسیقی', 'سینما', 'بازی', 'کوهنوردی', 'عکاسی', 'برنامه‌نویسی', 'آشپزی'
-];
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInterestsOpen, setIsInterestsOpen] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-function CreateEventPage({ onBack }: { onBack: () => void; key?: React.Key }) {
+  const INTEREST_OPTIONS = [
+    'ورزشی', 'تکنولوژی', 'هنر', 'آموزشی', 'کسب و کار', 
+    'موسیقی', 'کتاب', 'کوهنوردی', 'عکاسی', 'شطرنج'
+  ];
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImage(reader.result as string);
+        setIsCropperOpen(true);
+      });
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name) newErrors.name = 'نام و نام خانوادگی الزامی است';
+    if (!formData.birthDate) newErrors.birthDate = 'تاریخ تولد الزامی است';
+    if (!formData.city) newErrors.city = 'انتخاب شهر الزامی است';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      onComplete(formData);
+      setIsSubmitting(false);
+    }, 1000);
+  };
+
+  const PROVINCES = [
+    { id: '1', name: 'تهران' },
+    { id: '2', name: 'فارس' },
+    { id: '3', name: 'اصفهان' },
+    { id: '4', name: 'خراسان رضوی' },
+    { id: '5', name: 'مازندران' },
+  ];
+
+  const CITIES = {
+    '1': ['تهران', 'ری', 'تجریش', 'ورامین'],
+    '2': ['شیراز', 'مرودشت', 'کازرون', 'فسا'],
+    '3': ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد'],
+    '4': ['مشهد', 'نیشابور', 'سبزوار', 'تربت حیدریه'],
+    '5': ['ساری', 'بابل', 'آمل', 'قائم‌شهر'],
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="flex-1 flex flex-col bg-white overflow-hidden relative"
+      dir="rtl"
+    >
+      {/* Header */}
+      <header className="px-6 py-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-10 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          <h2 className="text-lg font-black text-gray-900">تکمیل پروفایل</h2>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+        <div className="px-6 pt-8 space-y-10">
+          {/* Avatar Upload */}
+          <div className="flex flex-col items-center gap-4">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={onFileChange} 
+            />
+            <div className="relative group">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-24 h-24 rounded-[32px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400 group-hover:bg-blue-50/30 cursor-pointer"
+              >
+                {formData.avatar ? (
+                  <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera className="w-8 h-8 text-gray-300" />
+                )}
+              </div>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 text-white rounded-xl shadow-lg border-2 border-white flex items-center justify-center transition-transform active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">تصویر پروفایل شما</p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-gray-400 mr-1">نام و نام خانوادگی</label>
+              <div className="relative">
+                <UserIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="مثال: علی احمدی"
+                  className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all shadow-sm shadow-gray-100/10`}
+                />
+              </div>
+              {errors.name && <p className="text-[10px] font-bold text-red-500 mr-2">{errors.name}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* BirthDate */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">تاریخ تولد</label>
+                <div className="relative">
+                  <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    value={formData.birthDate}
+                    onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
+                    placeholder="۱۳۷۰/۰۱/۰۱"
+                    className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all`}
+                  />
+                </div>
+              </div>
+
+              {/* Occupation */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">شغل</label>
+                <div className="relative">
+                  <Briefcase className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    value={formData.occupation}
+                    onChange={e => setFormData({ ...formData, occupation: e.target.value })}
+                    placeholder="مثال: برنامه‌نویس"
+                    className="w-full bg-gray-50 border border-gray-100 h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Gender */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">جنسیت</label>
+                <div className="flex bg-gray-50 p-1.5 rounded-2xl gap-1.5 border border-gray-100 shadow-sm shadow-gray-100/5">
+                  <button 
+                    onClick={() => setFormData({ ...formData, gender: 'male' })}
+                    className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'male' ? 'bg-white text-blue-600 shadow-md shadow-blue-500/5' : 'text-gray-400'}`}
+                  >
+                    آقا
+                  </button>
+                  <button 
+                    onClick={() => setFormData({ ...formData, gender: 'female' })}
+                    className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'female' ? 'bg-white text-rose-600 shadow-md shadow-rose-500/5' : 'text-gray-400'}`}
+                  >
+                    خانم
+                  </button>
+                </div>
+              </div>
+
+              {/* Marital Status */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">وضعیت تاهل</label>
+                <div className="flex bg-gray-50 p-1.5 rounded-2xl gap-1.5 border border-gray-100 shadow-sm shadow-gray-100/5">
+                  <button 
+                    onClick={() => setFormData({ ...formData, maritalStatus: 'single' })}
+                    className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.maritalStatus === 'single' ? 'bg-white text-gray-900 shadow-md shadow-gray-100/10' : 'text-gray-400'}`}
+                  >
+                    مجرد
+                  </button>
+                  <button 
+                    onClick={() => setFormData({ ...formData, maritalStatus: 'married' })}
+                    className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.maritalStatus === 'married' ? 'bg-white text-gray-900 shadow-md shadow-gray-100/10' : 'text-gray-400'}`}
+                  >
+                    متاهل
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Province */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">استان محل سکونت</label>
+                <select 
+                  value={formData.provinceId}
+                  onChange={e => setFormData({ ...formData, provinceId: e.target.value, city: '' })}
+                  className="w-full bg-gray-50 border border-gray-100 h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all"
+                >
+                  <option value="">انتخاب استان</option>
+                  {PROVINCES.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+
+              {/* City */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-gray-400 mr-1">شهر</label>
+                <select 
+                  value={formData.city}
+                  disabled={!formData.provinceId}
+                  onChange={e => setFormData({ ...formData, city: e.target.value })}
+                  className={`w-full bg-gray-50 border ${errors.city ? 'border-red-500' : 'border-gray-100'} h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all disabled:opacity-50`}
+                >
+                  <option value="">انتخاب شهر</option>
+                  {formData.provinceId && (CITIES as any)[formData.provinceId].map((c: string) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Interests - Button to open Drawer */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-2">
+                <Smile className="w-4 h-4 text-amber-500" />
+                <label className="text-[11px] font-black text-gray-400">علاقه‌مندی‌های شما</label>
+              </div>
+              <button 
+                onClick={() => setIsInterestsOpen(true)}
+                className="w-full bg-gray-50 border border-gray-100 py-4 px-5 rounded-2xl flex items-center justify-between group hover:bg-white hover:border-blue-200 transition-all shadow-sm shadow-gray-100/5"
+              >
+                <div className="flex flex-wrap gap-2">
+                  {formData.interests.length > 0 ? (
+                    formData.interests.map(interest => (
+                      <span key={interest} className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100/50">
+                        {interest}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[11px] font-bold text-gray-400">یک یا چند مورد را انتخاب کنید...</span>
+                  )}
+                </div>
+                <PlusCircle className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Button - Sticky Bottom of the page view */}
+      <div className="px-6 py-4 bg-white/80 backdrop-blur-md border-t border-gray-50 sticky bottom-0 z-10 flex-shrink-0">
+        <button 
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white h-14 rounded-2xl text-sm font-black shadow-xl shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-3 transition-all active:scale-95"
+        >
+          {isSubmitting ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <>
+              تکمیل ثبت نام و ورود
+              <Check className="w-4 h-4" />
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Interests Selection Drawer */}
+      <AnimatePresence>
+        {isInterestsOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsInterestsOpen(false)}
+              className="absolute inset-0 bg-black/60 z-[200] backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="absolute bottom-0 left-0 w-full bg-white z-[210] rounded-t-[32px] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            >
+                <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+                <div className="px-6 pb-24 overflow-y-auto no-scrollbar">
+                  <div className="space-y-6">
+                    <div className="text-center space-y-1 mt-2">
+                      <h3 className="text-lg font-black text-gray-900">علاقه‌مندی‌ها</h3>
+                      <p className="text-[11px] font-bold text-gray-400">زمینه‌های مورد علاقه خود برای رویدادها را انتخاب کنید</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pb-8">
+                      {INTEREST_OPTIONS.map(interest => (
+                        <button 
+                          key={interest}
+                          onClick={() => {
+                            if (formData.interests.includes(interest)) {
+                              setFormData({ ...formData, interests: formData.interests.filter(i => i !== interest) });
+                            } else {
+                              setFormData({ ...formData, interests: [...formData.interests, interest] });
+                            }
+                          }}
+                          className={`flex items-center justify-between px-4 py-4 rounded-2xl border-2 transition-all ${
+                            formData.interests.includes(interest) 
+                            ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-md shadow-blue-500/5' 
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                          }`}
+                        >
+                          <span className="text-[12px] font-black">{interest}</span>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                            formData.interests.includes(interest) ? 'bg-blue-600 border-blue-600' : 'border-gray-200'
+                          }`}>
+                            {formData.interests.includes(interest) && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 w-full p-6 bg-white/95 backdrop-blur-sm border-t border-gray-100">
+                  <button 
+                    onClick={() => setIsInterestsOpen(false)}
+                    className="w-full bg-gray-900 text-white h-13 rounded-2xl text-[13px] font-black shadow-xl transition-all active:scale-95"
+                  >
+                    تایید انتخاب‌ها
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        <ImageCropperDrawer
+          image={tempImage}
+          isOpen={isCropperOpen}
+          onClose={() => { setIsCropperOpen(false); setTempImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+          onCropComplete={(croppedImage) => setFormData({...formData, avatar: croppedImage})}
+          aspectRatio={1} // Profile is usually 1:1
+        />
+    </motion.div>
+  );
+}
+
+function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (event: any) => void; key?: React.Key }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -1671,6 +2296,34 @@ function CreateEventPage({ onBack }: { onBack: () => void; key?: React.Key }) {
     setIsLoading(true);
     // Simulate server request
     setTimeout(() => {
+      const newEvent: AppEvent = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        interests: formData.interests,
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        location: formData.isOnline ? 'رویداد آنلاین' : (formData.city + '، ' + formData.address),
+        address: formData.address,
+        provinceId: formData.provinceId,
+        city: formData.city,
+        isOnline: formData.isOnline,
+        onlineLink: formData.onlineLink,
+        minCapacity: formData.minCapacity,
+        maxCapacity: formData.maxCapacity,
+        minAge: formData.minAge,
+        maxAge: formData.maxAge,
+        organizer: 'من کاربر', // Hardcoded for simulation
+        image: formData.image || 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
+        isFree: !formData.isPaid,
+        price: formData.isPaid ? `${formData.price} تومان` : 'رایگان',
+        isConfirmed: false, // New events need confirmation
+        status: 'pending',
+        isDisabled: true // Pending events are disabled by default
+      };
+      onSave(newEvent);
       setIsLoading(false);
       setIsSuccess(true);
       setTimeout(() => {
@@ -2362,6 +3015,7 @@ function FormSelect({
 
 function EventDetailsPage({ 
   eventId, 
+  events = [],
   onBack, 
   isLoggedIn, 
   onOpenAuth,
@@ -2370,6 +3024,7 @@ function EventDetailsPage({
   onUnregister
 }: { 
   eventId: string; 
+  events?: AppEvent[];
   onBack: () => void; 
   isLoggedIn: boolean; 
   onOpenAuth: () => void;
@@ -2378,7 +3033,7 @@ function EventDetailsPage({
   onUnregister?: (id: string) => void;
   key?: React.Key 
 }) {
-  const event = EVENTS.find(e => e.id === eventId) || EVENTS[0];
+  const event = events.find(e => e.id === eventId) || events[0] || EVENTS[0];
   const isRegistered = registeredEventIds.includes(event.id);
   const [isReportDrawerOpen, setIsReportDrawerOpen] = useState(false);
   const [isConfirmDrawerOpen, setIsConfirmDrawerOpen] = useState(false);
@@ -3793,7 +4448,7 @@ function CitySelectionDrawer({
   );
 }
 
-function AuthDrawer({ isOpen, onClose, onLoginSuccess }: { isOpen: boolean; onClose: () => void; onLoginSuccess: () => void }) {
+function AuthDrawer({ isOpen, onClose, onLoginSuccess }: { isOpen: boolean; onClose: () => void; onLoginSuccess: (phone: string) => void }) {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   
@@ -3825,9 +4480,9 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess }: { isOpen: boolean; onCl
             dir="rtl"
           >
             {/* Handle for visual identification of bottom sheet */}
-            <div className="w-12 bg-gray-100 rounded-full mx-auto" />
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
             
-            <div className="flex flex-col min-h-[45vh] px-6 pt-4 pb-10">
+            <div className="flex flex-col min-h-[45vh] px-6 pb-20">
                {step === 'phone' ? (
                  <StepPhoneNumber 
                    onClose={onClose} 
@@ -3840,7 +4495,7 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess }: { isOpen: boolean; onCl
                  <StepOTP 
                    phoneNumber={phoneNumber}
                    onBack={() => setStep('phone')}
-                   onSuccess={onLoginSuccess}
+                   onSuccess={() => onLoginSuccess(phoneNumber)}
                  />
                )
                }
@@ -3955,7 +4610,7 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: { phoneNumber: string; onBa
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
             <ArrowRight className="w-5 h-5" />
@@ -3999,7 +4654,7 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: { phoneNumber: string; onBa
 
         <button 
           onClick={() => handleVerify(code.join(''))}
-          className="w-full bg-[#00A1F1] hover:bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-[0.98] transition-all"
+          className="w-full bg-[#00A1F1] hover:bg-blue-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-[0.98] transition-all"
         >
           تایید
         </button>
@@ -4249,7 +4904,25 @@ function ConsultantCard({ consultant }: { consultant: any; key?: React.Key }) {
   );
 }
 
-function ProfilePage({ onBack, onLogout }: { onBack: () => void; onLogout?: () => void; key?: React.Key }) {
+function ProfilePage({ onBack, onLogout, user, onUpdateUser }: { onBack: () => void; onLogout?: () => void; user: AppUser | null; onUpdateUser?: (user: AppUser) => void; key?: React.Key }) {
+  const [isInterestsDrawerOpen, setIsInterestsDrawerOpen] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  if (!user) return null;
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImage(reader.result as string);
+        setIsCropperOpen(true);
+      });
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
   return (
     <motion.main 
       initial={{ opacity: 0, x: -100 }}
@@ -4261,21 +4934,33 @@ function ProfilePage({ onBack, onLogout }: { onBack: () => void; onLogout?: () =
       {/* Header */}
       <header className="px-6 pt-10 pb-6 flex items-center justify-between">
         <div className="flex items-center gap-4 text-right">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-2 border-teal-500 p-0.5">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={onFileChange} 
+          />
+          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <div className="w-16 h-16 rounded-full border-2 border-blue-500 p-0.5 overflow-hidden transition-all group-hover:border-[#ED1C24]">
               <img 
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" 
+                src={user.avatar} 
                 alt="profile" 
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform"
               />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                <Camera className="w-5 h-5 text-white" />
+              </div>
             </div>
-            <div className="absolute top-0 right-0 bg-[#00A091] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border-2 border-white">
-              Pro
-            </div>
+            {user.isVerified && (
+              <div className="absolute top-0 right-0 bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border-2 border-white">
+                Verif
+              </div>
+            )}
           </div>
           <div className="flex flex-col items-start text-right">
-            <h1 className="text-lg font-black text-gray-900 leading-none">علی قلی پور</h1>
-            <p className="text-xs font-bold text-gray-400 mt-1">۰۹۱۱۹۶۵۸۲۲۴</p>
+            <h1 className="text-lg font-black text-gray-900 leading-none">{user.name}</h1>
+            <p className="text-xs font-bold text-gray-400 mt-1" dir="ltr">{user.phone}</p>
           </div>
         </div>
 
@@ -4313,6 +4998,7 @@ function ProfilePage({ onBack, onLogout }: { onBack: () => void; onLogout?: () =
 
       {/* Menu List */}
       <section className="space-y-1">
+        <MenuItem icon={<Heart className="w-5 h-5 text-rose-500" />} title="علاقه‌مندی‌ها" onClick={() => setIsInterestsDrawerOpen(true)} />
         <MenuItem icon={<Coins className="w-5 h-5" />} title="بازگشت طلایی" subtitle="تبدیل هزینه سفر به طلا" showBadge />
         <MenuItem icon={<Diamond className="w-5 h-5" />} title="اسنپ‌کلاب" subtitle="باشگاه مشتریان اسنپ" badgeText="۱۰۵,۲۷۰ امتیاز" />
         <MenuItem icon={<ShoppingCart className="w-5 h-5" />} title="سفارش‌ها" />
@@ -4329,6 +5015,21 @@ function ProfilePage({ onBack, onLogout }: { onBack: () => void; onLogout?: () =
           onClick={onLogout}
         />
       </section>
+
+      <InterestsDrawer 
+        isOpen={isInterestsDrawerOpen}
+        onClose={() => setIsInterestsDrawerOpen(false)}
+        selectedInterests={user.interests || []}
+        onToggle={() => {}} // Read-only in profile for now or could implement it
+      />
+
+      <ImageCropperDrawer
+        image={tempImage}
+        isOpen={isCropperOpen}
+        onClose={() => { setIsCropperOpen(false); setTempImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+        onCropComplete={(croppedImage) => onUpdateUser?.({...user, avatar: croppedImage})}
+        aspectRatio={1}
+      />
     </motion.main>
   );
 }
@@ -4405,7 +5106,7 @@ function EventsPage({
 }: { 
   onSelectEvent: (id: string) => void; 
   isInitialLoading: boolean; 
-  events: Event[];
+  events: AppEvent[];
   key?: React.Key 
 }) {
   const [visibleEventsCount, setVisibleEventsCount] = useState(4);
@@ -4597,21 +5298,6 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
     handleManualInteraction();
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        setIndex((prev) => (prev - 1 + total) % total);
-        handleManualInteraction();
-      } else if (e.key === 'ArrowLeft') {
-        setIndex((prev) => (prev + 1) % total);
-        handleManualInteraction();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [total]);
-
   if (isLoading) {
     return (
       <div className="w-full px-4 py-4">
@@ -4628,7 +5314,7 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
         if (!pauseTimeoutRef.current) setIsAutoPlaying(true);
       }}
     >
-      <div className="relative h-[200px] sm:h-[240px] px-2.5 overflow-visible"> {/* Peeking container refined */}
+      <div className="relative h-[200px] sm:h-[240px] px-2.5 overflow-visible">
         <motion.div 
           className="flex h-full"
           style={{ width: `${total * 100}%` }}
@@ -4640,27 +5326,21 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
           onDragEnd={handleDragEnd}
           onDragStart={() => setIsAutoPlaying(false)}
         >
-          {banners.map((banner, i) => (
+          {banners.map((banner) => (
             <div 
               key={banner.id} 
               className="px-1 h-full"
               style={{ width: `calc(100% / ${total})` }}
             >
-              <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex items-center p-8">
-                {/* Background Image */}
+              <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex items-center p-8 text-right">
                 <img 
                   src={banner.image} 
                   alt="" 
                   className="absolute inset-0 w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-                
-                {/* Gradient Overlays for Readability */}
                 <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
-                <div className="absolute inset-0 bg-black/10" />
-
-                {/* Content */}
-                <div className="z-10 relative flex-1 space-y-2 h-full flex flex-col items-start text-right">
+                <div className="z-10 relative flex-1 space-y-2">
                   <h3 className="text-white text-3xl font-black leading-tight drop-shadow-lg">
                     {banner.title}
                   </h3>
@@ -4674,7 +5354,6 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
         </motion.div>
       </div>
 
-      {/* Pagination Dots */}
       <div className="flex justify-center items-center gap-2 mt-5">
         {banners.map((_, i) => (
           <button
@@ -4690,69 +5369,33 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
   );
 }
 
-function OfferCard({ item }: { item: any; key?: React.Key }) {
-  const cardRef = useRef(null);
-  const { scrollXProgress } = useScroll({
-    target: cardRef,
-    offset: ["start end", "end start"]
-  });
-
-  const imgY = useTransform(scrollXProgress, [0, 1], ["-10%", "10%"]);
-
+function OfferCard({ item }: { item: any }) {
   return (
     <motion.div
-      ref={cardRef}
       initial={{ opacity: 0, scale: 0.9, y: 20 }}
       whileInView={{ opacity: 1, scale: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="flex-shrink-0 w-52 bg-white rounded-2xl overflow-hidden shadow-md snap-center relative border border-gray-100 group/card"
+      viewport={{ once: true }}
+      className="flex-shrink-0 w-52 bg-white rounded-2xl overflow-hidden shadow-md snap-center relative border border-gray-100"
     >
-      {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden">
-        <motion.img 
+        <img 
           src={item.image} 
           alt={item.title} 
-          style={{ x: imgY, scale: 1.2 }}
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
         />
-        
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
-        
-        {/* Ribbon Badge */}
         <div className="absolute top-3 right-0 z-10">
-          <motion.div 
-            initial={{ x: 20, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[#ED1C24] text-white text-[9px] font-black px-3 py-1 rounded-l-lg shadow-sm"
-          >
+          <div className="bg-[#ED1C24] text-white text-[9px] font-black px-3 py-1 rounded-l-lg">
             {item.badge}
-          </motion.div>
+          </div>
         </div>
-
-        {/* Rating Badge */}
-        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm z-10">
+        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
           <span>{item.rating}</span>
           <span className="text-yellow-500">★</span>
         </div>
-
-        {/* Logo Overlay */}
-        <div className="absolute -bottom-5 left-4 p-0.5 bg-white rounded-xl shadow-lg border border-gray-50 z-20">
-           <img 
-             src={item.organizerLogo} 
-             alt="logo" 
-             className="w-10 h-10 rounded-lg object-contain bg-gray-50"
-             referrerPolicy="no-referrer"
-           />
-        </div>
       </div>
-
-      {/* Content */}
       <div className="p-5 pt-8 space-y-1">
-        <h3 className="text-sm font-black text-gray-900 leading-tight truncate group-hover/card:text-[#ED1C24] transition-colors">{item.title}</h3>
+        <h3 className="text-sm font-black text-gray-900 leading-tight truncate">{item.title}</h3>
         <p className="text-[11px] font-bold text-gray-400 truncate">{item.description}</p>
       </div>
     </motion.div>
@@ -4761,22 +5404,27 @@ function OfferCard({ item }: { item: any; key?: React.Key }) {
 
 function MyEventsPage({ 
   onSelectEvent,
+  events = [],
   registeredEventIds = [],
   onUnregister,
   onNavigate,
-  onCreateEvent
+  onCreateEvent,
+  onReRequestApproval
 }: { 
   onSelectEvent: (id: string) => void;
+  events?: AppEvent[];
   registeredEventIds?: string[];
   onUnregister?: (id: string) => void;
   onNavigate: (tab: string) => void;
   onCreateEvent: () => void;
+  onReRequestApproval?: (id: string) => void;
 }) {
   const [activeSubTab, setActiveSubTab] = useState<'registered' | 'hosted'>('registered');
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [eventToCancel, setEventToCancel] = useState<string | null>(null);
 
-  const registeredEvents = EVENTS.filter(e => registeredEventIds.includes(e.id));
+  const registeredEvents = events.filter(e => registeredEventIds.includes(e.id));
+  const hostedEvents = events.filter(e => !EVENTS.some(initial => initial.id === e.id));
 
   return (
     <motion.main 
@@ -4791,7 +5439,6 @@ function MyEventsPage({
         <p className="text-sm font-bold text-gray-400">تاریخچه و مدیریت فعالیت‌های شما</p>
       </header>
 
-      {/* Modern Tab Switcher */}
       <div className="px-6 mb-8">
         <div className="bg-gray-100 p-1.5 rounded-[2rem] flex items-center shadow-inner">
           <button
@@ -4870,7 +5517,10 @@ function MyEventsPage({
                     در میان رویدادهای جذاب جستجو کنید و اولین تجربه خود را ثبت کنید.
                   </p>
                 </div>
-                <button className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all">
+                <button 
+                   onClick={() => onNavigate('events')}
+                   className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
+                >
                   مشاهده رویدادهای پرطرفدار
                 </button>
               </div>
@@ -4882,23 +5532,97 @@ function MyEventsPage({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="px-6 flex flex-col items-center justify-center py-20 text-center gap-6"
+            className="px-6 space-y-4"
           >
-            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
-              <Plus className="w-12 h-12" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-gray-900">هنوز میزبان نبوده‌اید؟</h3>
-              <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
-                همین حالا رویداد منحصر به فرد خودتان را بسازید و جامعه خود را دور هم جمع کنید.
-              </p>
-            </div>
-            <button 
-              onClick={onCreateEvent}
-              className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
-            >
-              ساخت اولین رویداد
-            </button>
+            {hostedEvents.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-xs font-black text-gray-400">رویدادهای ثبت شده توسط شما</span>
+                  <div className="bg-gray-100 px-2 py-1 rounded-md text-[9px] font-black text-gray-500">
+                    {hostedEvents.length} رویداد
+                  </div>
+                </div>
+                {hostedEvents.map(event => (
+                  <div key={event.id} className="group flex flex-col gap-3">
+                    <div 
+                      className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all cursor-pointer"
+                      onClick={() => onSelectEvent(event.id)}
+                    >
+                      <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
+                        <img src={event.image} alt="" className="w-full h-full object-cover" />
+                        {!event.isConfirmed && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+                            <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}>
+                              {event.status === 'rejected' ? 'رد شده' : 'منتظر تایید'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' : (event.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
+                            {event.isConfirmed ? 'تایید شده' : (event.status === 'rejected' ? 'رد شده' : 'در انتظار بررسی')}
+                          </span>
+                          {event.isDisabled && (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-600">غیرفعال</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          <span>{event.date}</span>
+                        </div>
+                      </div>
+                      <ChevronLeft className="w-5 h-5 text-gray-300" />
+                    </div>
+
+                    {event.status === 'rejected' && (
+                      <div className="bg-red-50 rounded-2xl p-4 border border-red-100 space-y-3">
+                        <div className="flex items-center gap-2 text-red-600">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-[10px] font-black">علت رد شدن توسط ناظر</span>
+                        </div>
+                        <p className="text-xs font-bold text-red-500 leading-relaxed italic pr-2 border-r-2 border-red-200">
+                          {event.rejectionReason || 'توضیحات بیشتری ثبت نشده است.'}
+                        </p>
+                        <button 
+                          onClick={() => onReRequestApproval?.(event.id)}
+                          className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
+                        >
+                          درخواست بررسی مجدد رویداد
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                <button 
+                  onClick={onCreateEvent}
+                  className="w-full mt-4 bg-gray-50 border-2 border-dashed border-gray-200 py-6 rounded-3xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-all group"
+                >
+                  <Plus className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-black">ساخت رویداد جدید</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
+                  <Plus className="w-12 h-12" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black text-gray-900">هنوز میزبان نبوده‌اید؟</h3>
+                  <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                    همین حالا رویداد منحصر به فرد خودتان را بسازید و جامعه خود را دور هم جمع کنید.
+                  </p>
+                </div>
+                <button 
+                  onClick={onCreateEvent}
+                  className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
+                >
+                  ساخت اولین رویداد
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -4914,6 +5638,646 @@ function MyEventsPage({
           }
         }}
       />
+    </motion.main>
+  );
+}
+
+function AdminPage({ 
+  events, 
+  users,
+  onConfirm, 
+  onReject,
+  onDisable,
+  onBack
+}: { 
+  events: AppEvent[]; 
+  users: AppUser[];
+  onConfirm: (id: string) => void;
+  onReject: (id: string, reason: string) => void;
+  onDisable: (id: string) => void;
+  onBack: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'events' | 'users'>('events');
+  const [selectedEventForReject, setSelectedEventForReject] = useState<string | null>(null);
+  const [selectedEventForReason, setSelectedEventForReason] = useState<AppEvent | null>(null);
+  const [selectedEventForDetails, setSelectedEventForDetails] = useState<AppEvent | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
+  const sortedUsers = [...users].sort((a, b) => b.joinDate.localeCompare(a.joinDate));
+
+  return (
+    <motion.main 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="flex-1 overflow-y-auto no-scrollbar pb-24"
+      dir="rtl"
+    >
+      <header className="px-6 pt-8 pb-6 sticky top-0 bg-white/80 backdrop-blur-md z-30 border-b border-gray-50">
+        <div className="flex items-center justify-between mb-6">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-gray-900">مدیریت سایت</h1>
+            <p className="text-xs font-bold text-gray-400">بررسی رویدادها و کاربران</p>
+          </div>
+          <button 
+            onClick={onBack}
+            className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            <ArrowRight className="w-5 h-5 text-gray-900" />
+          </button>
+        </div>
+
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+          <button 
+            onClick={() => setActiveTab('events')}
+            className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'events' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            رویدادها
+          </button>
+          <button 
+            onClick={() => setActiveTab('users')}
+            className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'users' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            کاربران
+          </button>
+        </div>
+      </header>
+
+      <div className="px-6 py-6">
+        <AnimatePresence mode="wait">
+          {activeTab === 'events' ? (
+            <motion.div 
+              key="events-list"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              {events.map((event) => (
+                <div 
+                  key={event.id}
+                  onClick={() => setSelectedEventForDetails(event)}
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex flex-col sm:flex-row transition-all hover:shadow-md cursor-pointer group items-stretch"
+                >
+                  <div className="w-full sm:w-28 relative flex-shrink-0 min-h-[100px] sm:h-auto">
+                    <img src={event.image} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
+                    {event.status === 'pending' && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center backdrop-blur-[1px]">
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">
+                           تایید
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 p-3.5 flex flex-col justify-between min-w-0 bg-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-0.5">
+                        <h3 className="text-sm font-black text-gray-900 truncate">{event.title}</h3>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                          <UserIcon className="w-3 h-3" />
+                          <span>{event.organizer}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <div className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1.5 ${
+                          event.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                          event.status === 'rejected' ? 'bg-red-50 text-red-600' :
+                          'bg-amber-50 text-amber-600'
+                        }`}>
+                          <div className={`w-1 h-1 rounded-full ${
+                            event.status === 'approved' ? 'bg-emerald-500' :
+                            event.status === 'rejected' ? 'bg-red-500' :
+                            'bg-amber-500 animate-pulse'
+                          }`} />
+                          {event.status === 'approved' ? 'تایید شده' :
+                           event.status === 'rejected' ? 'رد شده' :
+                           'در انتظار'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-4">
+                      {event.status === 'pending' || event.status === 'rejected' ? (
+                        <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                          <button 
+                            onClick={() => onConfirm(event.id)}
+                            className="flex-[2] bg-emerald-500 text-white h-9 rounded-xl text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5 border-none"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            تایید نهایی
+                          </button>
+                          <button 
+                            onClick={() => setSelectedEventForReject(event.id)}
+                            className="flex-1 bg-red-50 text-red-500 h-9 rounded-xl text-[10px] font-black hover:bg-red-100 transition-all border-none"
+                          >
+                            رد کردن
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                          <button 
+                            onClick={() => onDisable(event.id)}
+                            className={`flex-1 h-9 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 border-none ${
+                              event.isDisabled 
+                              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
+                              : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            }`}
+                          >
+                            {event.isDisabled ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                            <span>{event.isDisabled ? 'فعالسازی' : 'غیرفعال‌سازی'}</span>
+                          </button>
+                          <button 
+                            onClick={() => setSelectedEventForReject(event.id)}
+                            className="bg-red-50 text-red-500 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-red-100 transition-all border-none"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="users-list"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-3"
+            >
+              {sortedUsers.map((user) => (
+                <button 
+                  key={user.id}
+                  onClick={() => setSelectedUser(user)}
+                  className="w-full flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 text-right hover:shadow-lg hover:shadow-gray-100 transition-all active:scale-[0.99]"
+                >
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
+                    <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-black text-gray-900">{user.name}</h4>
+                    <p className="text-[10px] font-bold text-gray-400 mt-0.5">{user.email}</p>
+                  </div>
+                  <div className="text-left flex flex-col items-end gap-1">
+                    <span className="text-[9px] font-black text-gray-300">عضویت</span>
+                    <span className="text-[10px] font-black text-gray-600">{user.joinDate}</span>
+                  </div>
+                  <ChevronLeft className="w-5 h-5 text-gray-300" />
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Rejection Reason Drawer */}
+      <AnimatePresence>
+        {selectedEventForDetails && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForDetails(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-[4px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh]"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+              
+              <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-20">
+                <div className="space-y-6">
+                  <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-md">
+                    <img src={selectedEventForDetails.image} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-gray-900 border border-white/50 shadow-sm">
+                      {selectedEventForDetails.category}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-black text-gray-900">{selectedEventForDetails.title}</h2>
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                        selectedEventForDetails.isFree ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {selectedEventForDetails.isFree ? 'رایگان' : selectedEventForDetails.price}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">مکان</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700 truncate">{selectedEventForDetails.location}</p>
+                      </div>
+                      
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">تاریخ و زمان</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700 truncate">{selectedEventForDetails.date} - {selectedEventForDetails.startTime}</p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <UserIcon className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">برگزارکننده</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700 truncate">{selectedEventForDetails.organizer}</p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Users className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">رده سنی</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700">{selectedEventForDetails.minAge || '۰'} تا {selectedEventForDetails.maxAge || '۹۹'} سال</p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Compass className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">ظرفیت</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700">{selectedEventForDetails.maxCapacity || 'نامحدود'} نفر</p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <PlusCircle className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">نوع رویداد</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700">{selectedEventForDetails.isOnline ? 'آنلاین' : 'حضوری'}</p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Store className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">شهر و استان</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700 truncate">
+                          {selectedEventForDetails.city} - {PROVINCES_DATA.find(p => p.id === selectedEventForDetails.provinceId)?.name || 'نامشخص'}
+                        </p>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Heart className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">علاقه‌مندی‌ها</span>
+                        </div>
+                        <p className="text-[11px] font-black text-gray-700 truncate">{selectedEventForDetails.interests?.join('، ') || 'بدون مورد'}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <h4 className="text-xs font-black text-gray-400 px-1 italic">درباره رویداد</h4>
+                       <div className="bg-gray-100/50 p-4 rounded-2xl border border-gray-100">
+                          <p className="text-sm font-bold text-gray-700 leading-relaxed text-justify">
+                            {selectedEventForDetails.description || 'توضیحاتی برای این رویداد ثبت نشده است.'}
+                          </p>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-0 left-0 w-full p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  {selectedEventForDetails.status === 'pending' || selectedEventForDetails.status === 'rejected' ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          onConfirm(selectedEventForDetails.id);
+                          setSelectedEventForDetails(null);
+                        }}
+                        className="flex-[2] bg-emerald-500 text-white h-11 rounded-xl text-[11px] font-black shadow-lg shadow-emerald-500/20"
+                      >
+                        تایید نهایی رویداد
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setSelectedEventForReject(selectedEventForDetails.id);
+                          setSelectedEventForDetails(null);
+                        }}
+                        className="flex-1 bg-red-50 text-red-500 h-11 rounded-xl text-[11px] font-black"
+                      >
+                        رد کردن
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => {
+                          setSelectedEventForReject(selectedEventForDetails.id);
+                          setSelectedEventForDetails(null);
+                        }}
+                        className="flex-1 bg-red-50 text-red-500 h-11 rounded-xl text-[11px] font-black"
+                      >
+                        تغییر وضعیت به رد شده
+                      </button>
+                      <button 
+                        disabled={selectedEventForDetails.status === 'approved'}
+                        onClick={() => {
+                          onConfirm(selectedEventForDetails.id);
+                        }}
+                        className="flex-1 bg-emerald-50 text-emerald-600 h-11 rounded-xl text-[11px] font-black disabled:opacity-50"
+                      >
+                        تایید مجدد
+                      </button>
+                    </>
+                  )}
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    onDisable(selectedEventForDetails.id);
+                    setSelectedEventForDetails(null);
+                  }}
+                  className={`w-full h-11 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-2 ${
+                    selectedEventForDetails.isDisabled 
+                    ? 'bg-emerald-50 text-emerald-600' 
+                    : 'bg-amber-50 text-amber-600'
+                  }`}
+                >
+                  {selectedEventForDetails.isDisabled ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  <span>{selectedEventForDetails.isDisabled ? 'فعالسازی مجدد رویداد' : 'غیرفعال کردن موقت رویداد'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedEventForReject && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForReject(null)}
+              className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-3xl shadow-2xl flex flex-col pt-2"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
+              <div className="px-8 pb-10 space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-xl font-black text-gray-900">دلیل رد رویداد</h2>
+                  <p className="text-sm font-bold text-gray-400">لطفا علت عدم تایید این رویداد را بنویسید تا به کاربر اطلاع داده شود.</p>
+                </div>
+
+                <textarea 
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="مثلا: اطلاعات رویداد ناقص است یا محتوای نامناسب دارد..."
+                  className="w-full h-32 bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-100 transition-all resize-none"
+                />
+
+                <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={() => {
+                      if (selectedEventForReject) {
+                        onReject(selectedEventForReject, rejectionReason);
+                        setSelectedEventForReject(null);
+                        setRejectionReason('');
+                      }
+                    }}
+                    disabled={!rejectionReason.trim()}
+                    className="w-full bg-red-500 text-white py-4 rounded-2xl font-black text-base shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:shadow-none transition-all"
+                  >
+                    ثبت رد رویداد
+                  </button>
+                  <button 
+                    onClick={() => setSelectedEventForReject(null)}
+                    className="w-full bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-base"
+                  >
+                    انصراف
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedEventForReason && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForReason(null)}
+              className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-3xl shadow-2xl flex flex-col pt-2"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
+              <div className="px-8 pb-10 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-black text-gray-900">علت رد رویداد</h2>
+                    <p className="text-[11px] font-bold text-gray-400">{selectedEventForReason.title}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                  <p className="text-sm font-bold text-gray-700 leading-relaxed">
+                    {selectedEventForReason.rejectionReason || 'توضیحاتی برای رد این رویداد ثبت نشده است.'}
+                  </p>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedEventForReason(null)}
+                  className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                >
+                   بستن
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* User Detail Drawer */}
+      <AnimatePresence>
+        {selectedUser && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedUser(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-[4px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh]"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+              
+              <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-20">
+                <div className="space-y-6">
+                  <div className="flex flex-col items-center gap-4 mt-2">
+                    <div className="w-24 h-24 rounded-[32px] overflow-hidden shadow-xl ring-4 ring-gray-50 relative group">
+                      <img src={selectedUser.avatar} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                      {selectedUser.isVerified && (
+                        <div className="absolute bottom-2 right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-2 border-white shadow-lg">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center space-y-1">
+                      <h2 className="text-xl font-black text-gray-900">{selectedUser.name}</h2>
+                      {selectedUser.isVerified ? (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-black text-emerald-600 flex items-center justify-center gap-1 bg-emerald-50 px-3 py-1 rounded-full mx-auto w-fit">
+                            <Check className="w-3 h-3" />
+                            کاربر تایید شده
+                          </p>
+                          {selectedUser.about && (
+                            <p className="text-[11px] font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed italic">
+                              "{selectedUser.about}"
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full mx-auto w-fit">کاربر عادی</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Mail className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">ایمیل</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700 truncate">{selectedUser.email}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">شماره تماس</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700">{selectedUser.phone}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">تاریخ تولد</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700">{selectedUser.birthDate || 'ثبت نشده'}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Heart className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">وضعیت تاهل</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700">
+                        {selectedUser.maritalStatus === 'single' ? 'مجرد' : (selectedUser.maritalStatus === 'married' ? 'متاهل' : 'ثبت نشده')}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <UserIcon className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">جنسیت</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700">
+                        {selectedUser.gender === 'male' ? 'آقا' : (selectedUser.gender === 'female' ? 'خانم' : 'ثبت نشده')}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">شغل</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700 truncate">{selectedUser.occupation || 'ثبت نشده'}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1 col-span-2">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black">علاقه‌مندی‌ها</span>
+                      </div>
+                      <p className="text-[11px] font-black text-gray-700">
+                        {selectedUser.interests?.join('، ') || 'موردی ثبت نشده است'}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl space-y-1 col-span-2 overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black">لینک دعوت اختصاصی</span>
+                        </div>
+                        <button className="text-[10px] font-black text-blue-500 hover:underline">کپی لینک</button>
+                      </div>
+                      <p className="text-[11px] font-black text-blue-600 truncate underline">{selectedUser.invitationLink || 'در دسترس نیست'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-0 left-0 w-full p-6 bg-white/80 backdrop-blur-md border-t border-gray-50">
+                <button 
+                  onClick={() => setSelectedUser(null)}
+                  className="w-full bg-gray-900 text-white h-12 rounded-2xl text-sm font-black shadow-xl"
+                >
+                  بستن پروفایل کاربر
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.main>
   );
 }
