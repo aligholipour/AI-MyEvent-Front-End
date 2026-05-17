@@ -708,7 +708,7 @@ export default function App() {
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen font-vazir" dir="rtl">
       {/* Mobile Container Wraps */}
-      <div className={`w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col ${isRegisterPageOpen || isCreateEventOpen || selectedEventId || activeTab === 'profile' || activeTab === 'admin' ? '' : 'pb-20'} overflow-x-hidden`}>
+      <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
         
         <AnimatePresence mode="wait">
           {isCreateEventOpen ? (
@@ -1050,7 +1050,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Footer Navigation */}
-        {!(isRegisterPageOpen || isCreateEventOpen || selectedEventId || activeTab === 'profile' || activeTab === 'admin') && (
+        {!selectedEventId && (
           <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
             <FooterItem 
               icon={<Home className="w-9 h-9" />} 
@@ -2366,7 +2366,7 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         <div className="px-6 py-6 space-y-6">
           
           {/* Image Picker */}
@@ -4928,7 +4928,7 @@ function ProfilePage({ onBack, onLogout, user, onUpdateUser }: { onBack: () => v
       initial={{ opacity: 0, x: -100 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -100 }}
-      className="flex-1 overflow-y-auto no-scrollbar pb-10 bg-white"
+      className="flex-1 overflow-y-auto no-scrollbar pb-32 bg-white"
       dir="rtl"
     >
       {/* Header */}
