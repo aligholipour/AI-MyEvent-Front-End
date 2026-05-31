@@ -10,14 +10,14 @@ export interface AppUser {
   maritalStatus?: 'single' | 'married';
   about?: string;
   gender?: 'male' | 'female';
-  interests?: string[];
+  interests?: number[];
   occupation?: string;
   invitationLink?: string;
   role?: 'user' | 'admin';
 }
 
 export interface AppEvent {
-  id: string;
+  id: number;
   title: string;
   date: string;
   location: string;
@@ -27,20 +27,20 @@ export interface AppEvent {
   price?: string;
   lat?: number;
   lng?: number;
-  category?: string;
+  categoryId: number;
   status?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
   isConfirmed?: boolean;
   isDisabled?: boolean;
   description?: string;
-  interests?: string[];
+  interests?: number[];
   startTime?: string;
   endTime?: string;
   minCapacity?: string;
   maxCapacity?: string;
   minAge?: string;
   maxAge?: string;
-  provinceId?: string;
+  provinceId?: number;
   city?: string;
   isOnline?: boolean;
   onlineLink?: string;
@@ -48,8 +48,98 @@ export interface AppEvent {
 }
 
 export interface AppCategory {
-  id: string;
+  id: number;
   title: string;
   icon: string;
   color: string;
+}
+
+export interface AppUsers {
+  id: number;
+  name: string;
+  title: string;
+  rating: number;
+  badge: string;
+  image: string;
+  color: string;
+  registeredDate: string
+}
+export interface HomeSlider {
+  id: string;
+  title: string;
+  subtitle: string;
+  extra: string;
+  buttonText: string;
+  image: string
+}
+export interface Favourite {
+  id: number;
+  title: string
+}
+export interface Province {
+  id: number;
+  name: string
+}
+export interface City {
+  id: number;
+  name: string
+}
+
+export interface GetEventsRequest {
+  pageNumber: number;
+  pageSize: number;
+  searchTerm?: string;
+  categoryId?: number;
+  provinceId?: number;
+  fromDate?: string;
+  toDate?: string;
+  isOnline?: boolean;
+  isFreeOnly?: boolean;
+  interestIds?: number[],
+  gender?: number,
+  eventType?: number
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+export interface Job {
+  id: number;
+  title: string
+}
+export interface RegisterRequest {
+  phone: string,
+  fullName: string,
+  birthDate?: string,
+  gender: 'male' | 'female';
+  maritalStatus: 'single' | 'married',
+  cityId: number,
+  jobId?: number,
+  favouriteIds: number[],
+  profileImageAddress: string
+}
+export interface EventDetailForAdminResponse{
+  id: number
+  title: string,
+  description: string,
+  organizer: string,
+  image: string,
+  address: string,
+  eventTime: string,
+  ageRange: string,
+  capacity: string,
+  isOnline: boolean,
+  city: string,
+  isApprove: boolean,
+  isFree: boolean,
+  isActive: boolean,
+  price: string,
+  category: string,
+  favourites: string[]
 }

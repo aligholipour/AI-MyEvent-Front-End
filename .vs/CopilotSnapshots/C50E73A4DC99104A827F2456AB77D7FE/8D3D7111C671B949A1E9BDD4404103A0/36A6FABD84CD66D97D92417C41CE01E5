@@ -1,0 +1,1106 @@
+﻿/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
+import * as LucideIcons from 'lucide-react';
+import {
+  Check,
+  Ticket,
+  Search,
+  Menu,
+  Bell,
+  Home,
+  Calendar,
+  PlusCircle,
+  Plus,
+  Minus,
+  X,
+  ArrowRight,
+  ChevronDown,
+  User as UserIcon,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Briefcase,
+  Gamepad2,
+  Palette,
+  Atom,
+  Heart,
+  Laptop,
+  Dumbbell,
+  Users,
+  Compass,
+  Trophy,
+  Music,
+  GraduationCap,
+  Image,
+  Camera,
+  Smile,
+  Bold,
+  Italic,
+  AlertCircle,
+  ShieldCheck,
+  Phone,
+  Play,
+  Pause,
+  List,
+  Cpu,
+  Moon,
+  Flame,
+  Umbrella,
+  ShoppingBag,
+  Store,
+  Coins,
+  Diamond,
+  ShoppingCart,
+  Mail,
+  Headphones,
+  Settings,
+  Gift,
+  Info,
+  Share2,
+  Flag,
+  MoreVertical,
+  Send,
+  Star,
+  MessageCircle,
+  Inbox,
+  Filter
+} from 'lucide-react';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import Cropper, { Area, Point } from 'react-easy-crop';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { getCroppedImg } from './lib/utils';
+import { initCategories } from './services/categories';
+import { initEvents } from './services/events';
+
+const NEARBY_EVENTS_DATA = [
+  {
+    id: 'ne1',
+    title: 'تکنولوژی',
+    subTitle: 'سمینار هوش مصنوعی',
+    capacity: '۱۲ نفر باقی‌مانده',
+    price: '۴۵۶,۰۰۰ تومان',
+    discount: '🔥 ۵۷%',
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 'ne2',
+    title: 'هنر',
+    subTitle: 'نمایشگاه نقاشی مدرن',
+    capacity: '۵ نفر باقی‌مانده',
+    price: '۱۲۰,۰۰۰ تومان',
+    discount: '۷۵%',
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 'ne3',
+    title: 'آموزش',
+    subTitle: 'کارگاه طراحی وب',
+    capacity: '۲۰ نفر باقی‌مانده',
+    price: '۸۵۰,۰۰۰ تومان',
+    discount: '۲۰٪',
+    image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=400'
+  }
+];
+
+import { type AppEvent, type AppCategory, type AppUser } from './types';
+
+const EVENTS: AppEvent[] = [
+  {
+    id: '1',
+    title: 'کارگاه طراحی تجربه کاربری',
+    category: 'فنی',
+    date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
+    location: 'تهران، خیابان ولیعصر',
+    organizer: 'آکادمی دیزاین',
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 35.7152,
+    lng: 51.4043,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false,
+    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۷:۰۰',
+    minAge: '۱۸',
+    maxAge: '۴۵',
+    maxCapacity: '۳۰',
+    isOnline: false
+  },
+  {
+    id: '11',
+    title: 'سمینار هوش مصنوعی در پزشکی',
+    category: 'علمی',
+    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
+    location: 'تهران، دانشگاه علوم پزشکی',
+    organizer: 'انجمن علمی هوش مصنوعی',
+    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۵۰,۰۰۰ تومان',
+    isConfirmed: false,
+    status: 'pending',
+    isDisabled: true,
+    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۰:۰۰',
+    minAge: '۲۰',
+    maxAge: '۶۰',
+    maxCapacity: '۱۵۰',
+    isOnline: false
+  },
+  {
+    id: '12',
+    title: 'کارگاه عکاسی غیرحرفه‌ای',
+    category: 'آموزش',
+    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
+    location: 'اصفهان، بوستان ملت',
+    organizer: 'کانون عکاسان',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    isConfirmed: false,
+    status: 'rejected',
+    rejectionReason: 'کیفیت تصاویر بارگذاری شده مناسب نیست و توضیحات رویداد ناقص است.',
+    isDisabled: true,
+    description: 'آموزش عکاسی با موبایل برای علاقمندان به ثبت لحظات روزمره.',
+    city: 'اصفهان',
+    provinceId: '3',
+    startTime: '۱۶:۰۰',
+    minAge: '۱۲',
+    maxAge: '۹۹',
+    maxCapacity: '۲۰',
+    isOnline: false
+  },
+  {
+    id: '2',
+    title: 'نشست استارتاپ‌های نوپا',
+    category: 'تجاری',
+    date: 'سه‌شنبه، ۲۲ اردیبهشت - ۱۸:۳۰',
+    location: 'اصفهان، شهرک علمی تحقیقاتی',
+    organizer: 'شتاب‌دهنده هاب',
+    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۱۵۰,۰۰۰ تومان',
+    lat: 32.7214,
+    lng: 51.5222,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '3',
+    title: 'شب نشینی مافیا',
+    category: 'بازی',
+    date: 'چهارشنبه، ۲۳ اردیبهشت - ۲۰:۰۰',
+    location: 'شیراز، کافه هنر',
+    organizer: 'گروه بازی‌های دورهمی',
+    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 29.6264,
+    lng: 52.5295,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '4',
+    title: 'نمایشگاه بین‌المللی کتاب',
+    category: 'آموزش',
+    date: 'پنج‌شنبه، ۲۴ اردیبهشت - ۱۰:۰۰',
+    location: 'تهران، مصلی امام خمینی',
+    organizer: 'وزارت فرهنگ',
+    image: 'https://images.unsplash.com/photo-1491841573634-28140fc7ced7?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 35.7339,
+    lng: 51.4243,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '5',
+    title: 'کنسرت علی یاسینی',
+    category: 'کنسرت',
+    date: 'جمعه، ۲۵ اردیبهشت - ۲۱:۰۰',
+    location: 'تهران، برج میلاد',
+    organizer: 'لیما کنسرت',
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۴۵۰,۰۰۰ تومان',
+    lat: 35.7448,
+    lng: 51.3753,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '6',
+    title: 'تور دوچرخه‌سواری کوهستان',
+    category: 'ورزش',
+    date: 'شنبه، ۲۶ اردیبهشت - ۰۷:۰۰',
+    location: 'مازندران، نمک‌آبرود',
+    organizer: 'باشگاه دوچرخه‌سواران',
+    image: 'https://images.unsplash.com/photo-1544191714-3d9adabddf65?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 36.6713,
+    lng: 51.3061,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '7',
+    title: 'کارگاه آموزش پایتون',
+    category: 'فنی',
+    date: 'یکشنبه، ۲۷ اردیبهشت - ۱۶:۰۰',
+    location: 'تبریز، دانشگاه سراسری',
+    organizer: 'انجمن علمی کامپیوتر',
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۰۰,۰۰۰ تومان',
+    lat: 38.0667,
+    lng: 46.3333,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '8',
+    title: 'همایش بازاریابی دیجیتال',
+    category: 'تجاری',
+    date: 'دوشنبه، ۲۸ اردیبهشت - ۰۹:۰۰',
+    location: 'تهران، مرکز همایش‌های صدا و سیما',
+    organizer: 'دی‌ام بورد',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۹۸۰,۰۰۰ تومان',
+    lat: 35.7767,
+    lng: 51.4117,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '9',
+    title: 'جشنواره غذای خیابانی',
+    category: 'سفر',
+    date: 'سه‌شنبه، ۲۹ اردیبهشت - ۱۸:۰۰',
+    location: 'مشهد، بوستان ملت',
+    organizer: 'شهرداری مشهد',
+    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 36.3150,
+    lng: 59.5390,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: '10',
+    title: 'شب شعر معاصر',
+    category: 'هنر',
+    date: 'چهارشنبه، ۳۰ اردیبهشت - ۱۹:۳۰',
+    location: 'شیراز، حافظیه',
+    organizer: 'انجمن ادبی حافظ',
+    image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 29.6258,
+    lng: 52.5586,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  }
+];
+
+const USERS_DATA: AppUser[] = [
+  {
+    id: '1',
+    name: 'علی احمدی',
+    email: 'ali@example.com',
+    phone: '09121234567',
+    joinDate: '۱۴۰۲/۰۲/۱۵',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۷۵/۰۵/۱۰',
+    maritalStatus: 'single',
+    gender: 'male',
+    occupation: 'برنامه‌نویس ارشد',
+    about: 'علاقمند به سفرهای ماجراجویانه و یادگیری تکنولوژی‌های جدید.',
+    interests: ['کوه نوردی', 'طراحی', 'سینما'],
+    invitationLink: 'https://events-app.com/invite/ali-123'
+  },
+  {
+    id: '2',
+    name: 'سارا رضایی',
+    email: 'sara@example.com',
+    phone: '09192345678',
+    joinDate: '۱۴۰۲/۰۳/۱۰',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۸۰/۱۲/۲۲',
+    maritalStatus: 'married',
+    gender: 'female',
+    occupation: 'مدیر محصول',
+    about: 'عاشق دنیای کسب‌وکار و شبکه‌سازی در رویدادهای تخصصی.',
+    interests: ['عکاسی', 'شطرنج', 'سفر'],
+    invitationLink: 'https://events-app.com/invite/sara-456'
+  },
+  {
+    id: '3',
+    name: 'محمد محمدی',
+    email: 'm.m@example.com',
+    phone: '09353456789',
+    joinDate: '۱۴۰۲/۰۴/۰۵',
+    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=200',
+    isVerified: false,
+    birthDate: '۱۳۷۰/۰۱/۰۱',
+    maritalStatus: 'married',
+    gender: 'male',
+    occupation: 'فعال حوزه تکنولوژی',
+    invitationLink: 'https://events-app.com/invite/mmo-789'
+  },
+  {
+    id: '4',
+    name: 'مریم حسینی',
+    email: 'maryam@example.com',
+    phone: '09104567890',
+    joinDate: '۱۴۰۲/۰۵/۲۰',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۷۸/۰۷/۱۵',
+    maritalStatus: 'single',
+    gender: 'female',
+    occupation: 'طراح گرافیکی',
+    invitationLink: 'https://events-app.com/invite/mary-321'
+  },
+  {
+    id: '5',
+    name: 'امیر قاسمی',
+    email: 'amir@example.com',
+    phone: '09125678901',
+    joinDate: '۱۴۰۲/۰۶/۱۲',
+    avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=200',
+    isVerified: true,
+    birthDate: '۱۳۸۲/۰۹/۰۵',
+    invitationLink: 'https://events-app.com/invite/amir-654'
+  },
+];
+
+
+const StaticCATEGORIES: AppCategory[] = [
+  { id: '1', title: 'علمی', icon: 'Atom', color: 'text-purple-600' },
+  { id: '2', title: 'کنسرت', icon: 'Music', color: 'text-rose-600' },
+  { id: '3', title: 'هنر', icon: 'Palette', color: 'text-amber-600' },
+  { id: '4', title: 'ورزش', icon: 'Trophy', color: 'text-emerald-600' },
+  { id: '5', title: 'فنی', icon: 'Cpu', color: 'text-indigo-600' },
+  { id: '6', title: 'آموزش', icon: 'GraduationCap', color: 'text-blue-600' },
+  { id: '7', title: 'عکس', icon: 'Image', color: 'text-orange-600' },
+  { id: '8', title: 'بازی', icon: 'Gamepad2', color: 'text-cyan-600' },
+  { id: '9', title: 'مذهبی', icon: 'Moon', color: 'text-teal-600' },
+  { id: '10', title: 'تجاری', icon: 'Briefcase', color: 'text-rose-600' },
+  { id: '11', title: 'سلامت', icon: 'Heart', color: 'text-pink-600' },
+  { id: '12', title: 'سفر', icon: 'Compass', color: 'text-emerald-600' },
+];
+
+const FEATURED_OFFERS = [
+  {
+    id: 'fo1',
+    title: 'سمینار تخصصی متاورس',
+    description: 'مرکز همایش‌های کیش',
+    rating: '۴.۹',
+    badge: 'ظرفیت محدود',
+    organizerLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&q=80&w=100',
+    image: 'https://images.unsplash.com/photo-1475721027185-404ecc5a4220?auto=format&fit=crop&q=80&w=800',
+  },
+  {
+    id: 'fo2',
+    title: 'کنسرت موسیقی نواحی',
+    description: 'تالار وحدت تهران',
+    rating: '۴.۸',
+    badge: 'فروش ویژه',
+    organizerLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&q=80&w=100',
+    image: 'https://images.unsplash.com/photo-1514525253361-b83f859b2a55?auto=format&fit=crop&q=80&w=800',
+  },
+  {
+    id: 'fo3',
+    title: 'جشنواره هنرهای تجسمی',
+    description: 'موزه هنرهای معاصر',
+    rating: '۴.۶',
+    badge: 'لحظه آخری',
+    organizerLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&q=80&w=100',
+    image: 'https://images.unsplash.com/photo-1460666819451-741097806421?auto=format&fit=crop&q=80&w=800',
+  }
+];
+
+const HERO_BANNERS = [
+  {
+    id: 'b1',
+    title: 'بستنی و فالوده',
+    subtitle: 'طعم‌های اصیل و خنک برای روزهای گرم',
+    extra: 'تخفیف تا ۱۵٪',
+    buttonText: 'خرید کنید >',
+    image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'b2',
+    title: 'نوشیدنی‌های گرم',
+    subtitle: 'انرژی مضاعف با قهوه‌های دست‌چین',
+    extra: 'ارسال رایگان',
+    buttonText: 'مشاهده منو >',
+    image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'b3',
+    title: 'شیرینی و دسر',
+    subtitle: 'لحظات شیرین با دسرهای خانگی متخصصین ما',
+    extra: 'پیشنهاد سرآشپز',
+    buttonText: 'رزرو کنید >',
+    image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800'
+  }
+];
+
+const EVENT_BANNERS = [
+  {
+    id: 'eb1',
+    title: 'جشنواره بستنی سنتی',
+    subtitle: 'گردهمایی بزرگ اساتید بستنی‌ساز',
+    extra: 'ورود رایگان',
+    buttonText: 'ثبت‌نام',
+    image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'eb2',
+    title: 'کارگاه آموزش باریستا',
+    subtitle: 'فوت و فن‌های قهوه‌سازی حرفه‌ای',
+    extra: 'ظرفیت محدود',
+    buttonText: 'رزرو بلیط',
+    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'eb3',
+    title: 'شب نشینی در بام تهران',
+    subtitle: 'موسیقی زنده و پذیرایی در هوای آزاد',
+    extra: 'جمعه‌ها',
+    buttonText: 'اطلاعات بیشتر',
+    image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=80&w=800'
+  }
+];
+
+const PROVINCES_DATA = [
+  { id: '1', name: 'تهران', cities: ['تهران', 'بومهن', 'پردیس', 'دماوند', 'فیروزکوه'] },
+  { id: '2', name: 'فارس', cities: ['شیراز', 'مرودشت', 'کازرون', 'جهرم', 'لار'] },
+  { id: '3', name: 'اصفهان', cities: ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر'] },
+  { id: '4', name: 'مازندران', cities: ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'بهشهر'] },
+];
+
+const INTERESTS_DATA = [
+  'چای', 'پیاده روی', 'کتابخوانی', 'موسیقی', 'سینما', 'بازی', 'کوهنوردی', 'عکاسی', 'برنامه‌نویسی', 'آشپزی'
+];
+
+const MOST_VISITED = [
+  { id: 'mv1', title: 'تکنولوژی دیجیتال', tag: 'مشاوره فنی', date: '۲۵ اردیبهشت', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=300' },
+  { id: 'mv2', title: 'طبیعت گردی', tag: 'سفر تفریحی', date: '۲۸ اردیبهشت', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=300' },
+  { id: 'mv3', title: 'آموزش برنامه‌نویسی', tag: 'یادگیری آنلاین', date: '۳۰ اردیبهشت', image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=300' },
+  { id: 'mv4', title: 'سلامت و ذهن', tag: 'روانشناسی', date: '۵ خرداد', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=300' },
+];
+
+const PREVIOUS_ORDERS = [
+  {
+    id: 'o1',
+    storeName: 'سوپرمارکت غفاری (محلاتی)',
+    date: 'یکشنبه ۱۳ اردیبهشت ۱۴۰۵، ۱۸:۱۳',
+    summary: '۶ کالا | ۱۰,۵۰۰ تومان | تحویل داده شد',
+    status: 'تحویل داده شد',
+    items: [
+      'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&q=80&w=100'
+    ]
+  },
+  {
+    id: 'o2',
+    storeName: 'نانوایی برکت',
+    date: 'شنبه ۱۲ اردیبهشت ۱۴۰۵، ۰۹:۴۵',
+    summary: '۳ کالا | ۵,۲۰۰ تومان | تحویل داده شد',
+    status: 'تحویل داده شد',
+    items: [
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&q=80&w=100'
+    ]
+  },
+  {
+    id: 'o3',
+    storeName: 'میوه فروشی مرکز',
+    date: 'جمعه ۱۱ اردیبهشت ۱۴۰۵، ۱۷:۲۰',
+    summary: '۱۰ کالا | ۲۵,۰۰۰ تومان | تحویل داده شد',
+    status: 'تحویل داده شد',
+    items: [
+      'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&q=80&w=100'
+    ]
+  }
+];
+
+const ORGANIZERS_DATA = [
+  {
+    id: 'org1',
+    name: 'بـــریـــر ی______ان وان ا پیروزی',
+    category: 'نانوایی',
+    info: 'کالا برگ اگر گو',
+    rating: '۴.۹',
+    reviews: '۷۹۳۰+',
+    time: '۴۹ دقیقه',
+    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=200'
+  },
+  {
+    id: 'org2',
+    name: 'رستوران سنتی صبا',
+    category: 'رستوران',
+    info: 'منوی ویژه افطار',
+    rating: '۴.۷',
+    reviews: '۲۵۰۰+',
+    time: '۳۵ دقیقه',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=200'
+  },
+  {
+    id: 'org3',
+    name: 'کافه هنر شیراز',
+    category: 'کافه',
+    info: 'محیط دنج و آرام',
+    rating: '۴.۸',
+    reviews: '۱۵۰۰+',
+    time: '۲۰ دقیقه',
+    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=200'
+  },
+  {
+    id: 'org4',
+    name: 'باشگاه تنیس انقلاب',
+    category: 'ورزشگاه',
+    info: 'رزرو زمین و مربی',
+    rating: '۴.۹',
+    reviews: '۳۰۰۰+',
+    time: '۱۵ دقیقه',
+    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800'
+  }
+];
+
+const CONSULTANTS_DATA = [
+  {
+    id: 'c1',
+    name: 'زهرا سعادتیان',
+    title: 'دکتری ژنتیک پزشکی',
+    rating: 5,
+    badge: 'زود رزرو کن',
+    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
+    color: 'bg-blue-600'
+  },
+  {
+    id: 'c2',
+    name: 'امیرحسین رضایی',
+    title: 'مشاور کسب و کار',
+    rating: 4.8,
+    badge: 'تخفیف ویژه',
+    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
+    color: 'bg-emerald-600'
+  },
+  {
+    id: 'c3',
+    name: 'مریم نبوی',
+    title: 'طراح تجربه کاربری',
+    rating: 5,
+    badge: 'منتور ارشد',
+    image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200',
+    color: 'bg-purple-600'
+  },
+  {
+    id: 'c4',
+    name: 'سهراب سپهری',
+    title: 'کارشناس هوش مصنوعی',
+    rating: 4.9,
+    badge: 'پیشنهاد اسنپ',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+    color: 'bg-amber-600'
+  }
+];
+
+const IconMap: Record<string, any> = {
+  Compass, Users, Heart, Dumbbell, Laptop, Palette, Gamepad2, Briefcase, Atom, Music, GraduationCap, Image, Cpu, Moon, Trophy
+};
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [isRegisterPageOpen, setIsRegisterPageOpen] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState('');
+  const [selectedCity, setSelectedCity] = useState('تهران');
+  const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+
+  // Helper to open create event page uniquely
+  const openCreateEvent = () => {
+    setSelectedEventId(null);
+    setIsCreateEventOpen(true);
+  };
+
+  const navigateToTab = (tab: string) => {
+    setActiveTab(tab);
+    setSelectedEventId(null);
+    setIsCreateEventOpen(false);
+  };
+
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [visibleEventsCount, setVisibleEventsCount] = useState(4);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('closest');
+  const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<AppCategory[]>()
+
+  const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
+  const [allUsers, setAllUsers] = useState<AppUser[]>(USERS_DATA);
+
+
+
+  const filteredEvents = searchQuery
+    ? allEvents.filter(e => {
+      const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+      const searchableText = `${e.title} ${e.location} ${e.category || ''} ${e.organizer}`.toLowerCase();
+      return words.every(word => searchableText.includes(word));
+    })
+    : allEvents;
+
+  const publicEvents = filteredEvents.filter(e => e.isConfirmed && !e.isDisabled);
+
+  useEffect(() => {
+
+    initCategories()
+      .then((data: AppCategory[]) => {
+        setCategories(data)
+        console.log(data);
+      });
+
+  }, []);
+
+  useEffect(() => {
+    // Initial loading simulation
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleHomeScroll = (e: React.UIEvent<HTMLElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
+      if (visibleEventsCount < 10 && !isFetching) {
+        setIsFetching(true);
+        setTimeout(() => {
+          setVisibleEventsCount(prev => Math.min(prev + 2, 10));
+          setIsFetching(false);
+        }, 1200);
+      }
+    }
+  };
+
+  return (
+    <div className="flex justify-center bg-gray-200 min-h-screen font-vazir" dir="rtl">
+      {/* Mobile Container Wraps */}
+      <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
+
+        <AnimatePresence mode="wait">
+          {isCreateEventOpen ? (
+            <CreateEventPage
+              key="create-event"
+              onBack={() => setIsCreateEventOpen(false)}
+              onSave={(newEvent) => setAllEvents(prev => [newEvent, ...prev])}
+            />
+          ) : isRegisterPageOpen ? (
+            <RegisterPage
+              phone={pendingPhone}
+              onBack={() => setIsRegisterPageOpen(false)}
+              onComplete={(userData) => {
+                const newUser: AppUser = {
+                  ...userData,
+                  id: Math.random().toString(36).substr(2, 9),
+                  phone: pendingPhone,
+                  joinDate: '۱۴۰۳/۰۲/۲۶',
+                  avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+                  isVerified: false,
+                  invitationLink: `https://events-app.com/invite/user-${Math.floor(Math.random() * 1000)}`
+                };
+                setAllUsers(prev => [...prev, newUser]);
+                setCurrentUser(newUser);
+                setIsLoggedIn(true);
+                setIsRegisterPageOpen(false);
+                navigateToTab('profile');
+              }}
+            />
+          ) : selectedEventId ? (
+            <EventDetailsPage
+              key="event-details"
+              eventId={selectedEventId}
+              events={allEvents}
+              onBack={() => setSelectedEventId(null)}
+              isLoggedIn={isLoggedIn}
+              onOpenAuth={() => setIsAuthDrawerOpen(true)}
+              registeredEventIds={registeredEventIds}
+              onRegister={(id) => setRegisteredEventIds(prev => [...prev, id])}
+              onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
+            />
+          ) : activeTab === 'profile' ? (
+            <ProfilePage
+              key="profile"
+              user={currentUser}
+              onBack={() => navigateToTab('home')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                setCurrentUser(null);
+                navigateToTab('home');
+              }}
+              onUpdateUser={(updatedUser) => setCurrentUser(updatedUser)}
+            />
+          ) : (
+            <>
+              {/* Header Section */}
+              <header className="px-6 pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 bg-[#ED1C24] rounded-full flex items-center justify-center">
+                      <span className="text-white font-black text-xl">H</span>
+                    </div>
+                    <span className="text-2xl font-black text-[#ED1C24]">همایش</span>
+                  </div>
+
+                  {/* Province/City Selector */}
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => navigateToTab('admin')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeTab === 'admin'
+                        ? 'bg-gray-800 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                    >
+                      مدیر سایت
+                    </button>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-gray-400">استان/شهر</span>
+                      <button
+                        onClick={() => setIsCityDrawerOpen(true)}
+                        className="flex items-center gap-1 group"
+                      >
+                        <span className="text-sm font-black text-gray-800 group-hover:text-[#ED1C24] transition-colors">{selectedCity}</span>
+                        <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-[#ED1C24] transition-colors" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {(activeTab === 'home' || activeTab === 'events') && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative group">
+                        <input
+                          type="text"
+                          placeholder="جستجو در رویدادها..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-gray-100 border-none rounded-xl py-4 pr-14 pl-6 focus:ring-2 focus:ring-gray-900/5 transition-all outline-none text-base"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-[#ED1C24] rounded-full">
+                          <Search className="w-5 h-5 text-white" />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setIsFilterDrawerOpen(true)}
+                        className="flex items-center gap-2 group active:scale-95 transition-all flex-shrink-0 h-[60px]"
+                      >
+                        <Filter className="w-5 h-5 text-gray-500 group-hover:text-[#ED1C24] transition-colors" />
+                        <span className="text-xs font-black text-gray-500 group-hover:text-[#ED1C24]">فیلتر</span>
+                      </button>
+                    </div>
+
+                    {/* Sorting Pills */}
+                    {activeTab === 'events' && (
+                      <div className="flex items-center pb-2">
+                        <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+                          {[
+                            { id: 'closest', label: 'نزدیک‌ترین' },
+                            { id: 'cheapest', label: 'ارزان‌ترین' },
+                            { id: 'best', label: 'برترین' }
+                          ].map(item => (
+                            <button
+                              key={item.id}
+                              onClick={() => setSortBy(item.id)}
+                              className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${sortBy === item.id
+                                ? 'bg-gray-800 text-white shadow-sm'
+                                : 'text-gray-400 hover:bg-gray-50'
+                                }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </header>
+
+              {activeTab === 'home' ? (
+                <motion.main
+                  key="home"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  onScroll={handleHomeScroll}
+                  className="flex-1 overflow-y-auto no-scrollbar"
+                >
+                  {/* Enhanced Hero Slider Section */}
+                  <section>
+                    <EnhancedHeroSlider banners={HERO_BANNERS} isLoading={isInitialLoading} />
+                  </section>
+
+                  {/* Category Grid Section */}
+                  <section className="px-6 py-6 bg-gray-50">
+                    <h2 className="text-lg font-black mb-6 text-center">دسته‌بندی رویدادها</h2>
+                    <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                      {categories?.map((cat) => {
+                        const Icon = IconMap[cat.icon] || Compass;
+                        return (
+                          <motion.div
+                            key={cat.id}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex flex-col items-center gap-2 cursor-pointer group"
+                          >
+                            <div className="w-20 h-20 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center group-hover:border-[#ED1C24] transition-all">
+                              <Icon className={`w-10 h-10 ${cat.color}`} />
+                            </div>
+                            <span className="text-[12px] font-bold text-gray-500 text-center tracking-tight leading-tight px-1">
+                              {cat.title}
+                            </span>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Latest Events Page List */}
+                  <section className="px-6 py-4">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-black">لیست رویدادها</h2>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {isInitialLoading ? (
+                        <>
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </>
+                      ) : publicEvents.length > 0 ? (
+                        publicEvents.slice(0, visibleEventsCount).map((event) => (
+                          <motion.div
+                            key={event.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="group cursor-pointer"
+                            onClick={() => setSelectedEventId(event.id)}
+                          >
+                            <div className="flex gap-4 p-3 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] border border-transparent hover:border-gray-100">
+                              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                                <img
+                                  src={event.image}
+                                  alt={event.title}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <div className="flex flex-col justify-between py-0.5 flex-1 min-w-0">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-black text-gray-900 group-hover:text-[#ED1C24] transition-colors line-clamp-1">{event.title}</h3>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
+                                      <Clock className="w-3 h-3 text-[#ED1C24]" />
+                                      <span>{event.date}</span>
+                                    </div>
+                                    {event.isFree && (
+                                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/50">رایگان</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                    <MapPin className="w-3 h-3" />
+                                    <span className="truncate max-w-[120px]">{event.location}</span>
+                                  </div>
+                                  <div className="text-[10px] font-black text-gray-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                                    مشاهده جزییات
+                                    <ChevronLeft className="w-3 h-3" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <EmptyState message="رویدادی یافت نشد" />
+                      )}
+
+                      {isFetching && (
+                        <div className="flex flex-col gap-6">
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </div>
+                      )}
+
+                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && publicEvents.length > 0 && (
+                        <div className="py-10 text-center">
+                          <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+
+                  {/* Event Organizers Section */}
+                  <section className="px-6 bg-white border-t border-gray-50">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-black text-gray-900">برگزار کننده‌های رویداد</h2>
+                      <button className="text-[#ED1C24] font-black text-xs underline decoration-dotted offset-4">مشاهده همه</button>
+                    </div>
+
+                    <div className="relative overflow-hidden cursor-grab active:cursor-grabbing">
+                      {isInitialLoading ? (
+                        <div className="flex gap-4 pb-4">
+                          <SkeletonOrganizer />
+                          <SkeletonOrganizer />
+                          <SkeletonOrganizer />
+                          <SkeletonOrganizer />
+                        </div>
+                      ) : ORGANIZERS_DATA.length > 0 ? (
+                        <motion.div
+                          className="flex gap-4 pb-4"
+                          drag="x"
+                          dragConstraints={{ left: 0, right: 500 }}
+                          dragElastic={0.05}
+                        >
+                          {/* Event Organizers View All Card */}
+                          {ORGANIZERS_DATA.map((org) => (
+                            <OrganizerCard key={org.id} org={org} />
+                          ))}
+
+                          <motion.div
+                            className="flex-shrink-0 w-[42vw] max-w-[180px] bg-white rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[#ED1C24] transition-colors"
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
+                              <ChevronLeft className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <span className="text-gray-900 font-bold text-sm">مشاهده همه</span>
+                          </motion.div>
+                        </motion.div>
+                      ) : (
+                        <div className="pb-8">
+                          <EmptyState message="برگزار کننده‌ای یافت نشد" />
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Latest Events Page List */}
+                  <section className="px-6 py-4">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-black">لیست رویدادها</h2>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {isInitialLoading ? (
+                        <>
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </>
+                      ) : publicEvents.length > 0 ? (
+                        publicEvents.slice(0, visibleEventsCount).map((event) => (
+                          <motion.div
+                            key={event.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="group cursor-pointer"
+                            onClick={() => setSelectedEventId(event.id)}
+                          >
+                            <div className="flex gap-4 p-3 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] border border-transparent hover:border-gray-100">
+                              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                                <img
+                                  src={event.image}
+                                  alt={event.title}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <div className="flex flex-col justify-between py-0.5 flex-1 min-w-0">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-black text-gray-900 group-hover:text-[#ED1C24] transition-colors line-clamp-1">{event.title}</h3>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
+                                      <Clock className="w-3 h-3 text-[#ED1C24]" />
+                                      <span>{event.date}</span>
+                                    </div>
+                                    {event.isFree && (
+                                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/50">رایگان</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                    <MapPin className="w-3 h-3" />
+                                    <span className="truncate max-w-[120px]">{event.location}</span>
+                                  </div>
+                                  <div className="text-[10px] font-black text-gray-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                                    مشاهده جزییات
+                                    <ChevronLeft className="w-3 h-3" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <EmptyState message="رویدادی یافت نشد" />
+                      )}
+
+                      {isFetching && (
+                        <div className="flex flex-col gap-6">
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </div>
+                      )}
+
+                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && publicEvents.length > 0 && (
+                        <div className="py-10 text-center">
+                          <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+   

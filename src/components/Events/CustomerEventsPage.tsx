@@ -1,0 +1,603 @@
+import { useState, useEffect, useRef } from "react";
+import { AppEvent } from "../../types";
+import { motion, AnimatePresence } from "motion/react";
+import { Ticket, ShieldCheck, AlertCircle, ChevronLeft, Clock, Plus, MapPin, X, Loader } from "lucide-react";
+import CancellationConfirmDrawer from "../Shared/CancellationConfirmDrawer";
+import { getRegisteredEvents, getHostedEvents, cancelRegistration } from "../../services/events";
+
+const EVENTS: AppEvent[] = [
+  {
+    id: 1,
+    title: 'کارگاه طراحی تجربه کاربری',
+    categoryId: 1,
+    date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
+    location: 'تهران، خیابان ولیعصر',
+    organizer: 'آکادمی دیزاین',
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 35.7152,
+    lng: 51.4043,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false,
+    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
+    city: 'تهران',
+    provinceId: 1,
+    startTime: '۱۷:۰۰',
+    minAge: '۱۸',
+    maxAge: '۴۵',
+    maxCapacity: '۳۰',
+    isOnline: false
+  },
+  {
+    id: 11,
+    title: 'سمینار هوش مصنوعی در پزشکی',
+    categoryId: 2,
+    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
+    location: 'تهران، دانشگاه علوم پزشکی',
+    organizer: 'انجمن علمی هوش مصنوعی',
+    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۵۰,۰۰۰ تومان',
+    isConfirmed: false,
+    status: 'pending',
+    isDisabled: true,
+    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
+    city: 'تهران',
+    provinceId: 1,
+    startTime: '۱۰:۰۰',
+    minAge: '۲۰',
+    maxAge: '۶۰',
+    maxCapacity: '۱۵۰',
+    isOnline: false
+  },
+  {
+    id: 12,
+    title: 'کارگاه عکاسی غیرحرفه‌ای',
+    categoryId: 3,
+    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
+    location: 'اصفهان، بوستان ملت',
+    organizer: 'کانون عکاسان',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    isConfirmed: false,
+    status: 'rejected',
+    rejectionReason: 'کیفیت تصاویر بارگذاری شده مناسب نیست و توضیحات رویداد ناقص است.',
+    isDisabled: true,
+    description: 'آموزش عکاسی با موبایل برای علاقمندان به ثبت لحظات روزمره.',
+    city: 'اصفهان',
+    provinceId: 3,
+    startTime: '۱۶:۰۰',
+    minAge: '۱۲',
+    maxAge: '۹۹',
+    maxCapacity: '۲۰',
+    isOnline: false
+  },
+  {
+    id: 2,
+    title: 'نشست استارتاپ‌های نوپا',
+    categoryId: 4,
+    date: 'سه‌شنبه، ۲۲ اردیبهشت - ۱۸:۳۰',
+    location: 'اصفهان، شهرک علمی تحقیقاتی',
+    organizer: 'شتاب‌دهنده هاب',
+    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۱۵۰,۰۰۰ تومان',
+    lat: 32.7214,
+    lng: 51.5222,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 3,
+    title: 'شب نشینی مافیا',
+    categoryId: 5,
+    date: 'چهارشنبه، ۲۳ اردیبهشت - ۲۰:۰۰',
+    location: 'شیراز، کافه هنر',
+    organizer: 'گروه بازی‌های دورهمی',
+    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 29.6264,
+    lng: 52.5295,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 4,
+    title: 'نمایشگاه بین‌المللی کتاب',
+    categoryId: 6,
+    date: 'پنج‌شنبه، ۲۴ اردیبهشت - ۱۰:۰۰',
+    location: 'تهران، مصلی امام خمینی',
+    organizer: 'وزارت فرهنگ',
+    image: 'https://images.unsplash.com/photo-1491841573634-28140fc7ced7?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 35.7339,
+    lng: 51.4243,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 5,
+    title: 'کنسرت علی یاسینی',
+    categoryId: 7,
+    date: 'جمعه، ۲۵ اردیبهشت - ۲۱:۰۰',
+    location: 'تهران، برج میلاد',
+    organizer: 'لیما کنسرت',
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۴۵۰,۰۰۰ تومان',
+    lat: 35.7448,
+    lng: 51.3753,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 6,
+    title: 'تور دوچرخه‌سواری کوهستان',
+    categoryId: 8,
+    date: 'شنبه، ۲۶ اردیبهشت - ۰۷:۰۰',
+    location: 'مازندران، نمک‌آبرود',
+    organizer: 'باشگاه دوچرخه‌سواران',
+    image: 'https://images.unsplash.com/photo-1544191714-3d9adabddf65?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 36.6713,
+    lng: 51.3061,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 7,
+    title: 'کارگاه آموزش پایتون',
+    categoryId: 9,
+    date: 'یکشنبه، ۲۷ اردیبهشت - ۱۶:۰۰',
+    location: 'تبریز، دانشگاه سراسری',
+    organizer: 'انجمن علمی کامپیوتر',
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۰۰,۰۰۰ تومان',
+    lat: 38.0667,
+    lng: 46.3333,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 8,
+    title: 'همایش بازاریابی دیجیتال',
+    categoryId: 10,
+    date: 'دوشنبه، ۲۸ اردیبهشت - ۰۹:۰۰',
+    location: 'تهران، مرکز همایش‌های صدا و سیما',
+    organizer: 'دی‌ام بورد',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۹۸۰,۰۰۰ تومان',
+    lat: 35.7767,
+    lng: 51.4117,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 9,
+    title: 'جشنواره غذای خیابانی',
+    categoryId: 11,
+    date: 'سه‌شنبه، ۲۹ اردیبهشت - ۱۸:۰۰',
+    location: 'مشهد، بوستان ملت',
+    organizer: 'شهرداری مشهد',
+    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 36.3150,
+    lng: 59.5390,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  },
+  {
+    id: 10,
+    title: 'شب شعر معاصر',
+    categoryId: 12,
+    date: 'چهارشنبه، ۳۰ اردیبهشت - ۱۹:۳۰',
+    location: 'شیراز، حافظیه',
+    organizer: 'انجمن ادبی حافظ',
+    image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 29.6258,
+    lng: 52.5586,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false
+  }
+];
+
+function CustomerEventsPage({
+  onSelectEvent,
+  events = [],
+  registeredEventIds = [],
+  onUnregister,
+  onNavigate,
+  onCreateEvent,
+  onReRequestApproval
+}: {
+  onSelectEvent: (id: string) => void;
+  events?: AppEvent[];
+  registeredEventIds?: string[];
+  onUnregister?: (id: number) => void;
+  onNavigate: (tab: string) => void;
+  onCreateEvent: () => void;
+  onReRequestApproval?: (id: string) => void;
+}) {
+  const [activeSubTab, setActiveSubTab] = useState<'registered' | 'hosted'>('registered');
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [eventToCancel, setEventToCancel] = useState<number | null>(null);
+
+  const [registeredEvents, setRegisteredEvents] = useState<AppEvent[]>([]);
+  const [totalCountRegisteredEvent, setTotalCountRegisteredEvents] = useState<number>(0);
+  const [registeredLoading, setRegisteredLoading] = useState(true);
+  const [registeredHasMore, setRegisteredHasMore] = useState(true);
+  const [registeredPage, setRegisteredPage] = useState(1);
+
+  const [hostedEvents, setHostedEvents] = useState<AppEvent[]>([]);
+  const [totalCountHostedEvent, setTotalCountHostedEvents] = useState<number>(0);
+  const [hostedLoading, setHostedLoading] = useState(true);
+  const [hostedHasMore, setHostedHasMore] = useState(true);
+  const [hostedPage, setHostedPage] = useState(1);
+
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const hasFetched = useRef(false);
+
+  // دریافت رویدادهای ثبت‌نام شده
+  const fetchRegisteredEvents = async (page: number, isRefresh = false) => {
+    try {
+      const result = await getRegisteredEvents({ pageNumber: page, pageSize: 10 });
+      setTotalCountRegisteredEvents(result.totalCount);
+      
+      if (isRefresh) {
+        setRegisteredEvents(result.data);
+      } else {
+
+        setRegisteredEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const newEvents = result.data.filter(e => !existingIds.has(e.id));
+          return [...prev, ...newEvents];
+        });
+
+        // setRegisteredEvents(prev => [...prev, ...result.data]);
+      }
+      setRegisteredHasMore(result.hasNextPage);
+    } catch (error) {
+      console.error('Error fetching registered events:', error);
+    } finally {
+      setRegisteredLoading(false);
+    }
+  };
+
+  // دریافت رویدادهای برگزار شده
+  const fetchHostedEvents = async (page: number, isRefresh = false) => {
+    try {
+      const result = await getHostedEvents({ pageNumber: page, pageSize: 10 });
+      setTotalCountHostedEvents(result.totalCount);
+
+      if (isRefresh) {
+        setHostedEvents(result.data);
+      } else {
+
+        setHostedEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const newEvents = result.data.filter(e => !existingIds.has(e.id));
+          return [...prev, ...newEvents];
+        });
+
+        setHostedEvents(prev => [...prev, ...result.data]);
+      }
+      setHostedHasMore(result.hasNextPage);
+    } catch (error) {
+      console.error('Error fetching hosted events:', error);
+    } finally {
+      setHostedLoading(false);
+    }
+  };
+
+  // بارگذاری اولیه
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    fetchRegisteredEvents(1, true);
+    fetchHostedEvents(1, true);
+  }, []);
+
+  // تابع انصراف از رویداد
+  const handleCancelRegistration = async () => {
+    if (!eventToCancel) return;
+
+    try {
+      const result = await cancelRegistration(eventToCancel);
+      if (result.success) {
+        // حذف رویداد از لیست
+        setRegisteredEvents(prev => prev.filter(e => e.id !== eventToCancel));
+      }
+    } catch (error) {
+      console.error('Error canceling registration:', error);
+    } finally {
+      setIsCancelConfirmOpen(false);
+      setEventToCancel(null);
+    }
+  };
+
+  // بارگذاری بیشتر برای رویدادهای ثبت‌نام شده (اسکرول بی‌نهایت)
+  const loadMoreRegistered = async () => {
+    if (registeredHasMore && !registeredLoading && !isLoadingMore) {
+      setIsLoadingMore(true);
+      const nextPage = registeredPage + 1;
+      await fetchRegisteredEvents(nextPage, false);
+      setRegisteredPage(nextPage);
+      setIsLoadingMore(false);
+    }
+  };
+
+  // بارگذاری بیشتر برای رویدادهای برگزار شده
+  const loadMoreHosted = async () => {
+    if (hostedHasMore && !hostedLoading && !isLoadingMore) {
+      setIsLoadingMore(true);
+      const nextPage = hostedPage + 1;
+      await fetchHostedEvents(nextPage, false);
+      setHostedPage(nextPage);
+      setIsLoadingMore(false);
+    }
+  };
+
+  // نمایش لودینگ
+  if (registeredLoading || hostedLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader className="w-8 h-8 animate-spin text-[#ED1C24]" />
+      </div>
+    );
+  }
+
+  // const registeredEvents = events.filter(e => registeredEventIds.includes(e.id.toString()));
+  // const hostedEvents = events.filter(e => EVENTS.some(initial => initial.id === e.id));
+
+  return (
+    <motion.main
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="flex-1 overflow-y-auto no-scrollbar pb-24"
+      dir="rtl">
+      <header className="px-6 pt-8 pb-4">
+        <h1 className="text-2xl font-black text-gray-900 mb-2">رویدادهای من</h1>
+        <p className="text-sm font-bold text-gray-400">تاریخچه و مدیریت فعالیت‌های شما</p>
+      </header>
+
+      <div className="px-6 mb-8">
+        <div className="bg-gray-100 p-1.5 rounded-[2rem] flex items-center shadow-inner">
+          <button
+            onClick={() => setActiveSubTab('registered')}
+            className={`flex-1 py-3.5 rounded-full text-sm font-black transition-all flex items-center justify-center gap-2 ${activeSubTab === 'registered'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            <Ticket className={`w-4 h-4 ${activeSubTab === 'registered' ? 'text-[#ED1C24]' : ''}`} />
+            تجارب من ({totalCountRegisteredEvent})
+          </button>
+          <button
+            onClick={() => setActiveSubTab('hosted')}
+            className={`flex-1 py-3.5 rounded-full text-sm font-black transition-all flex items-center justify-center gap-2 ${activeSubTab === 'hosted'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            <ShieldCheck className={`w-4 h-4 ${activeSubTab === 'hosted' ? 'text-[#ED1C24]' : ''}`} />
+            میزبانی ({totalCountHostedEvent})
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeSubTab === 'registered' ? (
+          <motion.div
+            key="registered"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-6 space-y-4">
+            {registeredEvents.length > 0 ? (
+              <>
+                {registeredEvents.map(event => (
+                  <div key={event.id} className="group relative">
+                    <div
+                      className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-gray-100 transition-all cursor-pointer"
+                      onClick={() => onSelectEvent(event.id.toString())}>
+                      <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        <img src={"http://localhost:5066" + event.image} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                        <p className="text-[10px] font-bold text-gray-400 mt-1">{event.date}</p>
+                        <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                          <MapPin className="w-3 h-3" />
+                          <span>{event.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEventToCancel(event.id);
+                        setIsCancelConfirmOpen(true);
+                      }}
+                      className="absolute top-2 left-2 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* دکمه بارگذاری بیشتر */}
+                {registeredHasMore && (
+                  <button
+                    onClick={loadMoreRegistered}
+                    className="w-full py-3 text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                    مشاهده بیشتر
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
+                  <Ticket className="w-12 h-12" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black text-gray-900">هنوز خاطره‌ای نساخته‌اید!</h3>
+                  <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                    در میان رویدادهای جذاب جستجو کنید و اولین تجربه خود را ثبت کنید.
+                  </p>
+                </div>
+                <button
+                  onClick={() => onNavigate('events')}
+                  className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
+                >
+                  مشاهده رویدادهای پرطرفدار
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="hosted"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-6 space-y-4"
+          >
+            {hostedEvents.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-xs font-black text-gray-400">رویدادهای ثبت شده توسط شما</span>
+                  <div className="bg-gray-100 px-2 py-1 rounded-md text-[9px] font-black text-gray-500">
+                    {hostedEvents.length} رویداد
+                  </div>
+                </div>
+                {hostedEvents.map(event => (
+                  <div key={event.id} className="group flex flex-col gap-3">
+                    <div
+                      className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all cursor-pointer"
+                      onClick={() => onSelectEvent(event.id.toString())}
+                    >
+                      <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
+                        <img src={"http://localhost:5066" + event.image} alt="" className="w-full h-full object-cover" />
+                        {!event.isConfirmed && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+                            <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}>
+                              {event.status === 'rejected' ? 'رد شده' : 'منتظر تایید'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' : (event.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
+                            {event.isConfirmed ? 'تایید شده' : (event.status === 'rejected' ? 'رد شده' : 'در انتظار بررسی')}
+                          </span>
+                          {event.isDisabled && (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-600">غیرفعال</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          <span>{event.date}</span>
+                        </div>
+                      </div>
+                      <ChevronLeft className="w-5 h-5 text-gray-300" />
+                    </div>
+
+                    {event.status === 'rejected' && (
+                      <div className="bg-red-50 rounded-2xl p-4 border border-red-100 space-y-3">
+                        <div className="flex items-center gap-2 text-red-600">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-[10px] font-black">علت رد شدن توسط ناظر</span>
+                        </div>
+                        <p className="text-xs font-bold text-red-500 leading-relaxed italic pr-2 border-r-2 border-red-200">
+                          {event.rejectionReason || 'توضیحات بیشتری ثبت نشده است.'}
+                        </p>
+                        <button
+                          onClick={() => onReRequestApproval?.(event.id.toString())}
+                          className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
+                        >
+                          درخواست بررسی مجدد رویداد
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* دکمه بارگذاری بیشتر */}
+                {hostedHasMore && (
+                  <button
+                    onClick={loadMoreHosted}
+                    className="w-full py-3 text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                    مشاهده بیشتر
+                  </button>
+                )}
+
+                <button
+                  onClick={onCreateEvent}
+                  className="w-full mt-4 bg-gray-50 border-2 border-dashed border-gray-200 py-6 rounded-3xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-all group">
+                  <Plus className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-black">ساخت رویداد جدید</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 border-2 border-dashed border-gray-100">
+                  <Plus className="w-12 h-12" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black text-gray-900">هنوز میزبان نبوده‌اید؟</h3>
+                  <p className="text-sm font-bold text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                    همین حالا رویداد منحصر به فرد خودتان را بسازید و جامعه خود را دور هم جمع کنید.
+                  </p>
+                </div>
+                <button
+                  onClick={onCreateEvent}
+                  className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all"
+                >
+                  ساخت اولین رویداد
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <CancellationConfirmDrawer
+        isOpen={isCancelConfirmOpen}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={handleCancelRegistration}
+      // onConfirm={() => {
+      //   if (eventToCancel) {
+      //     onUnregister?.(eventToCancel);
+      //     setIsCancelConfirmOpen(false);
+      //     setEventToCancel(null);
+      //   }
+      // }}
+      />
+    </motion.main>
+  );
+}
+
+export default CustomerEventsPage;
