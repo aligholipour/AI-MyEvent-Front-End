@@ -426,7 +426,7 @@ export default function App() {
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
   const [eventsLates, setEventLates] = useState<AppEvent[]>([])
   const [homeSliders, setHomeSliders] = useState<HomeSlider[]>()
-  const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
+  // const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
   const [allUsers, setAllUsers] = useState<AppUser[]>(USERS_DATA);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -455,15 +455,15 @@ export default function App() {
     setIsCreateEventOpen(false);
   };
 
-  const filteredEvents = searchQuery
-    ? allEvents.filter(e => {
-      const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-      const searchableText = `${e.title} ${e.location} ${e.categoryId || ''} ${e.organizer}`.toLowerCase();
-      return words.every(word => searchableText.includes(word));
-    })
-    : allEvents;
+  // const filteredEvents = searchQuery
+  //   ? allEvents.filter(e => {
+  //     const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  //     const searchableText = `${e.title} ${e.location} ${e.categoryId || ''} ${e.organizer}`.toLowerCase();
+  //     return words.every(word => searchableText.includes(word));
+  //   })
+  //   : allEvents;
 
-  const publicEvents = filteredEvents.filter(e => e.isConfirmed && !e.isDisabled);
+  // const publicEvents = filteredEvents.filter(e => e.isConfirmed && !e.isDisabled);
 
   useEffect(() => {
     initHomeSlider()
@@ -581,7 +581,6 @@ export default function App() {
             <EventDetailsPage
               key="event-details"
               eventId={selectedEventId}
-              events={allEvents}
               onBack={() => setSelectedEventId(null)}
               isLoggedIn={isLoggedIn}
               onOpenAuth={() => setIsAuthDrawerOpen(true)}

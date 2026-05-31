@@ -226,13 +226,14 @@ function CreateEvent({ onBack, onSave }: { onBack: () => void; onSave: (event: a
             price: formData.isPaid ? `${formData.price} تومان` : 'رایگان',
             isConfirmed: false, // New events need confirmation
             status: 'pending',
-            isDisabled: true // Pending events are disabled by default
+            isDisabled: true, // Pending events are disabled by default
+            eventTime: ''
         };
 
         console.log(newEvent);
 
         var response = await createEvent(newEvent);
-        if (response) {
+        if (response?.name) {
             onSave(newEvent);
             setIsLoading(false);
             setIsSuccess(true);
@@ -676,7 +677,6 @@ function CreateEvent({ onBack, onSave }: { onBack: () => void; onSave: (event: a
             <CategoryDrawer
                 isOpen={isCategoryOpen}
                 onClose={() => setIsCategoryOpen(false)}
-                selectedCategory={formData.categoryId}
                 categoryTitle={formData.categoryTitle || ''}
                 onSelect={(categoryId, categoryTitle) => {
                     console.log('Selected - ID:', categoryId, 'Title:', categoryTitle);

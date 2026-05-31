@@ -27,7 +27,7 @@ export interface AppEvent {
   price?: string;
   lat?: number;
   lng?: number;
-  categoryId: number;
+  categoryId: number | null;
   status?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
   isConfirmed?: boolean;
@@ -40,11 +40,12 @@ export interface AppEvent {
   maxCapacity?: string;
   minAge?: string;
   maxAge?: string;
-  provinceId?: number;
+  provinceId?: number | null;
   city?: string;
   isOnline?: boolean;
   onlineLink?: string;
   address?: string;
+  eventTime: string
 }
 
 export interface AppCategory {

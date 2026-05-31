@@ -8,12 +8,10 @@ import { AppCategory } from "../../types";
 function CategoryDrawer({
     isOpen,
     onClose,
-    selectedCategory,
     categoryTitle,
     onSelect }: {
         isOpen: boolean;
         onClose: () => void;
-        selectedCategory: number;
         categoryTitle: string;
         onSelect: (categoryId: number, categoryTitle: string) => void;
     }) {

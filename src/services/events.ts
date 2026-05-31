@@ -5,93 +5,6 @@ import { Participant } from '../components/Events/EventDetails';
 import axiosInstance from './Auth/AxiosConfigs';
 import { EventDetailForAdminResponse } from '../types';
 
-export const STATIC_EVENTS: AppEvent[] = [
-  {
-    id: 1,
-    title: 'کارگاه طراحی تجربه کاربری',
-    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    location: 'تهران، خیابان ولیعصر',
-    date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
-    categoryId: 1,
-    organizer: 'آکادمی دیزاین',
-    price: 'رایگان',
-    lat: 35.7152,
-    lng: 51.4043,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false,
-    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
-    city: 'تهران',
-    provinceId: 1,
-    startTime: '۱۷:۰۰',
-    minAge: '۱۸',
-    maxAge: '۴۵',
-    maxCapacity: '۳۰',
-    isOnline: false
-  },
-  {
-    id: 11,
-    title: 'سمینار هوش مصنوعی در پزشکی',
-    categoryId: 2,
-    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
-    location: 'تهران، دانشگاه علوم پزشکی',
-    organizer: 'انجمن علمی هوش مصنوعی',
-    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۲۵۰,۰۰۰ تومان',
-    isConfirmed: false,
-    status: 'pending',
-    isDisabled: true,
-    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
-    city: 'تهران',
-    provinceId: 1,
-    startTime: '۱۰:۰۰',
-    minAge: '۲۰',
-    maxAge: '۶۰',
-    maxCapacity: '۱۵۰',
-    isOnline: false
-  },
-  {
-    id: 12,
-    title: 'کارگاه عکاسی غیرحرفه‌ای',
-    categoryId: 3,
-    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
-    location: 'اصفهان، بوستان ملت',
-    organizer: 'کانون عکاسان',
-    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    isConfirmed: false,
-    status: 'rejected',
-    rejectionReason: 'کیفیت تصاویر بارگذاری شده مناسب نیست و توضیحات رویداد ناقص است.',
-    isDisabled: true,
-    description: 'آموزش عکاسی با موبایل برای علاقمندان به ثبت لحظات روزمره.',
-    city: 'اصفهان',
-    provinceId: 3,
-    startTime: '۱۶:۰۰',
-    minAge: '۱۲',
-    maxAge: '۹۹',
-    maxCapacity: '۲۰',
-    isOnline: false
-  },
-  {
-    id: 2,
-    title: 'نشست استارتاپ‌های نوپا',
-    categoryId: 4,
-    date: 'سه‌شنبه، ۲۲ اردیبهشت - ۱۸:۳۰',
-    location: 'اصفهان، شهرک علمی تحقیقاتی',
-    organizer: 'شتاب‌دهنده هاب',
-    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۱۵۰,۰۰۰ تومان',
-    lat: 32.7214,
-    lng: 51.5222,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-];
 export interface UserEventsResponse {
   registeredEvents: AppEvent[];
   hostedEvents: AppEvent[];
@@ -111,12 +24,7 @@ export interface RejectEventRequest {
   bahamId: number;
   reason: string;
 }
-
-let runtimeEvents: AppEvent[] = STATIC_EVENTS;
-
-export function getEvents(): AppEvent[] {
-  return runtimeEvents;
-}
+let runtimeEvents: AppEvent[]
 
 export async function initEventsLates(baseUrl = 'http://localhost:5066') {
   try {

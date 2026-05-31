@@ -9,21 +9,12 @@ import {
 } from "lucide-react";
 import { getUserDetailForAdmin, GetUserDetailForAdminResponse, getUsers } from "../../services/users";
 
-const PROVINCES_DATA = [
-    { id: 1, name: 'تهران', cities: ['تهران', 'بومهن', 'پردیس', 'دماوند', 'فیروزکوه'] },
-    { id: 2, name: 'فارس', cities: ['شیراز', 'مرودشت', 'کازرون', 'جهرم', 'لار'] },
-    { id: 3, name: 'اصفهان', cities: ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر'] },
-    { id: 4, name: 'مازندران', cities: ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'بهشهر'] },
-];
-
 function AdminPage({
-    // users,
     onConfirm,
     onReject,
     onDisable,
     onBack
 }: {
-    // users: AppUser[];
     onConfirm: (id: string) => void;
     onReject: (id: string, reason: string) => void;
     onDisable: (id: string) => void;
@@ -32,7 +23,6 @@ function AdminPage({
     const [activeTab, setActiveTab] = useState<'events' | 'users'>('events');
     const [selectedEventForReject, setSelectedEventForReject] = useState<number>(0);
     const [selectedEventForReason, setSelectedEventForReason] = useState<AppEvent | null>(null);
-    // const [selectedEventForDetails, setSelectedEventForDetails] = useState<AppEvent | null>(null);
     const [selectedEventForDetails, setSelectedEventForDetails] = useState<EventDetailForAdminResponse | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedUser, setSelectedUser] = useState<any | null>(null);
@@ -46,8 +36,6 @@ function AdminPage({
     const [useredLoading, setUseredLoading] = useState(true);
 
     const [userDetail, setUserDetail] = useState<GetUserDetailForAdminResponse | null>(null);
-
-    // const sortedUsers = [...users].sort((a, b) => b.joinDate.localeCompare(a.joinDate));
 
     const fetchEvents = async (page: number, isRefresh = false) => {
         try {
