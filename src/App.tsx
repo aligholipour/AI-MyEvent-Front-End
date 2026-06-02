@@ -274,7 +274,7 @@ export default function App() {
               {/* Header Section */}
               <header className="px-6 pt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div onClick={() => navigateToTab('home')} className="flex items-center gap-2">
                     <div className="w-10 h-10 bg-[#ED1C24] rounded-full flex items-center justify-center">
                       <span className="text-white font-black text-xl">H</span>
                     </div>
