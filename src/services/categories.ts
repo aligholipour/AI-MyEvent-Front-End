@@ -21,9 +21,9 @@ export function getCategories(): AppCategory[] {
   return runtimeCategories;
 }
 
-export async function initCategories(baseUrl = 'http://localhost:5066') {
+export async function initCategories() {
   try {
-    const res = await fetch(`${baseUrl}/api/Category/Test`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(`${process.env.API_BaseURL}/Category/Test`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.every((c: any) => c && c.id && c.title)) {
@@ -37,9 +37,9 @@ export async function initCategories(baseUrl = 'http://localhost:5066') {
   }
   return runtimeCategories;
 }
-export async function CreateEventCategory(baseUrl = 'http://localhost:5066') {
+export async function CreateEventCategory() {
   try {
-    const response = await fetch(`${baseUrl}/api/Category/CreateEventCategory`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Category/CreateEventCategory`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export async function CreateEventCategory(baseUrl = 'http://localhost:5066') {
     }
 
     const data = await response.json();
-    
+
     if (Array.isArray(data) && data.every(c => c && c.id && c.title)) {
       return data as AppCategory[];
     } else {

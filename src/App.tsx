@@ -71,341 +71,7 @@ import EventDetailsPage from './components/Events/EventDetails';
 import CustomerEventsPage from './components/Events/CustomerEventsPage';
 import { type AppEvent, type AppUser, AppUsers, HomeSlider } from './types';
 import AdminPage from './components/admin/AdminPage';
-
-const EVENTS: AppEvent[] = [
-  {
-    id: 1,
-    title: 'کارگاه طراحی تجربه کاربری',
-    categoryId: 1,
-    date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
-    location: 'تهران، خیابان ولیعصر',
-    organizer: 'آکادمی دیزاین',
-    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 35.7152,
-    lng: 51.4043,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false,
-    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
-    city: 'تهران',
-    provinceId: 1,
-    startTime: '۱۷:۰۰',
-    minAge: '۱۸',
-    maxAge: '۴۵',
-    maxCapacity: '۳۰',
-    isOnline: false
-  },
-  {
-    id: 11,
-    title: 'سمینار هوش مصنوعی در پزشکی',
-    categoryId: 2,
-    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
-    location: 'تهران، دانشگاه علوم پزشکی',
-    organizer: 'انجمن علمی هوش مصنوعی',
-    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۲۵۰,۰۰۰ تومان',
-    isConfirmed: false,
-    status: 'pending',
-    isDisabled: true,
-    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
-    city: 'تهران',
-    provinceId: 1,
-    startTime: '۱۰:۰۰',
-    minAge: '۲۰',
-    maxAge: '۶۰',
-    maxCapacity: '۱۵۰',
-    isOnline: false
-  },
-  {
-    id: 12,
-    title: 'کارگاه عکاسی غیرحرفه‌ای',
-    categoryId: 3,
-    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
-    location: 'اصفهان، بوستان ملت',
-    organizer: 'کانون عکاسان',
-    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    isConfirmed: false,
-    status: 'rejected',
-    rejectionReason: 'کیفیت تصاویر بارگذاری شده مناسب نیست و توضیحات رویداد ناقص است.',
-    isDisabled: true,
-    description: 'آموزش عکاسی با موبایل برای علاقمندان به ثبت لحظات روزمره.',
-    city: 'اصفهان',
-    provinceId: 3,
-    startTime: '۱۶:۰۰',
-    minAge: '۱۲',
-    maxAge: '۹۹',
-    maxCapacity: '۲۰',
-    isOnline: false
-  },
-  {
-    id: 2,
-    title: 'نشست استارتاپ‌های نوپا',
-    categoryId: 4,
-    date: 'سه‌شنبه، ۲۲ اردیبهشت - ۱۸:۳۰',
-    location: 'اصفهان، شهرک علمی تحقیقاتی',
-    organizer: 'شتاب‌دهنده هاب',
-    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۱۵۰,۰۰۰ تومان',
-    lat: 32.7214,
-    lng: 51.5222,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 3,
-    title: 'شب نشینی مافیا',
-    categoryId: 5,
-    date: 'چهارشنبه، ۲۳ اردیبهشت - ۲۰:۰۰',
-    location: 'شیراز، کافه هنر',
-    organizer: 'گروه بازی‌های دورهمی',
-    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 29.6264,
-    lng: 52.5295,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 4,
-    title: 'نمایشگاه بین‌المللی کتاب',
-    categoryId: 6,
-    date: 'پنج‌شنبه، ۲۴ اردیبهشت - ۱۰:۰۰',
-    location: 'تهران، مصلی امام خمینی',
-    organizer: 'وزارت فرهنگ',
-    image: 'https://images.unsplash.com/photo-1491841573634-28140fc7ced7?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 35.7339,
-    lng: 51.4243,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 5,
-    title: 'کنسرت علی یاسینی',
-    categoryId: 7,
-    date: 'جمعه، ۲۵ اردیبهشت - ۲۱:۰۰',
-    location: 'تهران، برج میلاد',
-    organizer: 'لیما کنسرت',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۴۵۰,۰۰۰ تومان',
-    lat: 35.7448,
-    lng: 51.3753,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 6,
-    title: 'تور دوچرخه‌سواری کوهستان',
-    categoryId: 8,
-    date: 'شنبه، ۲۶ اردیبهشت - ۰۷:۰۰',
-    location: 'مازندران، نمک‌آبرود',
-    organizer: 'باشگاه دوچرخه‌سواران',
-    image: 'https://images.unsplash.com/photo-1544191714-3d9adabddf65?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 36.6713,
-    lng: 51.3061,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 7,
-    title: 'کارگاه آموزش پایتون',
-    categoryId: 9,
-    date: 'یکشنبه، ۲۷ اردیبهشت - ۱۶:۰۰',
-    location: 'تبریز، دانشگاه سراسری',
-    organizer: 'انجمن علمی کامپیوتر',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۲۰۰,۰۰۰ تومان',
-    lat: 38.0667,
-    lng: 46.3333,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 8,
-    title: 'همایش بازاریابی دیجیتال',
-    categoryId: 10,
-    date: 'دوشنبه، ۲۸ اردیبهشت - ۰۹:۰۰',
-    location: 'تهران، مرکز همایش‌های صدا و سیما',
-    organizer: 'دی‌ام بورد',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
-    isFree: false,
-    price: '۹۸۰,۰۰۰ تومان',
-    lat: 35.7767,
-    lng: 51.4117,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 9,
-    title: 'جشنواره غذای خیابانی',
-    categoryId: 11,
-    date: 'سه‌شنبه، ۲۹ اردیبهشت - ۱۸:۰۰',
-    location: 'مشهد، بوستان ملت',
-    organizer: 'شهرداری مشهد',
-    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 36.3150,
-    lng: 59.5390,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  },
-  {
-    id: 10,
-    title: 'شب شعر معاصر',
-    categoryId: 12,
-    date: 'چهارشنبه، ۳۰ اردیبهشت - ۱۹:۳۰',
-    location: 'شیراز، حافظیه',
-    organizer: 'انجمن ادبی حافظ',
-    image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800',
-    isFree: true,
-    price: 'رایگان',
-    lat: 29.6258,
-    lng: 52.5586,
-    isConfirmed: true,
-    status: 'approved',
-    isDisabled: false
-  }
-];
-
-const USERS_DATA: AppUser[] = [
-  {
-    id: '1',
-    name: 'علی احمدی',
-    email: 'ali@example.com',
-    phone: '09121234567',
-    joinDate: '۱۴۰۲/۰۲/۱۵',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
-    isVerified: true,
-    birthDate: '۱۳۷۵/۰۵/۱۰',
-    maritalStatus: 'single',
-    gender: 'male',
-    occupation: 'برنامه‌نویس ارشد',
-    about: 'علاقمند به سفرهای ماجراجویانه و یادگیری تکنولوژی‌های جدید.',
-    // interests: ['کوه نوردی', 'طراحی', 'سینما'],
-    invitationLink: 'https://events-app.com/invite/ali-123'
-  },
-  {
-    id: '2',
-    name: 'سارا رضایی',
-    email: 'sara@example.com',
-    phone: '09192345678',
-    joinDate: '۱۴۰۲/۰۳/۱۰',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
-    isVerified: true,
-    birthDate: '۱۳۸۰/۱۲/۲۲',
-    maritalStatus: 'married',
-    gender: 'female',
-    occupation: 'مدیر محصول',
-    about: 'عاشق دنیای کسب‌وکار و شبکه‌سازی در رویدادهای تخصصی.',
-    // interests: ['عکاسی', 'شطرنج', 'سفر'],
-    invitationLink: 'https://events-app.com/invite/sara-456'
-  },
-  {
-    id: '3',
-    name: 'محمد محمدی',
-    email: 'm.m@example.com',
-    phone: '09353456789',
-    joinDate: '۱۴۰۲/۰۴/۰۵',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=200',
-    isVerified: false,
-    birthDate: '۱۳۷۰/۰۱/۰۱',
-    maritalStatus: 'married',
-    gender: 'male',
-    occupation: 'فعال حوزه تکنولوژی',
-    invitationLink: 'https://events-app.com/invite/mmo-789'
-  },
-  {
-    id: '4',
-    name: 'مریم حسینی',
-    email: 'maryam@example.com',
-    phone: '09104567890',
-    joinDate: '۱۴۰۲/۰۵/۲۰',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
-    isVerified: true,
-    birthDate: '۱۳۷۸/۰۷/۱۵',
-    maritalStatus: 'single',
-    gender: 'female',
-    occupation: 'طراح گرافیکی',
-    invitationLink: 'https://events-app.com/invite/mary-321'
-  },
-  {
-    id: '5',
-    name: 'امیر قاسمی',
-    email: 'amir@example.com',
-    phone: '09125678901',
-    joinDate: '۱۴۰۲/۰۶/۱۲',
-    avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=200',
-    isVerified: true,
-    birthDate: '۱۳۸۲/۰۹/۰۵',
-    invitationLink: 'https://events-app.com/invite/amir-654'
-  },
-];
-
-
-
-const ORGANIZERS_DATA = [
-  {
-    id: 'org1',
-    name: 'بـــریـــر یــــان وان ا پیروزی',
-    category: 'نانوایی',
-    info: 'کالا برگ اگر گو',
-    rating: '۴.۹',
-    reviews: '۷۹۳۰+',
-    time: '۴۹ دقیقه',
-    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'org2',
-    name: 'رستوران سنتی صبا',
-    category: 'رستوران',
-    info: 'منوی ویژه افطار',
-    rating: '۴.۷',
-    reviews: '۲۵۰۰+',
-    time: '۳۵ دقیقه',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'org3',
-    name: 'کافه هنر شیراز',
-    category: 'کافه',
-    info: 'محیط دنج و آرام',
-    rating: '۴.۸',
-    reviews: '۱۵۰۰+',
-    time: '۲۰ دقیقه',
-    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'org4',
-    name: 'باشگاه تنیس انقلاب',
-    category: 'ورزشگاه',
-    info: 'رزرو زمین و مربی',
-    rating: '۴.۹',
-    reviews: '۳۰۰۰+',
-    time: '۱۵ دقیقه',
-    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800'
-  }
-];
+import NewOrganizer from './components/Shared/NewOrganizer';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -425,16 +91,20 @@ export default function App() {
   const [sortBy, setSortBy] = useState('closest');
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
   const [eventsLates, setEventLates] = useState<AppEvent[]>([])
-  const [homeSliders, setHomeSliders] = useState<HomeSlider[]>()
+  const [homeSliders, setHomeSliders] = useState<HomeSlider[]>([])
   // const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
-  const [allUsers, setAllUsers] = useState<AppUser[]>(USERS_DATA);
+  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
   }, []);
 
-  const handleSelectEvent = useCallback((eventId: string) => {
+  // const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+
+  const handleSelectEvent = useCallback((eventId: number) => {
+
+    setSelectedEventId(eventId);
     // این تابع زمانی صدا زده می‌شود که کاربر روی یک رویداد کلیک کند
     // انجام کارهای مورد نظر مانند:
     // - هدایت به صفحه جزئیات رویداد
@@ -556,7 +226,8 @@ export default function App() {
             <CreateEvent
               key="create-event"
               onBack={() => setIsCreateEventOpen(false)}
-              onSave={(newEvent) => setAllEvents(prev => [newEvent, ...prev])} />
+            // onSave={(newEvent) => setAllEvents(prev => [newEvent, ...prev])}
+            />
           ) : isRegisterPageOpen ? (
             <RegisterPage
               phone={pendingPhone}
@@ -632,8 +303,8 @@ export default function App() {
                   </div>
                 </div>
 
-                {(activeTab === 'home' || activeTab === 'events') && (
-
+                {/* {(activeTab === 'home' || activeTab === 'events') && ( */}
+                {(activeTab === 'events') && (
                   <div className="space-y-4">
 
                     <div className="flex items-center gap-3">
@@ -724,8 +395,7 @@ export default function App() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="group cursor-pointer"
-                            onClick={() => setSelectedEventId(event.id)}
-                          >
+                            onClick={() => setSelectedEventId(event.id)}>
                             <div className="flex gap-4 p-3 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] border border-transparent hover:border-gray-100">
                               <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 shadow-sm">
                                 <img
@@ -774,7 +444,7 @@ export default function App() {
                         </div>
                       )}
 
-                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && publicEvents.length > 0 && (
+                      {!isFetching && !isInitialLoading && visibleEventsCount >= 10 && (
                         <div className="py-10 text-center">
                           <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
                         </div>
@@ -827,29 +497,32 @@ export default function App() {
                   </section> */}
 
                   {/* Consultant Slider Section */}
-                  <ConsultantSlider isLoading={isInitialLoading} />
+                  <NewOrganizer isLoading={isInitialLoading} />
                 </motion.main>
               ) : activeTab === 'my-events' ? (
                 <CustomerEventsPage
                   key="my-events"
                   onSelectEvent={(id) => setSelectedEventId(Number(id))}
-                  events={allEvents}
-                  registeredEventIds={registeredEventIds}
-                  onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
+                  // events={allEvents}
+                  // registeredEventIds={registeredEventIds}
+                  // onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
                   onNavigate={navigateToTab}
                   onCreateEvent={openCreateEvent}
-                  onReRequestApproval={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, status: 'pending', isConfirmed: false, rejectionReason: '' } : e))} />
+                // onReRequestApproval={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, status: 'pending', isConfirmed: false, rejectionReason: '' } : e))}
+                />
               ) : activeTab === 'admin' ? (
                 <AdminPage
                   key="admin"
                   // events={allEvents}
-                  users={allUsers}
-                  onConfirm={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isConfirmed: true, status: 'approved', isDisabled: false } : e))}
-                  onReject={(id, reason) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isConfirmed: false, status: 'rejected', rejectionReason: reason, isDisabled: true } : e))}
-                  onDisable={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isDisabled: !e.isDisabled } : e))}
+                  // users={allUsers}
+                  // onConfirm={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isConfirmed: true, status: 'approved', isDisabled: false } : e))}
+                  // onReject={(id, reason) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isConfirmed: false, status: 'rejected', rejectionReason: reason, isDisabled: true } : e))}
+                  // onDisable={(id) => setAllEvents(prev => prev.map(e => e.id.toString() === id ? { ...e, isDisabled: !e.isDisabled } : e))}
                   onBack={() => navigateToTab('home')} />
               ) : (
                 <EventsPage
+                  // onClick={() => setSelectedEventId(event.id)}
+                  // onSelectEvent={() => setSelectedEventId}
                   onSelectEvent={handleSelectEvent}
                   searchQuery={searchQuery}
                   filters={{
@@ -1167,7 +840,7 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (phone: string) => void;
-  onRegisterNeeded?: (phone: string) => void;
+  onRegisterNeeded: (phone: string) => void;
 }) {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -1553,121 +1226,6 @@ function OrganizerCard({ org }: { org: any; key?: React.Key }) {
           <span className="text-[9px] font-bold">{org.time}</span>
         </div>
       </div>
-    </motion.div>
-  );
-}
-
-function ConsultantSlider({ isLoading }: { isLoading?: boolean }) {
-  const [userList, setUsers] = useState<AppUsers[]>([])
-
-  const hasFetched = useRef(false);
-
-  useEffect(() => {
-
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
-    const fetchUsers = async () => {
-      try {
-        const eventData = await getUsers({ pageNumber: 1, pageSize: 10 });
-        setUsers(eventData.data);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
-    fetchUsers();
-  }, []);
-
-  return (
-    <section className="py-8 bg-gray-50/30 overflow-hidden" dir="rtl">
-      <div className="px-6 flex items-center justify-between mb-6">
-        <h2 className="text-xl font-black text-gray-900">برگزارکنندگان جدید</h2>
-        <button className="text-[#ED1C24] font-black text-xs">مشاهده همه</button>
-      </div>
-
-      <div className="relative">
-        {isLoading ? (
-          <div className="flex gap-4 px-6">
-            <div className="w-[210px] h-[240px] bg-gray-100 rounded-2xl animate-pulse" />
-            <div className="w-[210px] h-[240px] bg-gray-100 rounded-2xl animate-pulse" />
-          </div>
-        ) : (
-          <motion.div
-            className="flex gap-4 px-6 cursor-grab active:cursor-grabbing"
-            drag="x"
-            dragConstraints={{ left: 0, right: 650 }}
-            dragElastic={0.1}
-            whileTap={{ cursor: 'grabbing' }}
-          >
-            {userList?.map((consultant) => (
-              <ConsultantCard key={consultant.id} consultant={consultant} />
-            ))}
-
-            <motion.div
-              className="flex-shrink-0 w-[210px] h-[240px] bg-white rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[#ED1C24] transition-colors"
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
-                <ChevronLeft className="w-7 h-7 text-gray-400" />
-              </div>
-              <div className="text-center">
-                <span className="text-gray-900 font-black text-base block">مشاهده همه</span>
-                <span className="text-gray-400 text-[10px] font-bold">بیش از ۵۰ مشاور برتر</span>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function ConsultantCard({ consultant }: { consultant: any; key?: React.Key }) {
-  return (
-    <motion.div
-      className="flex-shrink-0 w-[210px] h-[240px] bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between relative group"
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="space-y-4">
-        {/* Top Badge */}
-        <div className="flex justify-end">
-          <div className="bg-orange-50 text-orange-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-orange-100">
-            {consultant.badge}
-          </div>
-        </div>
-
-        {/* Profile Image & Rating */}
-        <div className="relative flex justify-center">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img
-              src={"http://localhost:5066" + consultant.image}
-              alt={consultant.name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <div className="absolute -bottom-1 bg-yellow-400 text-white px-2 py-0.5 rounded-full text-[8px] font-black flex items-center gap-0.5 shadow-sm border border-white">
-            <span>{consultant.rating}</span>
-            <span className="text-[10px]">★</span>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="text-center space-y-0.5">
-          <h3 className="text-gray-900 font-black text-sm leading-none">{consultant.name}</h3>
-          <p className="text-gray-400 text-[10px] font-bold">{consultant.title}</p>
-        </div>
-      </div>
-
-      {/* Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.95 }}
-        className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-xl text-[10px] font-black hover:bg-gray-200 transition-colors"
-      >
-        مشاهده پروفایل
-      </motion.button>
     </motion.div>
   );
 }

@@ -66,7 +66,7 @@ function CategoryDrawer({
                         exit={{ y: "100%", x: "-50%" }}
                         className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]"
                         dir="rtl"
-                    >
+                        >
                         <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
 
                         <div className="flex items-center justify-between shrink-0">
@@ -105,8 +105,7 @@ function CategoryDrawer({
                                             className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all gap-3 ${isSelected
                                                 ? 'bg-gray-900/5 border-gray-900 shadow-sm'
                                                 : 'bg-gray-50 border-transparent hover:bg-gray-100'
-                                                }`}
-                                        >
+                                                }`}>
                                             <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center bg-white ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
                                                 {IconComponent && <IconComponent className="w-6 h-6" />}
                                             </div>

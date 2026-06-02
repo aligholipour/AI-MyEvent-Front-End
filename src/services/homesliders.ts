@@ -34,9 +34,9 @@ export function getEvents(): HomeSlider[] {
   
 }
 
-export async function initHomeSlider(baseUrl = 'http://localhost:5066') {
+export async function initHomeSlider() {
   try {
-    const res = await fetch(`${baseUrl}/api/Media/HomeSliders`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(`${process.env.API_BaseURL}/Media/HomeSliders`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.every((e: any) => e && e.id && e.title)) {

@@ -26,9 +26,9 @@ export function getCities(): City[] {
   return runtimeCties;
 }
 
-export async function getAllProvince(baseUrl = 'http://localhost:5066') {
+export async function getAllProvince() {
   try {
-    const res = await fetch(`${baseUrl}/api/Location/GetProvinces`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(`${process.env.API_BaseURL}/Location/GetProvinces`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.every((c: any) => c && c.id && c.name)) {
@@ -43,9 +43,9 @@ export async function getAllProvince(baseUrl = 'http://localhost:5066') {
   return runtimeProvinces;
 }
 
-export async function getCityWithProvinceId(provinceId: number, baseUrl = 'http://localhost:5066') {
+export async function getCityWithProvinceId(provinceId: number) {
   try {
-    const res = await fetch(`${baseUrl}/api/Location/GetCities/${provinceId}`, {
+    const res = await fetch(`${process.env.API_BaseURL}/Location/GetCities/${provinceId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

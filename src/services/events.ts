@@ -26,9 +26,9 @@ export interface RejectEventRequest {
 }
 let runtimeEvents: AppEvent[]
 
-export async function initEventsLates(baseUrl = 'http://localhost:5066') {
+export async function initEventsLates() {
   try {
-    const res = await fetch(`${baseUrl}/api/Baham/GetLatest`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch(`${process.env.API_BaseURL}/Baham/GetLatest`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.every((e: any) => e && e.id && e.title)) {
@@ -43,7 +43,7 @@ export async function initEventsLates(baseUrl = 'http://localhost:5066') {
   return runtimeEvents;
 }
 
-export async function createEvent(eventData: any, baseUrl = 'http://localhost:5066') {
+export async function createEvent(eventData: any) {
 
   try {
     const formData = new FormData();
@@ -83,7 +83,7 @@ export async function createEvent(eventData: any, baseUrl = 'http://localhost:50
       formData.append('image', imageFile);
     }
 
-    const response = await fetch(`${baseUrl}/api/Baham/Add`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/Add`, {
       method: 'POST',
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -106,7 +106,7 @@ export async function createEvent(eventData: any, baseUrl = 'http://localhost:50
   }
 }
 
-export async function getEventsWithPagination(request: GetEventsRequest, baseUrl = 'http://localhost:5066')
+export async function getEventsWithPagination(request: GetEventsRequest)
   : Promise<PaginatedResponse<AppEvent>> {
   try {
     const params = new URLSearchParams();
@@ -125,7 +125,7 @@ export async function getEventsWithPagination(request: GetEventsRequest, baseUrl
       });
     }
 
-    const response = await fetch(`${baseUrl}/api/Baham/GetAll?${params.toString()}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/GetAll?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -146,9 +146,9 @@ export async function getEventsWithPagination(request: GetEventsRequest, baseUrl
   }
 }
 
-export async function getEventById(id: number, baseUrl = 'http://localhost:5066'): Promise<EventDetailsResponse> {
+export async function getEventById(id: number): Promise<EventDetailsResponse> {
   try {
-    const response = await fetch(`${baseUrl}/api/Baham/Get/${id}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/Get/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -174,7 +174,6 @@ export async function getEventParticipants(
   bahamId: number,
   pageNumber = 1,
   pageSize = 20,
-  baseUrl = 'http://localhost:5066'
 ): Promise<{ data: Participant[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const params = new URLSearchParams();
@@ -182,7 +181,7 @@ export async function getEventParticipants(
     params.append('pageSize', pageSize.toString());
 
     const response = await fetch(
-      `${baseUrl}/api/Baham/Participants/${bahamId}?${params.toString()}`,
+      `${process.env.API_BaseURL}/Baham/Participants/${bahamId}?${params.toString()}`,
       {
         method: 'GET',
         headers: {
@@ -210,10 +209,9 @@ export async function getEventParticipants(
 
 export async function registerForEvent(
   bahamId: number,
-  baseUrl = 'http://localhost:5066'
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const response = await axiosInstance.post(`${baseUrl}/api/Baham/Register/${bahamId}`);
+    const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`);
 
     return {
       success: true,
@@ -226,8 +224,7 @@ export async function registerForEvent(
 }
 
 export async function getRegisteredEvents(
-  request: GetUserEventsRequest = {},
-  baseUrl = 'http://localhost:5066'
+  request: GetUserEventsRequest = {}
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const token = localStorage.getItem('access_token');
@@ -236,7 +233,7 @@ export async function getRegisteredEvents(
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
     if (request.status && request.status !== 'all') params.append('status', request.status);
 
-    const response = await fetch(`${baseUrl}/api/Baham/CustomerGuestBaham?${params.toString()}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/CustomerGuestBaham?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -263,8 +260,7 @@ export async function getRegisteredEvents(
 }
 
 export async function getHostedEvents(
-  request: GetUserEventsRequest = {},
-  baseUrl = 'http://localhost:5066'
+  request: GetUserEventsRequest = {}
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const token = localStorage.getItem('access_token');
@@ -273,7 +269,7 @@ export async function getHostedEvents(
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
     if (request.status && request.status !== 'all') params.append('status', request.status);
 
-    const response = await fetch(`${baseUrl}/api/Baham/CustomerHostBaham?${params.toString()}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/CustomerHostBaham?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -300,13 +296,12 @@ export async function getHostedEvents(
 }
 
 export async function cancelRegistration(
-  bahamId: number,
-  baseUrl = 'http://localhost:5066'
+  bahamId: number
 ): Promise<{ success: boolean; message: string }> {
   try {
     const token = localStorage.getItem('access_token');
 
-    const response = await fetch(`${baseUrl}/api/Baham/CancelRegistration/${bahamId}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/CancelRegistration/${bahamId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -329,8 +324,7 @@ export async function cancelRegistration(
 }
 
 export async function getEventsFormAdminPage(
-  request: GetEventsForAdminPageRequest,
-  baseUrl = 'http://localhost:5066'
+  request: GetEventsForAdminPageRequest
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const token = localStorage.getItem('access_token');
@@ -338,7 +332,7 @@ export async function getEventsFormAdminPage(
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
 
-    const response = await fetch(`${baseUrl}/api/Baham/EventsForAdminPage?${params.toString()}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/EventsForAdminPage?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -364,12 +358,12 @@ export async function getEventsFormAdminPage(
   }
 }
 
-export async function getEventDetailForAdmin(bahamId: number, baseUrl = 'http://localhost:5066')
+export async function getEventDetailForAdmin(bahamId: number)
   : Promise<{ data: EventDetailForAdminResponse; }> {
   try {
     const token = localStorage.getItem('access_token');
 
-    const response = await fetch(`${baseUrl}/api/Baham/EventDetailForAdminPage/${bahamId}`, {
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/EventDetailForAdminPage/${bahamId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -393,10 +387,10 @@ export async function getEventDetailForAdmin(bahamId: number, baseUrl = 'http://
   }
 }
 
-export async function approveEvent(bahamId: number, baseUrl = 'http://localhost:5066')
+export async function approveEvent(bahamId: number)
   : Promise<{ success: boolean; message: string }> {
 
-  const response = await axiosInstance.post(`${baseUrl}/api/Baham/ApproveEvent/${bahamId}`);
+  const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/ApproveEvent/${bahamId}`);
 
   return {
     success: true,
@@ -404,12 +398,12 @@ export async function approveEvent(bahamId: number, baseUrl = 'http://localhost:
   };
 }
 
-export async function rejectEvent(request: RejectEventRequest, baseUrl = 'http://localhost:5066')
+export async function rejectEvent(request: RejectEventRequest)
   : Promise<{ success: boolean; message: string }> {
 
   const token = localStorage.getItem('access_token');
 
-  const response = await fetch(`${baseUrl}/api/Baham/RejectEvent`, {
+  const response = await fetch(`${process.env.API_BaseURL}/Baham/RejectEvent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -430,10 +424,10 @@ export async function rejectEvent(request: RejectEventRequest, baseUrl = 'http:/
 
 }
 
-export async function changeStatusEvent(bahamId: number, baseUrl = 'http://localhost:5066')
+export async function changeStatusEvent(bahamId: number)
   : Promise<{ success: boolean; message: string }> {
 
-  const response = await axiosInstance.post(`${baseUrl}/api/Baham/ApproveEvent/${bahamId}`);
+  const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/ApproveEvent/${bahamId}`);
 
   return {
     success: true,

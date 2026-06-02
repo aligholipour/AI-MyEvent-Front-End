@@ -50,15 +50,14 @@ export function getEvents(): AppUsers[] {
 }
 
 export async function getUsers(
-  request: GetUsersRequest = {},
-  baseUrl = 'http://localhost:5066'
+  request: GetUsersRequest = {}
 ): Promise<{ data: AppUsers[]; totalCount: number; hasNextPage: boolean }> {
 
   const params = new URLSearchParams();
   if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
   if (request.pageSize) params.append('pageSize', request.pageSize.toString());
 
-  const response = await fetch(`${baseUrl}/api/User/Users?${params.toString()}`,
+  const response = await fetch(`${process.env.API_BaseURL}/User/Users?${params.toString()}`,
     {
       method: 'GET',
       headers: {
@@ -95,7 +94,7 @@ export async function getUsers(
   // return runtimeEvents;
 }
 
-export async function Register(eventData: any, baseUrl = 'http://localhost:5066') {
+export async function Register(eventData: any) {
   try {
     const formData = new FormData();
 
@@ -119,7 +118,7 @@ export async function Register(eventData: any, baseUrl = 'http://localhost:5066'
       formData.append('profileImageAddress', imageFile);
     }
 
-    const response = await fetch(`${baseUrl}/api/User/Register`, {
+    const response = await fetch(`${process.env.API_BaseURL}/User/Register`, {
       method: 'POST',
       body: formData,
     });
@@ -138,13 +137,13 @@ export async function Register(eventData: any, baseUrl = 'http://localhost:5066'
   }
 }
 
-export async function getUserDetailForAdmin(userId: number, baseUrl = 'http://localhost:5066'
+export async function getUserDetailForAdmin(userId: number
 
 ): Promise<{ data: GetUserDetailForAdminResponse }> {
 
   const token = localStorage.getItem('access_token');
 
-  const response = await fetch(`${baseUrl}/api/User/UserDetailForAdmin/${userId}`, {
+  const response = await fetch(`${process.env.API_BaseURL}/User/UserDetailForAdmin/${userId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

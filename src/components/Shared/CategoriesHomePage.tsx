@@ -27,8 +27,8 @@ function CategoryForHomePage() {
                             key={cat.id}
                             whileTap={{ scale: 0.9 }}
                             className="flex flex-col items-center gap-2 cursor-pointer group">
-                            <div className="w-20 h-20 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center group-hover:border-[#ED1C24] transition-all">
-                                <Icon className={`w-10 h-10 ${cat.color}`} />
+                            <div className="w-16 h-16 bg-white rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center transition-all">
+                                <Icon className={`w-8 h-8 text-gray-400`} />
                             </div>
                             <span className="text-[12px] font-bold text-gray-500 text-center tracking-tight leading-tight px-1">
                                 {cat.title}

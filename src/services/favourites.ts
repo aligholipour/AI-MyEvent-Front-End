@@ -18,9 +18,10 @@ export function getFavourites(): Favourite[] {
   return runtimeFavourites;
 }
 
-export async function getAllFavourite(baseUrl = 'http://localhost:5066') {
+export async function getAllFavourite() {
   try {
-    const res = await fetch(`${baseUrl}/api/Favourite/GetAllFavourite`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    console.log('get all favourites ' + process.env.API_BaseURL);
+    const res = await fetch(`${process.env.API_BaseURL}/Favourite/GetAllFavourite`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.every((c: any) => c && c.id && c.title)) {

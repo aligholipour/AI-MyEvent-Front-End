@@ -11,9 +11,9 @@ export function getJobs(): Job[] {
   return runtimeJobs;
 }
 
-export async function GetAllJobs(baseUrl = 'http://localhost:5066'){
+export async function GetAllJobs(){
     try {
-        const res = await fetch(`${baseUrl}/api/Job/GetAll`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        const res = await fetch(`${process.env.API_BaseURL}/Job/GetAll`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (Array.isArray(data) && data.every((c: any) => c && c.id && c.title)) {

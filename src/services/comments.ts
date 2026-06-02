@@ -4,7 +4,6 @@ export async function getEventComments(
     eventId: number,
     pageNumber = 1,
     pageSize = 10,
-    baseUrl = 'http://localhost:5066'
 ): Promise<{ data: Comment[]; totalCount: number; hasNextPage: boolean }> {
     try {
         const params = new URLSearchParams();
@@ -12,7 +11,7 @@ export async function getEventComments(
         params.append('pageSize', pageSize.toString());
 
         const response = await fetch(
-            `${baseUrl}/api/Baham/Comments/${eventId}?${params.toString()}`,
+            `${process.env.API_BaseURL}/Baham/Comments/${eventId}?${params.toString()}`,
             {
                 method: 'GET',
                 headers: {
@@ -42,7 +41,6 @@ export async function submitComment(
     bahamId: number,
     rate: number,
     text: string,
-    baseUrl = 'http://localhost:5066'
 ): Promise<{
     success: boolean;
     // message: string;
@@ -50,7 +48,7 @@ export async function submitComment(
     text: string;
 }> {
     try {
-        const response = await fetch(`${baseUrl}/api/Baham/Comment`, {
+        const response = await fetch(`${process.env.API_BaseURL}/Baham/Comment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

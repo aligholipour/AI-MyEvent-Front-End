@@ -23,7 +23,11 @@ import {
 } from 'lucide-react';
 
 
-function CreateEvent({ onBack, onSave }: { onBack: () => void; onSave: (event: any) => void; key?: React.Key }) {
+function CreateEvent({ onBack }: {
+    onBack: () => void;
+    // onSave: (event: any) => void;
+    key?: React.Key
+}) {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -234,7 +238,7 @@ function CreateEvent({ onBack, onSave }: { onBack: () => void; onSave: (event: a
 
         var response = await createEvent(newEvent);
         if (response?.name) {
-            onSave(newEvent);
+            // onSave(newEvent);
             setIsLoading(false);
             setIsSuccess(true);
         }

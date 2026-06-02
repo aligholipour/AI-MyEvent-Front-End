@@ -10,14 +10,14 @@ import {
 import { getUserDetailForAdmin, GetUserDetailForAdminResponse, getUsers } from "../../services/users";
 
 function AdminPage({
-    onConfirm,
-    onReject,
-    onDisable,
+    // onConfirm,
+    // onReject,
+    // onDisable,
     onBack
 }: {
-    onConfirm: (id: string) => void;
-    onReject: (id: string, reason: string) => void;
-    onDisable: (id: string) => void;
+    // onConfirm: (id: string) => void;
+    // onReject: (id: string, reason: string) => void;
+    // onDisable: (id: string) => void;
     onBack: () => void;
 }) {
     const [activeTab, setActiveTab] = useState<'events' | 'users'>('events');
@@ -99,7 +99,7 @@ function AdminPage({
     const approveEventHandle = async (eventId: number) => {
         var response = await approveEvent(eventId)
         if (response.success) {
-            onConfirm(eventId.toString());
+            // onConfirm(eventId.toString());
             setSelectedEventForDetails(null);
         }
     }
@@ -115,7 +115,7 @@ function AdminPage({
     const changeStatusEventHandle = async (bahamId: number) => {
         var response = await changeStatusEvent(bahamId)
         if (response.success) {
-            onDisable(bahamId.toString());
+            // onDisable(bahamId.toString());
             setSelectedEventForDetails(null);
         }
     }
@@ -224,7 +224,7 @@ function AdminPage({
                                             {event.status === 'pending' || event.status === 'rejected' ? (
                                                 <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
                                                     <button
-                                                        onClick={() => onConfirm(event.id.toString())}
+                                                        // onClick={() => onConfirm(event.id.toString())}
                                                         className="flex-[2] bg-emerald-500 text-white h-9 rounded-xl text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5 border-none">
                                                         <Check className="w-3.5 h-3.5" />
                                                         تایید نهایی
@@ -238,7 +238,7 @@ function AdminPage({
                                             ) : (
                                                 <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
                                                     <button
-                                                        onClick={() => onDisable(event.id.toString())}
+                                                        // onClick={() => onDisable(event.id.toString())}
                                                         className={`flex-1 h-9 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 border-none ${event.isDisabled
                                                             ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                                                             : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
@@ -440,9 +440,7 @@ function AdminPage({
                                             </button>
                                             <button
                                                 disabled={selectedEventForDetails.isApprove}
-                                                onClick={() => {
-                                                    onConfirm(selectedEventForDetails.id.toString());
-                                                }}
+                                                // onClick={() => { onConfirm(selectedEventForDetails.id.toString()); }}
                                                 className="flex-1 bg-emerald-50 text-emerald-600 h-11 rounded-xl text-[11px] font-black disabled:opacity-50">
                                                 تایید مجدد
                                             </button>

@@ -1,23 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { AppEvent } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
-import { Ticket, ShieldCheck, AlertCircle, ChevronLeft, Clock, Plus, MapPin, X, Loader } from "lucide-react";
+import { Ticket, ShieldCheck, AlertCircle, ChevronLeft, Clock, Plus, MapPin, X, Loader, User, Timer } from "lucide-react";
 import CancellationConfirmDrawer from "../Shared/CancellationConfirmDrawer";
 import { getRegisteredEvents, getHostedEvents, cancelRegistration } from "../../services/events";
 
 function CustomerEventsPage({
   onSelectEvent,
-  events = [],
-  registeredEventIds = [],
-  onUnregister,
   onNavigate,
   onCreateEvent,
   onReRequestApproval
 }: {
   onSelectEvent: (id: string) => void;
-  events?: AppEvent[];
-  registeredEventIds?: string[];
-  onUnregister?: (id: number) => void;
   onNavigate: (tab: string) => void;
   onCreateEvent: () => void;
   onReRequestApproval?: (id: string) => void;
@@ -46,7 +40,7 @@ function CustomerEventsPage({
     try {
       const result = await getRegisteredEvents({ pageNumber: page, pageSize: 10 });
       setTotalCountRegisteredEvents(result.totalCount);
-      
+
       if (isRefresh) {
         setRegisteredEvents(result.data);
       } else {
@@ -209,13 +203,30 @@ function CustomerEventsPage({
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
                         <p className="text-[10px] font-bold text-gray-400 mt-1">{event.date}</p>
-                        <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                        <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                          <Timer className="w-3 h-3" />
+                          <span className="text-gray-500">{event.eventTime}</span>
+                        </div>
+                        <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
                           <MapPin className="w-3 h-3" />
-                          <span>{event.location}</span>
+                          <span className="text-gray-500">{event.location}</span>
+                        </div>
+                      </div>
+                      <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEventToCancel(event.id);
+                        setIsCancelConfirmOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
+                        <div className="text-[10px] font-black p-1 text-red-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                          لغو ثبت نام
+                          <ChevronLeft className="w-3 h-3" />
                         </div>
                       </div>
                     </div>
-                    <button
+                    
+                    {/* <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setEventToCancel(event.id);
@@ -223,7 +234,7 @@ function CustomerEventsPage({
                       }}
                       className="absolute top-2 left-2 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm">
                       <X className="w-4 h-4" />
-                    </button>
+                    </button> */}
                   </div>
                 ))}
 
@@ -276,8 +287,7 @@ function CustomerEventsPage({
                   <div key={event.id} className="group flex flex-col gap-3">
                     <div
                       className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all cursor-pointer"
-                      onClick={() => onSelectEvent(event.id.toString())}
-                    >
+                      onClick={() => onSelectEvent(event.id.toString())}>
                       <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
                         <img src={"http://localhost:5066" + event.image} alt="" className="w-full h-full object-cover" />
                         {!event.isConfirmed && (
@@ -303,7 +313,13 @@ function CustomerEventsPage({
                           <span>{event.eventTime}</span>
                         </div>
                       </div>
-                      <ChevronLeft className="w-5 h-5 text-gray-300" />
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="text-[10px] font-black p-3 text-orange-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                          ویرایش رویداد
+                          <ChevronLeft className="w-3 h-3" />
+                        </div>
+                      </div>
+                      {/* <ChevronLeft className="w-5 h-5 text-gray-300" /> */}
                     </div>
 
                     {event.status === 'rejected' && (

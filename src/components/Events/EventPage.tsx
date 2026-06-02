@@ -7,7 +7,7 @@ import EmptyState from './EmptyState'
 import { MapPin, Clock } from 'lucide-react';
 
 interface EventsPageProps {
-  onSelectEvent: (id: string) => void;
+  onSelectEvent: (id: number) => void;
   searchQuery?: string;
   filters?: {
     categoryId?: number;
@@ -115,7 +115,7 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
       const response = await getEventsWithPagination({
         pageNumber: 1,
         pageSize: 10,
-        interestIds: filters.interestIds,
+        // interestIds: filters.interestIds,
         ...filters
       });
 
@@ -152,7 +152,7 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
       const response = await getEventsWithPagination({
         pageNumber: nextPage,
         pageSize: 10,
-        searchTerm: debouncedSearchQuery || undefined,
+        // searchTerm: debouncedSearchQuery || undefined,
         ...filters
       });
 
@@ -213,8 +213,7 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.05, 0.5) }}
                 className="group cursor-pointer"
-                onClick={() => onSelectEvent(event.id)}
-              >
+                onClick={() => onSelectEvent(event.id)}>
                 <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
                   <img
                     src={"http://localhost:5066" + event.image}
