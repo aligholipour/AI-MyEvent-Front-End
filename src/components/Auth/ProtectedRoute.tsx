@@ -3,7 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../Auth/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  console.log('ProtectedRoute rendering...');
+
   const { isAuthenticated, isLoading } = useAuth();
+
+  console.log('isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
 
   if (isLoading) {
     return (
@@ -14,11 +18,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    console.log('Not authenticated, redirecting to home');
+
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
-  
+
 }
 
 export default ProtectedRoute;

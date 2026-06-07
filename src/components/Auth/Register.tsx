@@ -318,8 +318,6 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                                     label="شهر"
                                     isSelect
                                     onSelectClick={() => formData.provinceId ? setIsCityOpen(true) : null}
-                                    // value={formData.city.toString()}
-                                    // value={formData.city.toString()}
                                     value={formData.city ? getCityName(formData.city) : ''}
                                     onChange={() => { }}
                                     error={errors.city}
@@ -327,42 +325,6 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                                     disabled={!formData.provinceId}
                                 />
                             </div>
-
-                            {/* <div className="space-y-2">
-                                <label className="text-[11px] font-black text-gray-400 mr-1">استان محل سکونت</label>
-                                <select
-                                    value={formData.provinceId}
-                                    onChange={e => setFormData({ ...formData, provinceId: Number(e.target.value), city: 0 })}
-                                    className="w-full bg-gray-50 border border-gray-100 h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all">
-                                    <option value="">انتخاب استان</option>
-                                    {provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-
-                                <label className="text-[11px] font-black text-gray-400 mr-1">شهر</label>
-                                <select
-                                    value={formData.city}
-                                    disabled={!formData.provinceId || loadingCities}
-                                    onChange={e => {
-                                        console.log(e.target.value);
-                                        setFormData({ ...formData, city: Number(e.target.value) });
-                                    }}
-                                    className={`w-full bg-gray-50 border ${errors.city ? 'border-red-500' : 'border-gray-100'} h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all disabled:opacity-50`}>
-                                    <option value="">انتخاب شهر</option>
-                                    {loadingCities ? (
-                                        <option disabled>در حال بارگذاری...</option>
-                                    ) : (
-                                        cities.map((city: City) => (
-                                            <option key={city.id} value={city.id}>
-                                                {city.name}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                                {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
-                            </div> */}
                         </div>
 
                         <div className="space-y-3 pt-2">

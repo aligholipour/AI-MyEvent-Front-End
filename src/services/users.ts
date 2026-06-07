@@ -94,27 +94,28 @@ export async function getUsers(
   // return runtimeEvents;
 }
 
-export async function Register(eventData: any) {
+export async function Register(registerData: any) {
   try {
     const formData = new FormData();
 
-    eventData.favouriteIds.forEach((favourite: number, index: number) => {
+    registerData.favouriteIds.forEach((favourite: number, index: number) => {
       formData.append(`FavouriteIds[${index}]`, favourite.toString());
     });
 
-    formData.append('fullName', eventData.fullName || '');
-    formData.append('gender', eventData.gender || 0);
-    formData.append('maritalStatus', eventData.maritalStatus || 0);
-    formData.append('cityId', eventData.cityId || eventData.cityId || 0);
-    formData.append('jobId', String(eventData.jobId || eventData.jobId || 0));
+    formData.append('fullName', registerData.fullName || '');
+    formData.append('gender', registerData.gender || 0);
+    formData.append('maritalStatus', registerData.maritalStatus || 0);
+    formData.append('cityId', registerData.cityId || registerData.cityId || 0);
+    formData.append('jobId', String(registerData.jobId || registerData.jobId || 0));
+    formData.append('phone', registerData.phone);
 
-    if (eventData.birthDate) {
-      const fromDateTime = new Date(eventData.birthDate);
+    if (registerData.birthDate) {
+      const fromDateTime = new Date(registerData.birthDate);
       formData.append('birthDate', fromDateTime.toISOString());
     }
 
-    if (eventData.profileImageAddress) {
-      const imageFile = dataURLtoFile(eventData.profileImageAddress, 'event-image.jpg');
+    if (registerData.profileImageAddress) {
+      const imageFile = dataURLtoFile(registerData.profileImageAddress, 'event-image.jpg');
       formData.append('profileImageAddress', imageFile);
     }
 

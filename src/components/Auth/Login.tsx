@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../Auth/AuthContext';
 import { X } from 'lucide-react';
+import { User } from '../../services/Auth/Auth';
 
-function Login({ onClose, onContinue, onRegisterNeeded }: {
+function Login({ onClose, onContinue }: {
   onClose: () => void;
-  onContinue: (num: string, isExist: boolean) => void;
-  onRegisterNeeded?: (phoneNumber: string) => void
+  onContinue: (num: string, isExist: boolean, user: User | null) => void;
 }) {
   const [phoneNumber, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,19 +17,33 @@ function Login({ onClose, onContinue, onRegisterNeeded }: {
     setError('');
     setIsLoading(true);
 
-    if (/^09\d{9}$/.test(phoneNumber))
-      onContinue(phoneNumber, false);
+    // اعتبارسنجی شماره تلفن
+    if (!/^09\d{9}$/.test(phoneNumber)) {
+      setError('شماره موبایل اشتباه است (مثال: 09123456789)');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const respones = await login(phoneNumber);
-      onContinue(phoneNumber, respones);
-
+      const result = await login(phoneNumber);
+      
+      if (result.success) {
+        if (result.needRegister) {
+          // کاربر وجود ندارد - نیاز به ثبت‌نام
+          onContinue(phoneNumber, false, null);
+        } else if (result.user) {
+          // کاربر وجود دارد - به مرحله OTP برود
+          onContinue(phoneNumber, true, result.user);
+        }
+      } else {
+        setError('خطا در ارتباط با سرور');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در ورود به سیستم');
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col flex-1">
@@ -66,14 +80,14 @@ function Login({ onClose, onContinue, onRegisterNeeded }: {
       <div>
         <button
           onClick={handleSubmit}
-          className="w-full mt-4 bg-[#00A1F1] hover:bg-blue-600 text-white py-3 rounded-xl font-black text-sm shadow-blue-200 active:scale-[0.98] transition-all"
+          disabled={isLoading}
+          className="w-full mt-4 bg-[#00A1F1] hover:bg-blue-600 text-white py-3 rounded-xl font-black text-sm shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50"
         >
-          ادامه
+          {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : 'ادامه'}
         </button>
       </div>
     </div>
   );
-
-};
+}
 
 export default Login;

@@ -1,3 +1,4 @@
+import { error } from 'console';
 import { AppCategory } from '../types';
 
 export const STATIC_CATEGORIES: AppCategory[] = [
@@ -33,7 +34,7 @@ export async function initCategories() {
       console.warn('categories API returned unexpected shape, using static mock');
     }
   } catch (err) {
-    console.warn('Failed to fetch categories from localhost, using static mock. Error:', err);
+    throw new Error(`HTTP  خطا در دریافت رویدادهای ثبت‌نام شده`);
   }
   return runtimeCategories;
 }
