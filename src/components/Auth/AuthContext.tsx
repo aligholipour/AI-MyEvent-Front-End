@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authService, { User, AuthResponse } from '../../services/Auth/Auth';
+import { resourceLimits } from 'worker_threads';
 
 interface AuthContextType {
     user: User | null;
@@ -7,6 +8,7 @@ interface AuthContextType {
     isLoading: boolean;
     isLoggedIn: boolean;
     login: (phoneNumber: string) => Promise<{ success: boolean; user?: User; needRegister?: boolean }>;
+    resendOTPCode: (phoneNumber: string) => Promise<{ success: boolean, message: string }>;
     confirmLogin: (code: string, phoneNumber: string) => Promise<{ success: boolean; user?: User; needRegister?: boolean }>;
     logout: () => void;
     getAccessToken: () => string | null;
@@ -25,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const checkAuth = () => {
             const currentUser = authService.getUser();
             const isAuth = authService.isAuthenticated();
-            
+
             if (currentUser && isAuth) {
                 setUser(currentUser);
                 setIsLoggedIn(true);
@@ -43,18 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (phoneNumber: string): Promise<{ success: boolean; user?: User; needRegister?: boolean }> => {
         setIsLoading(true);
         try {
-            const response = await authService.login({ phoneNumber });
-            
-            if (response.isExist && response.user) {
+            const responseExistUser = await authService.login({ phoneNumber });
+
+            if (responseExistUser) {
                 // کاربر وجود دارد - منتظر تایید کد هستیم
                 return {
                     success: true,
-                    user: {
-                        id: response.user.id,
-                        profileAddress: "",
-                        roles: response.user.roles || [],
-                        username: response.user.username
-                    },
                     needRegister: false
                 };
             } else {
@@ -77,31 +73,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         try {
             const result = await authService.confirmCode(code, phoneNumber);
-            
+
             if (result.success && result.user && result.accessToken) {
                 const newUser: User = {
                     id: result.user.id,
                     profileAddress: result.user.profileAddress || "",
                     roles: result.user.roles || [],
-                    username: result.user.username
+                    username: result.user.username,
+                    phone: phoneNumber
                 };
-                
-                // ذخیره اطلاعات در localStorage
                 authService.saveAuthData(result.accessToken, result.refreshToken || '', newUser);
                 setUser(newUser);
                 setIsLoggedIn(true);
-                
+
                 return {
                     success: true,
                     user: newUser,
                     needRegister: false
                 };
             }
-            
+
             return { success: false };
         } catch (error) {
             console.error('Confirm code error:', error);
             return { success: false };
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const resendOTPCode = async (phoneNumber: string): Promise<{ success: boolean; message: string }> => {
+        setIsLoading(true);
+        try {
+            const result = await authService.resendOTPCode(phoneNumber);
+            return { success: result.success, message: result.message };
+
+        } catch (error) {
+            console.error('resed otp code:', error);
+            return { success: false, message: '' };
         } finally {
             setIsLoading(false);
         }
@@ -129,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isLoggedIn,
                 login,
                 confirmLogin,
+                resendOTPCode,
                 logout,
                 getAccessToken,
                 updateUser,

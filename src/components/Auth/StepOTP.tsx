@@ -6,14 +6,14 @@ import { User } from '../../services/Auth/Auth';
 function StepOTP({ phoneNumber, onBack, onSuccess }: {
   phoneNumber: string;
   onBack: () => void;
-  onSuccess: (user: User) => void;
+  onSuccess: (user: User | undefined) => void;
 }) {
   const [code, setCode] = useState(['', '', '', '', '']);
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(5);
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const { confirmLogin } = useAuth();
+  const { confirmLogin, resendOTPCode } = useAuth();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -54,9 +54,10 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: {
     setIsVerifying(true);
     try {
       const result = await confirmLogin(finalCode, phoneNumber);
-      
-      if (result.success && result.user) {
+
+      if (result.success) {
         onSuccess(result.user);
+        return;
       } else {
         setError('کد اشتباه است، دوباره تلاش کنید');
         // پاک کردن کد
@@ -71,11 +72,26 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: {
   };
 
   const handleResendCode = async () => {
-    setTimer(60);
+    setTimer(5);
     setError('');
     setCode(['', '', '', '', '']);
-    // درخواست ارسال مجدد کد
-    // می‌توانید این قسمت را به API اضافه کنید
+
+    try {
+      const result = await resendOTPCode(phoneNumber);
+
+      if (result.success) {
+        return;
+      } else {
+        setError(result.message);
+        // پاک کردن کد
+        setCode(['', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
+    } catch (err) {
+      setError('مشکلی در ارسال کد بوجود آمد');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -118,8 +134,7 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: {
         <button
           disabled={timer > 0 || isVerifying}
           onClick={handleResendCode}
-          className={`text-xs font-black transition-colors ${timer > 0 ? 'text-gray-400' : 'text-blue-500 hover:text-blue-600'}`}
-        >
+          className={`text-xs font-black transition-colors ${timer > 0 ? 'text-gray-400' : 'text-blue-500 hover:text-blue-600'}`}>
           {timer > 0 ? `ارسال مجدد کد تا (${timer} ثانیه)` : 'ارسال مجدد کد'}
         </button>
 

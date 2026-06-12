@@ -1,30 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Search, X } from "lucide-react";
+import { getCityForHomePage } from "../../services/locations";
+import { City } from "../../types";
+import { useCity } from "../../components/Shared/CityContext";
 
 function CitySelectionDrawer({
     isOpen,
     onClose,
-    onSelect,
-    currentCity
 }: {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (city: string) => void;
-    currentCity: string;
 }) {
-    const allCities = [
-        'تهران', 'شیراز', 'اصفهان', 'رشت', 'گرگان',
-        'تبریز', 'مشهد', 'کرج', 'اهواز', 'قم',
-        'کرمانشاه', 'یزد', 'اردبیل', 'بندرعباس', 'همدان',
-        'زنجان', 'سنندج', 'قزوین', 'خرم‌آباد', 'ساری'
-    ];
 
-    const [search, setSearch] = useState('');
 
-    const filteredCities = allCities.filter(city =>
-        city.includes(search)
-    );
+    const { selectedCity, updateUserCityPreference } = useCity();
+    const [cities, setCities] = useState<City[]>([]);
+    const [filteredCities, setFilteredCities] = useState<City[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSelectCity = async (city: City) => {
+        try {
+            await updateUserCityPreference(city.id, city.name);
+            onClose();
+            
+            console.log(`شهر ${city.name} با موفقیت انتخاب شد`);
+        } catch (error) {
+            console.error('Error selecting city:', error);
+            alert('خطا در ثبت شهر. لطفا دوباره تلاش کنید.');
+        }
+    };
+
+    const loadCities = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await getCityForHomePage();
+
+            if (Array.isArray(data) && data.length > 0) {
+                setCities(data);
+                setFilteredCities(data);
+            } else {
+                setCities([]);
+                setFilteredCities([]);
+                setError('هیچ شهری یافت نشد');
+            }
+        } catch (err) {
+            console.error('Error loading cities:', err);
+            setError('خطا در دریافت لیست شهرها');
+            setCities([]);
+            setFilteredCities([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            loadCities();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (cities.length > 0) {
+            const filtered = cities.filter(city =>
+                city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                city.name.includes(searchTerm)
+            );
+            setFilteredCities(filtered);
+        } else {
+            setFilteredCities([]);
+        }
+    }, [searchTerm, cities]);
 
     return (
         <AnimatePresence>
@@ -60,8 +109,8 @@ function CitySelectionDrawer({
                                 <input
                                     type="text"
                                     placeholder="جستجوی نام شهر..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-12 pl-4 text-sm font-bold focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                                 />
                             </div>
@@ -72,15 +121,16 @@ function CitySelectionDrawer({
                                 {filteredCities.length > 0 ? (
                                     filteredCities.map((city) => (
                                         <button
-                                            key={city}
-                                            onClick={() => onSelect(city)}
-                                            className={`w-full text-right px-6 py-4 rounded-2xl flex items-center justify-between transition-all ${city === currentCity
+                                            key={city.id}
+                                            onClick={() => handleSelectCity(city)}
+                                            // onClick={() => onSelect(city.name)}
+                                            className={`w-full text-right px-6 py-4 rounded-2xl flex items-center justify-between transition-all ${city.name === selectedCity
                                                 ? 'bg-white shadow-sm border border-blue-100 text-blue-600'
                                                 : 'hover:bg-white/60 text-gray-700'
                                                 }`}
                                         >
-                                            <span className="font-black">{city}</span>
-                                            {city === currentCity && (
+                                            <span className="font-black">{city.name}</span>
+                                            {city.name === selectedCity && (
                                                 <div className="w-2 h-2 bg-blue-600 rounded-full" />
                                             )}
                                         </button>

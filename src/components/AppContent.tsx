@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { AppEvent, HomeSlider } from "../types";
 import { useAuth } from "./Auth/AuthContext";
-import { initEventsLates } from "../services/events";
+import { getEventsByCity, initEventsLates } from "../services/events";
 import { initHomeSlider } from "../services/homesliders";
 import AuthDrawer from "./Auth/AuthDrawer";
 import FilterDrawer from "./Search/Filter";
@@ -21,14 +21,15 @@ import AdminPage from "./admin/AdminPage";
 import CitySelectionDrawer from "./Shared/CitySelectionDrawer";
 import FooterItem from "./Shared/FooterItem";
 import EnhancedHeroSlider from "./Shared/EnhancedHeroSlider";
+import { useCity } from "./Shared/CityContext";
 
 function AppContent() {
 
+    const { selectedCity, selectedCityId, isLoading: cityLoading } = useCity();
     const [activeTab, setActiveTab] = useState('home');
     const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
     const [isRegisterPageOpen, setIsRegisterPageOpen] = useState(false);
     const [pendingPhone, setPendingPhone] = useState('');
-    const [selectedCity, setSelectedCity] = useState('تهران');
     const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
     const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
@@ -41,7 +42,67 @@ function AppContent() {
     const [homeSliders, setHomeSliders] = useState<HomeSlider[]>([])
     const [searchQuery, setSearchQuery] = useState('');
     const { isLoggedIn, user: currentUser, logout: authLogout, updateUser } = useAuth();
+    const [isEventsLoading, setIsEventsLoading] = useState(false);
 
+    const isRequesting = useRef(false);
+    const previousTab = useRef<string>('home');
+
+    const loadEventsByCity = useCallback(async (cityId: number) => {
+        if (!cityId || cityId === 0) return;
+
+        if (isRequesting.current) return;
+
+        isRequesting.current = true;
+        setIsEventsLoading(true);
+
+        try {
+            const data = await getEventsByCity(cityId);
+            setEventLates(data);
+        } catch (error) {
+            console.error('Error loading events:', error);
+            setEventLates([]);
+        } finally {
+            setIsEventsLoading(false);
+            isRequesting.current = false;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (selectedCityId && selectedCityId > 0 && activeTab === 'home') {
+            loadEventsByCity(selectedCityId);
+        }
+    }, [selectedCityId, loadEventsByCity]);
+
+    useEffect(() => {
+        if (activeTab === 'home' && previousTab.current !== 'home' && selectedCityId) {
+            loadEventsByCity(selectedCityId);
+        }
+        previousTab.current = activeTab;
+    }, [activeTab, selectedCityId, loadEventsByCity]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsInitialLoading(false);
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, []);
+
+
+
+
+
+
+
+
+
+    const [activeFilters, setActiveFilters] = useState({
+        categoryId: undefined as number | undefined,
+        interestIds: [] as number[],
+        gender: undefined as string | undefined,
+        ageRange: undefined as string | undefined,
+        isFreeOnly: false,
+        eventType: undefined as string | undefined
+    });
 
     const handleSearchChange = useCallback((value: string) => {
         setSearchQuery(value);
@@ -66,17 +127,16 @@ function AppContent() {
         initHomeSlider()
             .then((data: HomeSlider[]) => {
                 setHomeSliders(data)
-                console.log(data);
             });
     }, []);
 
-    useEffect(() => {
-        initEventsLates()
-            .then((data: AppEvent[]) => {
-                setEventLates(data)
-                console.log(data);
-            });
-    }, []);
+    // useEffect(() => {
+    //     initEventsLates()
+    //         .then((data: AppEvent[]) => {
+    //             setEventLates(data)
+    //             console.log(data);
+    //         });
+    // }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -97,15 +157,6 @@ function AppContent() {
             }
         }
     };
-
-    const [activeFilters, setActiveFilters] = useState({
-        categoryId: undefined as number | undefined,
-        interestIds: [] as number[],
-        gender: undefined as string | undefined,
-        ageRange: undefined as string | undefined,
-        isFreeOnly: false,
-        eventType: undefined as string | undefined
-    });
 
     const handleApplyFilters = useCallback((filters: {
         categoryId?: string;
@@ -137,6 +188,13 @@ function AppContent() {
         });
     }, []);
 
+    if (cityLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-gray-500">در حال بارگذاری...</div>
+            </div>
+        );
+    }
 
     return (
 
@@ -207,7 +265,9 @@ function AppContent() {
                                             <button
                                                 onClick={() => setIsCityDrawerOpen(true)}
                                                 className="flex items-center gap-1 group">
-                                                <span className="text-sm font-black text-gray-800 group-hover:text-[#ED1C24] transition-colors">{selectedCity}</span>
+                                                <span className="text-sm font-black text-gray-800 group-hover:text-[#ED1C24] transition-colors">
+                                                    {selectedCity === '---' ? 'انتخاب شهر' : selectedCity}
+                                                </span>
                                                 <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-[#ED1C24] transition-colors" />
                                             </button>
                                         </div>
@@ -264,10 +324,10 @@ function AppContent() {
 
                                     <section className="px-6 py-4">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h2 className="text-xl font-black">جدیدترین</h2>
+                                            <h2 className="text-xl font-black">دورهمی های اخیر</h2>
                                         </div>
                                         <div className="flex flex-col gap-3">
-                                            {isInitialLoading ? (
+                                            {(isInitialLoading || isEventsLoading) ? (
                                                 <>
                                                     <EventCardSkeleton />
                                                     <EventCardSkeleton />
@@ -395,7 +455,7 @@ function AppContent() {
 
                         <FooterItem
                             icon={<UserIcon className="w-9 h-9" />}
-                            label="پروفایل"
+                            label={isLoggedIn ? "پروفایل" : "ورود/ثبت نام"}
                             isActive={activeTab === 'profile'}
                             onClick={() => {
                                 if (isLoggedIn) {
@@ -424,16 +484,17 @@ function AppContent() {
             <CitySelectionDrawer
                 isOpen={isCityDrawerOpen}
                 onClose={() => setIsCityDrawerOpen(false)}
-                onSelect={(city) => {
-                    setSelectedCity(city);
-                    setIsCityDrawerOpen(false);
-                }}
-                currentCity={selectedCity} />
+            // onSelect={(city) => {
+            //     setSelectedCity(city);
+            //     setIsCityDrawerOpen(false);
+            // }}
+            //currentCity={selectedCity}
+            />
 
             <AuthDrawer
                 isOpen={isAuthDrawerOpen}
                 onClose={() => setIsAuthDrawerOpen(false)}
-                onLoginSuccess={(phone, user) => {
+                onLoginSuccess={() => {
                     setIsAuthDrawerOpen(false);
                     navigateToTab('profile');
                 }}

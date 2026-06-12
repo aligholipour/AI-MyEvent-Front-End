@@ -5,7 +5,7 @@ import { User } from '../../services/Auth/Auth';
 
 function Login({ onClose, onContinue }: {
   onClose: () => void;
-  onContinue: (num: string, isExist: boolean, user: User | null) => void;
+  onContinue: (num: string, isExist: boolean) => void;
 }) {
   const [phoneNumber, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +29,9 @@ function Login({ onClose, onContinue }: {
       
       if (result.success) {
         if (result.needRegister) {
-          // کاربر وجود ندارد - نیاز به ثبت‌نام
-          onContinue(phoneNumber, false, null);
-        } else if (result.user) {
-          // کاربر وجود دارد - به مرحله OTP برود
-          onContinue(phoneNumber, true, result.user);
+          onContinue(phoneNumber, false);
+        } else  {
+          onContinue(phoneNumber, true);
         }
       } else {
         setError('خطا در ارتباط با سرور');

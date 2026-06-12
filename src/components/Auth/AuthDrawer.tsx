@@ -7,13 +7,13 @@ import { User } from "../../services/Auth/Auth";
 function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
     isOpen: boolean;
     onClose: () => void;
-    onLoginSuccess: (phone: string, user: User) => void;
+    onLoginSuccess: () => void;
     onRegisterNeeded: (phone: string) => void;
 }) {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isExistUser, setIsExistUser] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    // const [user, setUser] = useState<User | null>(null);
 
     // Reset step when opening
     useEffect(() => {
@@ -21,7 +21,7 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
             setStep('phone');
             setPhoneNumber('');
             setIsExistUser(false);
-            setUser(null);
+            // setUser(null);
         }
     }, [isOpen]);
 
@@ -53,13 +53,10 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
                             {step === 'phone' ? (
                                 <Login
                                     onClose={onClose}
-                                    onContinue={(num, isNew, userData) => {
+                                    onContinue={(num, isNew) => {
                                         setPhoneNumber(num);
                                         setIsExistUser(isNew);
                                         setStep('otp');
-                                        if (userData) {
-                                            setUser(userData);
-                                        }
                                     }}
                                 />
                             ) : (
@@ -70,7 +67,7 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
                                         if (!isExistUser) {
                                             onRegisterNeeded(phoneNumber);
                                         } else if (loggedInUser) {
-                                            onLoginSuccess(phoneNumber, loggedInUser);
+                                            onLoginSuccess();
                                         }
                                     }}
                                 />

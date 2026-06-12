@@ -144,3 +144,7 @@ export interface EventDetailForAdminResponse{
   category: string,
   favourites: string[]
 }
+export interface UserCityResponse{
+  cityId: number,
+  cityName: string
+}

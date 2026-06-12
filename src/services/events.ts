@@ -43,6 +43,16 @@ export async function initEventsLates() {
   return runtimeEvents;
 }
 
+export const getEventsByCity = async (cityId: number): Promise<AppEvent[]> => {
+    // می‌توانید توکن را هم ارسال کنید اگر نیاز است
+    const token = localStorage.getItem('accessToken');
+    
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/GetLatest/${cityId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    return response.json();
+};
+
 export async function createEvent(eventData: any) {
 
   try {

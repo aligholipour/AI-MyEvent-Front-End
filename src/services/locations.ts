@@ -1,4 +1,4 @@
-import { Province, City } from '../types';
+import { Province, City, UserCityResponse } from '../types';
 
 export const STATIC_Provinces: Province[] = [
   { id: 1, name: 'تهران' },
@@ -66,3 +66,61 @@ export async function getCityWithProvinceId(provinceId: number) {
   }
   return runtimeCties;
 }
+
+export async function getCityForHomePage() {
+
+  let cities: City[];
+
+  try {
+    const res = await fetch(`${process.env.API_BaseURL}/Location/GetCitiesForHomePage`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (Array.isArray(data) && data.every((c: any) => c && c.id && c.name)) {
+      cities = data as City[];
+      return cities;
+    } else {
+      console.warn('categories API returned unexpected shape, using static mock');
+    }
+  } catch (err) {
+    console.warn('Failed to fetch categories from localhost, using static mock. Error:', err);
+    return;
+  }
+}
+
+export const getUserCity = async (): Promise<UserCityResponse> => {
+  const token = localStorage.getItem('accessToken');
+
+  try {
+    const res = await fetch(`${process.env.API_BaseURL}/User/GetUserCity`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    return data;
+
+  } catch (err) {
+    throw new Error(`HTTP ${err}`);
+  }
+
+  // const response = await fetch(`${process.env.API_BaseURL}/user/profile`, {
+  //     method: 'GET',
+  //     headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //     },
+  // });
+
+  // if (!response.ok) {
+  //     throw new Error('خطا در دریافت اطلاعات کاربر');
+  // }
+
+  // return response.json();
+};

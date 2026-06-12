@@ -20,6 +20,7 @@ export interface User {
     username: string;
     roles: string[];
     profileAddress: string;
+    phone: string;
 }
 
 class AuthService {
@@ -140,6 +141,23 @@ class AuthService {
             accessToken: data.accessToken,
             refreshToken: data.refreshToken
         };
+    }
+
+    async resendOTPCode(phoneNumber: string): Promise<{ success: boolean, message: string }> {
+        const response = await fetch(`${this.baseUrl}/ResendOTPCode`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber }),
+        });
+
+        if (response.status === 200) {
+            return { success: true, message: '' };
+        } else {
+            const text = await response.text();
+            return { success: false, message: text };
+        }
     }
 }
 

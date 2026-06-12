@@ -72,7 +72,7 @@ function ProfilePage({ onBack, onLogout, onUpdateUser, user }
                     </div>
                     <div className="flex flex-col items-start text-right">
                         <h1 className="text-lg font-black text-gray-900 leading-none">{user.username}</h1>
-                        <p className="text-xs font-bold text-gray-400 mt-1" dir="ltr">{user.username}</p>
+                        <p className="text-xs font-bold text-gray-400 mt-1" dir="ltr">{user.phone}</p>
                     </div>
                 </div>
 
