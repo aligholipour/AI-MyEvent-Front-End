@@ -66,7 +66,7 @@ export const CityProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (userCity && userCity.cityId && userCity.cityName) {
                     // اگر اطلاعات سرور با localStorage متفاوت است، به‌روزرسانی کن
                     const storedCityId = localStorage.getItem(STORAGE_CITY_ID_KEY);
-                    if (userCity.cityId !== parseInt(storedCityId || '0', 10)) {
+                    if (storedCityId === "0" && userCity.cityId !== parseInt(storedCityId || '0', 10)) {
                         handleSetSelectedCity(userCity.cityName, userCity.cityId);
                     }
                 }

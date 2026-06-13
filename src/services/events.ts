@@ -44,13 +44,14 @@ export async function initEventsLates() {
 }
 
 export const getEventsByCity = async (cityId: number): Promise<AppEvent[]> => {
-    // می‌توانید توکن را هم ارسال کنید اگر نیاز است
-    const token = localStorage.getItem('accessToken');
-    
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/GetLatest/${cityId}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const response = await fetch(`${process.env.API_BaseURL}/Baham/GetLatest/${cityId}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    return response.json();
+  return response.json();
 };
 
 export async function createEvent(eventData: any) {
@@ -78,7 +79,7 @@ export async function createEvent(eventData: any) {
     formData.append('cityId', String(eventData.cityId || eventData.cityId || 0));
     formData.append('organizerId', String(eventData.organizerId || 0));
     formData.append('gender', eventData.gender || 0);
-    formData.append('gender', eventData.gender || 0);
+    formData.append('categoryId', eventData.categoryId || 0);
 
     if (eventData.date && eventData.startTime) {
       const fromDateTime = new Date(`${eventData.date}T${eventData.startTime}`);
@@ -93,11 +94,12 @@ export async function createEvent(eventData: any) {
       formData.append('image', imageFile);
     }
 
+    const token = localStorage.getItem('access_token');
+
     const response = await fetch(`${process.env.API_BaseURL}/Baham/Add`, {
       method: 'POST',
       headers: {
-        // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        // توجه: Content-Type را حذف کنید - مرورگر خودکار با boundary تنظیم می‌کند
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
       },
       body: formData,
     });
@@ -131,8 +133,11 @@ export async function getEventsWithPagination(request: GetEventsRequest)
     if (request.interestIds && request.interestIds.length > 0) {
       request.interestIds.forEach((favourite: number, index: number) => {
         params.append(`interestIds[${index}]`, favourite.toString());
-        // params.append('interestIds', interestId.toString()); // هر بار با کلید یکسان اضافه می‌شود
       });
+    }
+
+    if (request.cityId) {
+      params.append('cityId', request.cityId.toString());
     }
 
     const response = await fetch(`${process.env.API_BaseURL}/Baham/GetAll?${params.toString()}`, {

@@ -42,6 +42,7 @@ export interface AppEvent {
   maxAge?: string;
   provinceId?: number | null;
   city?: string;
+  cityId?: number | null;
   isOnline?: boolean;
   onlineLink?: string;
   address?: string;
@@ -98,7 +99,8 @@ export interface GetEventsRequest {
   isFreeOnly?: boolean;
   interestIds?: number[],
   gender?: number,
-  eventType?: number
+  eventType?: number,
+  cityId?: number
 }
 
 export interface PaginatedResponse<T> {

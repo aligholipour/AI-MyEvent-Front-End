@@ -48,6 +48,7 @@ function CreateEvent({ onBack }: {
         maxAge: '',
         provinceId: null as number | null,
         city: '',
+        cityId: null as number | null,
         isOnline: false,
         onlineLink: '',
         image: null as string | null,
@@ -231,7 +232,8 @@ function CreateEvent({ onBack }: {
             isConfirmed: false, // New events need confirmation
             status: 'pending',
             isDisabled: true, // Pending events are disabled by default
-            eventTime: ''
+            eventTime: '',
+            cityId: formData.cityId
         };
 
         console.log(newEvent);
@@ -722,7 +724,8 @@ function CreateEvent({ onBack }: {
                     setFormData({
                         ...formData,
                         // cityId: cityId,        // ذخیره Id برای ارسال به سرور
-                        city: selectedCity?.name || ''  // ذخیره Name برای نمایش
+                        city: selectedCity?.name || '',  // ذخیره Name برای نمایش
+                        cityId: cityId
                     });
                     // setFormData({ ...formData, city: val });
                     if (errors.city) setErrors({ ...errors, city: '' });

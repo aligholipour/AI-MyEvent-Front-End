@@ -5,6 +5,7 @@ import { getEventsWithPagination } from '../../services/events'
 import EventCardSkeleton from './EventCardSkeleton'
 import EmptyState from './EmptyState'
 import { MapPin, Clock } from 'lucide-react';
+import { useCity } from '../Shared/CityContext';
 
 interface EventsPageProps {
   onSelectEvent: (id: number) => void;
@@ -32,7 +33,12 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const isMounted = useRef(true);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const { selectedCityId } = useCity();
 
+  const lastLoadedCityId = useRef<number | null>(null);
+  const isCityChanging = useRef(false);
+
+  // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -42,7 +48,6 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
   }, [searchQuery]);
 
   const getFilters = useCallback(() => {
-
     let genderValue: number | undefined = 0;
     if (filters?.gender === 'آقا') genderValue = 1;
     else if (filters?.gender === 'خانم') genderValue = 2;
@@ -54,30 +59,73 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
     return {
       categoryId: filters?.categoryId,
       provinceId: filters?.provinceId,
-      searchTerm: searchQuery || undefined,
+      searchTerm: debouncedSearchQuery || undefined,
       interestIds: filters.interestIds || [],
       gender: genderValue,
       eventType: eventTypeValue,
       isFreeOnly: filters.isFreeOnly
     };
-  }, [filters?.categoryId, filters?.provinceId, searchQuery, filters?.interestIds || [], filters?.gender, filters?.eventType, filters.isFreeOnly]);
+  }, [filters?.categoryId, filters?.provinceId, debouncedSearchQuery, filters?.interestIds, filters?.gender, filters?.eventType, filters.isFreeOnly]);
 
-  const hasMounted = useRef(false);
-
-  useEffect(() => {
-
-    if (!hasMounted.current) {
-      resetAndLoadEvents();
-      hasMounted.current = true;
+  const resetAndLoadEvents = useCallback(async (isCityChange: boolean = false) => {
+    if (isCityChanging.current && !isCityChange) {
+      return;
     }
 
-    isMounted.current = true;
-    resetAndLoadEvents();
+    if (isCityChange) {
+      isCityChanging.current = true;
+    }
 
-    return () => {
-      isMounted.current = false;
-    };
-  }, [searchQuery, filters?.categoryId, filters?.provinceId, filters?.interestIds, filters?.gender, filters?.eventType, filters?.isFreeOnly]);
+    setIsInitialLoading(true);
+    setEvents([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    setError(null);
+
+    try {
+      const filtersData = getFilters();
+
+      const response = await getEventsWithPagination({
+        pageNumber: 1,
+        pageSize: 10,
+        cityId: selectedCityId!,
+        ...filtersData
+      });
+
+      if (isMounted.current) {
+        setEvents(response.data);
+        setTotalPages(response.totalPages);
+        setHasMore(response.hasNextPage);
+        setCurrentPage(1);
+        lastLoadedCityId.current = selectedCityId!;
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        setError(err instanceof Error ? err.message : 'خطا در دریافت رویدادها');
+      }
+    } finally {
+      if (isMounted.current) {
+        setIsInitialLoading(false);
+      }
+      if (isCityChange) {
+        isCityChanging.current = false;
+      }
+    }
+  }, [selectedCityId, getFilters]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+    resetAndLoadEvents(false);
+  }, [debouncedSearchQuery, filters?.categoryId, filters?.provinceId, filters?.interestIds, filters?.gender, filters?.eventType, filters?.isFreeOnly]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+    if (selectedCityId && selectedCityId > 0) {
+      if (lastLoadedCityId.current !== selectedCityId) {
+        resetAndLoadEvents(true);
+      }
+    }
+  }, [selectedCityId, resetAndLoadEvents]);
 
   useEffect(() => {
     if (!loadMoreRef.current || !hasMore || isLoadingMore || isInitialLoading || isLoading) return;
@@ -100,44 +148,7 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
     };
   }, [hasMore, isLoadingMore, isInitialLoading, isLoading, events.length]);
 
-  const resetAndLoadEvents = async () => {
-
-    setIsInitialLoading(true);
-    setEvents([]);
-    setCurrentPage(1);
-    setHasMore(true);
-    setError(null);
-
-    try {
-
-      const filters = getFilters();
-
-      const response = await getEventsWithPagination({
-        pageNumber: 1,
-        pageSize: 10,
-        // interestIds: filters.interestIds,
-        ...filters
-      });
-
-      if (isMounted.current) {
-        setEvents(response.data);
-        setTotalPages(response.totalPages);
-        setHasMore(response.hasNextPage);
-        setCurrentPage(1);
-      }
-    } catch (err) {
-      if (isMounted.current) {
-        setError(err instanceof Error ? err.message : 'خطا در دریافت رویدادها');
-      }
-    } finally {
-      if (isMounted.current) {
-        setIsInitialLoading(false);
-      }
-    }
-  };
-
   const loadMoreEvents = async () => {
-
     if (!hasMore || isLoadingMore || isInitialLoading || isLoading) {
       return;
     }
@@ -147,13 +158,13 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
     const nextPage = currentPage + 1;
 
     try {
-      const filters = getFilters();
+      const filtersData = getFilters();
 
       const response = await getEventsWithPagination({
         pageNumber: nextPage,
         pageSize: 10,
-        // searchTerm: debouncedSearchQuery || undefined,
-        ...filters
+        cityId: selectedCityId!,
+        ...filtersData
       });
 
       if (isMounted.current) {
@@ -185,6 +196,13 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
     }
   }, [hasMore, isLoadingMore, isInitialLoading, events.length]);
 
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const isSearching = searchQuery !== debouncedSearchQuery;
 
   return (
@@ -195,9 +213,14 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto no-scrollbar pb-10"
     >
-      {/* Latest Events Page List */}
       <section className="px-6 py-4">
-        <h2 className="text-xl font-black mb-6">لیست رویدادها</h2>
+        {/* <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-black">لیست رویدادها</h2>
+          <div className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+            {selectedCityId ? `شهر: ${selectedCityId}` : 'انتخاب شهر'}
+          </div>
+        </div> */}
+
         <div className="flex flex-col gap-6">
           {isInitialLoading ? (
             <div className="flex flex-col gap-8 animate-in fade-in duration-500">
@@ -212,35 +235,44 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.05, 0.5) }}
-                className="group cursor-pointer"
+                className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
                 onClick={() => onSelectEvent(event.id)}>
-                <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
+
+                {/* بخش تصویر با ارتفاع کمتر و سایه از پایین */}
+                <div className="relative h-44 rounded-t-2xl overflow-hidden">
                   <img
                     src={"http://localhost:5066" + event.image}
                     alt={event.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />
+
+                  {/* سایه مشکی کمرنگ از پایین به بالا */}
+                  <div className="absolute inset-0 bg-gradient-to-t   to-transparent pointer-events-none" />
+
                   {event.isFree && (
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black">
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black z-10">
                       رایگان
                     </div>
                   )}
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors">{event.title}</h3>
+
+                {/* بخش محتوای متنی */}
+                <div className="p-4 space-y-2">
+                  <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors line-clamp-2">
+                    {event.title}
+                  </h3>
                   <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>{event.date}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-400 text-xs">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="line-clamp-1">{event.location}</span>
                   </div>
                 </div>
               </motion.div>
             ))
-
           ) : (
             <EmptyState message="رویدادی یافت نشد" />
           )}
