@@ -5,7 +5,7 @@ export const STATIC_EVENTS: AppUsers[] = [
   {
     id: 1,
     name: 'زهرا سعادتیان',
-    title: 'دکتری ژنتیک پزشکی',
+    jobTitle: 'دکتری ژنتیک پزشکی',
     rating: 5,
     badge: 'زود رزرو کن',
     image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
@@ -15,7 +15,7 @@ export const STATIC_EVENTS: AppUsers[] = [
   {
     id: 2,
     name: 'امیرحسین رضایی',
-    title: 'مشاور کسب و کار',
+    jobTitle: 'مشاور کسب و کار',
     rating: 4.8,
     badge: 'تخفیف ویژه',
     image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
@@ -77,65 +77,6 @@ export async function getUsers(
     totalCount: data.totalCount,
     hasNextPage: data.HasNextPage,
   };
-
-  // try {
-  //   const res = await fetch(`${baseUrl}/api/User/Users`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-  //   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  //   const data = await res.json();
-  //   if (Array.isArray(data) && data.every((e: any) => e && e.id && e.title)) {
-  //     runtimeEvents = data as AppUsers[];
-  //     return runtimeEvents;
-  //   } else {
-  //     console.warn('events API returned unexpected shape, using static mock');
-  //   }
-  // } catch (err) {
-  //   console.warn('Failed to fetch events from localhost, using static mock. Error:', err);
-  // }
-  // return runtimeEvents;
-}
-
-export async function Register(registerData: any) {
-  try {
-    const formData = new FormData();
-
-    registerData.favouriteIds.forEach((favourite: number, index: number) => {
-      formData.append(`FavouriteIds[${index}]`, favourite.toString());
-    });
-
-    formData.append('fullName', registerData.fullName || '');
-    formData.append('gender', registerData.gender || 0);
-    formData.append('maritalStatus', registerData.maritalStatus || 0);
-    formData.append('cityId', registerData.cityId || registerData.cityId || 0);
-    formData.append('jobId', String(registerData.jobId || registerData.jobId || 0));
-    formData.append('phone', registerData.phone);
-
-    if (registerData.birthDate) {
-      const fromDateTime = new Date(registerData.birthDate);
-      formData.append('birthDate', fromDateTime.toISOString());
-    }
-
-    if (registerData.profileImageAddress) {
-      const imageFile = dataURLtoFile(registerData.profileImageAddress, 'event-image.jpg');
-      formData.append('profileImageAddress', imageFile);
-    }
-
-    const response = await fetch(`${process.env.API_BaseURL}/User/Register`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json;
-    return result;
-  }
-  catch (err) {
-    console.error('Failed to create event:', err);
-    throw err;
-  }
 }
 
 export async function getUserDetailForAdmin(userId: number

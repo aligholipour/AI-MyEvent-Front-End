@@ -229,9 +229,9 @@ function CreateEvent({ onBack }: {
             image: formData.image || 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
             isFree: !formData.isPaid,
             price: formData.isPaid ? `${formData.price} تومان` : 'رایگان',
-            isConfirmed: false, // New events need confirmation
+            isApprove: false, // New events need confirmation
             status: 'pending',
-            isDisabled: true, // Pending events are disabled by default
+            isActive: true, // Pending events are disabled by default
             eventTime: '',
             cityId: formData.cityId
         };

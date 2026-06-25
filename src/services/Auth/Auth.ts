@@ -1,3 +1,6 @@
+import { dataURLtoFile } from "@/src/lib/utils";
+import { RegisterResponse } from "@/src/types";
+
 export interface LoginRequest {
     phoneNumber: string
 }
@@ -7,6 +10,7 @@ export interface AuthResponse {
     refreshToken: string;
     expiresIn: number;
     isExist: boolean;
+    token: string;
     user?: {
         id: number;
         username: string;
@@ -28,7 +32,7 @@ class AuthService {
     private refreshTokenKey = 'refresh_token';
     private userKey = 'user';
     private isLoggedInKey = 'is_logged_in';
-    private baseUrl = 'http://localhost:5066/api/User';
+    private baseUrl = process.env.API_BaseURL + '/User';
 
     setTokens(accessToken: string, refreshToken: string) {
         localStorage.setItem(this.accessTokenKey, accessToken);
@@ -80,8 +84,8 @@ class AuthService {
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.message || 'خطا در ورود به سیستم');
-        }
 
+        }
         const data: AuthResponse = await response.json();
         return data;
     }
@@ -157,6 +161,50 @@ class AuthService {
         } else {
             const text = await response.text();
             return { success: false, message: text };
+        }
+    }
+
+    async Register(registerData: any): Promise<{ registerData: RegisterResponse }> {
+        try {
+            const formData = new FormData();
+
+            registerData.favouriteIds.forEach((favourite: number, index: number) => {
+                formData.append(`FavouriteIds[${index}]`, favourite.toString());
+            });
+
+            formData.append('fullName', registerData.fullName || '');
+            formData.append('gender', registerData.gender || 0);
+            formData.append('maritalStatus', registerData.maritalStatus || 0);
+            formData.append('cityId', registerData.cityId || registerData.cityId || 0);
+            formData.append('jobId', String(registerData.jobId || registerData.jobId || 0));
+            formData.append('phone', registerData.phone);
+
+            if (registerData.birthDate) {
+                const fromDateTime = new Date(registerData.birthDate);
+                formData.append('birthDate', fromDateTime.toISOString());
+            }
+
+            if (registerData.profileImageAddress) {
+                const imageFile = dataURLtoFile(registerData.profileImageAddress, 'event-image.jpg');
+                formData.append('profileImageAddress', imageFile);
+            }
+
+            const response = await fetch(`${process.env.API_BaseURL}/User/Register`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            return { registerData: result };
+        }
+        catch (err) {
+            console.error('Failed to create event:', err);
+            throw err;
         }
     }
 }

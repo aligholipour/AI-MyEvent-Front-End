@@ -56,7 +56,7 @@ function ProfilePage({ onBack, onLogout, onUpdateUser, user }
                     <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                         <div className="w-16 h-16 rounded-full border-2 border-blue-500 p-0.5 overflow-hidden transition-all group-hover:border-[#ED1C24]">
                             <img
-                                src={user.profileAddress}
+                                src={process.env.File_BaseURL + user.profileAddress}
                                 alt="profile"
                                 className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform"
                             />

@@ -4,6 +4,7 @@ import { EventDetailsResponse } from '../components/Events/EventDetails';
 import { Participant } from '../components/Events/EventDetails';
 import axiosInstance from './Auth/AxiosConfigs';
 import { EventDetailForAdminResponse } from '../types';
+import { User } from './Auth/Auth';
 
 export interface UserEventsResponse {
   registeredEvents: AppEvent[];
@@ -163,13 +164,39 @@ export async function getEventsWithPagination(request: GetEventsRequest)
 
 export async function getEventById(id: number): Promise<EventDetailsResponse> {
   try {
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/Get/${id}`, {
+
+    const userData = localStorage.getItem('user');
+    let userId: number | null = null;
+
+    if (userData) {
+      try {
+        const user: User = JSON.parse(userData);
+        userId = user.id;
+      } catch (parseError) {
+        throw new Error('خطا در دریافت جزئیات رویداد');
+      }
+    }
+
+    let url = `${process.env.API_BaseURL}/Baham/Get/${id}`;
+    if (userId !== null) {
+      url += `/${userId}`;
+    }
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
     });
+
+    // const response = await fetch(`${process.env.API_BaseURL}/Baham/Get/${id}/${userId}`, {
+    //   method: 'GET',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Accept': 'application/json',
+    //   },
+    // });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
@@ -226,12 +253,25 @@ export async function registerForEvent(
   bahamId: number,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`);
+    // const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`);
+    const token = localStorage.getItem('access_token');
 
-    return {
-      success: true,
-      message: 'ثبت‌نام با موفقیت انجام شد'
-    };
+    const response = await fetch(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+    });
+
+    if (response.status != 200) {
+      const responseData = await response.json().catch(() => null);
+      return { success: false, message: responseData };
+    }
+
+    return { success: true, message: 'ثبت‌نام با موفقیت انجام شد' }
+
   } catch (err) {
     console.error('Failed to register for event:', err);
     throw err;
@@ -407,6 +447,9 @@ export async function approveEvent(bahamId: number)
 
   const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/ApproveEvent/${bahamId}`);
 
+  if (response.status != 200)
+    return { success: false, message: response.data.Message }
+
   return {
     success: true,
     message: 'ثبت‌نام با موفقیت انجام شد'
@@ -442,10 +485,10 @@ export async function rejectEvent(request: RejectEventRequest)
 export async function changeStatusEvent(bahamId: number)
   : Promise<{ success: boolean; message: string }> {
 
-  const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/ApproveEvent/${bahamId}`);
+  const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/ChangeStatus/${bahamId}`);
 
   return {
     success: true,
-    message: 'رویداد با موفقیت رد شد'
+    message: 'وضعیت رویداد تغییر یافت'
   };
 }

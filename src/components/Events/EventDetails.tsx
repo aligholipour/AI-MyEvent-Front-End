@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { AppEvent } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Calendar, ArrowRight, ChevronDown, MapPin, Share2, MoreVertical, Star } from 'lucide-react';
+import { Check, Calendar, ArrowRight, ChevronDown, MapPin, Share2, MoreVertical, Star, X } from 'lucide-react';
 import EmptyState from "./EmptyState";
 import EventInsights from "./EventInsights";
 import CommentSection from "./CommentSection";
@@ -52,7 +51,9 @@ export interface EventDetailsResponse {
     totalRatings?: number;
     coverAddress: string;
     locationName: string;
-    userProfile: string
+    userProfile: string;
+    isRegistered: boolean;
+    isCapacity: boolean
 }
 
 export interface Participant {
@@ -74,41 +75,36 @@ export interface Comment {
     isActive: boolean;
 }
 
-
 function EventDetailsPage({
     eventId,
     onBack,
     isLoggedIn,
     onOpenAuth,
-    registeredEventIds = [],
     onRegister: onRegisterParent,
-    onUnregister
 }: {
     eventId: number;
     onBack: () => void;
     isLoggedIn: boolean;
     onOpenAuth: () => void;
-    registeredEventIds?: string[];
     onRegister?: (id: string) => void;
-    onUnregister?: (id: string) => void;
     key?: React.Key
 }) {
-    // const event = events.find(e => e.id === eventId) || events[0] || EVENTS[0];
     const [event, setEvent] = useState<EventDetailsResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
-    const [isRegistering, setIsRegistering] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
+    const [isRegistrationFailed, setIsRegistrationFailed] = useState(false);
+    const [registrationMessage, setRegistrationMessage] = useState('');
+
     const [isReportDrawerOpen, setIsReportDrawerOpen] = useState(false);
     const [isConfirmDrawerOpen, setIsConfirmDrawerOpen] = useState(false);
     const [isNavigationDrawerOpen, setIsNavigationDrawerOpen] = useState(false);
     const [isParticipantsDrawerOpen, setIsParticipantsDrawerOpen] = useState(false);
     const [activeParticipantId, setActiveParticipantId] = useState<number | null>(null);
     const [isSharing, setIsSharing] = useState(false);
-    const isRegistered = registeredEventIds.includes(eventId.toString());
     const hasFetched = useRef(false);
     const [isCommentSuccess, setIsCommentSuccess] = useState(false);
 
@@ -206,15 +202,17 @@ function EventDetailsPage({
 
     // تابع ثبت‌نام
     const handleRegister = async () => {
-        // if (!isLoggedIn) {
-        //     onOpenAuth();
-        //     return;
-        // }
-        setIsRegistering(true);
+        if (!isLoggedIn) {
+            onOpenAuth();
+            return;
+        }
+        let registrationSucceeded = false;
         try {
             const result = await registerForEvent(eventId);
             if (result.success) {
+                registrationSucceeded = true;
                 setIsRegistrationSuccess(true);
+                setRegistrationMessage(result.message);
                 setTimeout(() => setIsRegistrationSuccess(false), 3000);
 
                 const updatedEvent = await getEventById(eventId);
@@ -235,62 +233,22 @@ function EventDetailsPage({
 
                 // setParticipants(updatedParticipants.participants);
                 onRegisterParent?.(eventId.toString());
+
+                return;
             }
+
+            setRegistrationMessage(result.message);
+            setIsRegistrationFailed(true);
+            setTimeout(() => setIsRegistrationFailed(false), 5000);
         } catch (err) {
             console.error('Registration error:', err);
         } finally {
-            setIsRegistering(false);
+            if (registrationSucceeded) {
+                setEvent(prev => prev ? { ...prev, isRegistered: true } : prev);
+            }
             setIsConfirmDrawerOpen(false);
         }
     };
-
-    //#region 
-    // const participants = [
-    //     { id: 1, name: 'علی اکبری', role: 'طراح محصول', avatar: 'https://i.pravatar.cc/100?u=1' },
-    //     { id: 2, name: 'نیلوفر کریمی', role: 'برنامه‌نویس', avatar: 'https://i.pravatar.cc/100?u=2' },
-    //     { id: 3, name: 'رضا امینی', role: 'مدیر پروژه', avatar: 'https://i.pravatar.cc/100?u=3' },
-    //     { id: 4, name: 'مریم نوری', role: 'تحلیل‌گر', avatar: 'https://i.pravatar.cc/100?u=4' },
-    //     { id: 5, name: 'حسین محسنی', role: 'دیزاینر', avatar: 'https://i.pravatar.cc/100?u=5' },
-    //     { id: 6, name: 'سارا رضایی', role: 'استراتژیست', avatar: 'https://i.pravatar.cc/100?u=6' },
-    //     { id: 7, name: 'کامران بختیاری', role: 'توسعه‌دهنده', avatar: 'https://i.pravatar.cc/100?u=7' },
-    //     { id: 8, name: 'لادن طباطبایی', role: 'طراح UI', avatar: 'https://i.pravatar.cc/100?u=8' },
-    //     { id: 9, name: 'پیمان معادی', role: 'منتور', avatar: 'https://i.pravatar.cc/100?u=9' },
-    //     { id: 10, name: 'مهتاب کرامتی', role: 'سخنران', avatar: 'https://i.pravatar.cc/100?u=10' },
-    // ];
-
-    // const [comments, setComments] = useState([
-    //     {
-    //         id: 1,
-    //         name: 'سارا احمدی',
-    //         date: '۲ روز پیش',
-    //         text: 'واقعا کارگاه عالی بود، خیلی مطالب مفیدی یاد گرفتم. خسته نباشید به تیم برگزار کننده.',
-    //         avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-    //         rating: 5
-    //     },
-    //     {
-    //         id: 2,
-    //         name: 'محمد رضایی',
-    //         date: '۵ روز پیش',
-    //         text: 'محیط برگزاری خیلی خوب بود ولی ای کاش زمان بیشتری برای پرسش و پاسخ اختصاص داده میشد.',
-    //         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
-    //         rating: 4
-    //     }
-    // ]);
-
-    // const handleAddComment = () => {
-    //     if (!commentText.trim()) return;
-    //     const newComment = {
-    //         id: Date.now(),
-    //         name: 'کاربر مهمان',
-    //         date: 'هم‌اکنون',
-    //         text: commentText,
-    //         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
-    //         rating: 5
-    //     };
-    //     setComments([newComment, ...comments]);
-    //     setCommentText('');
-    // };
-    //#endregion
 
     // نمایش لودینگ
     if (isLoading) {
@@ -353,7 +311,7 @@ function EventDetailsPage({
                             </div>
                             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-md">
                                 <img
-                                    src={"http://localhost:5066" + event.userProfile}
+                                    src={process.env.File_BaseURL + event.userProfile}
                                     alt=""
                                     className="w-full h-full object-cover"
                                     referrerPolicy="no-referrer"
@@ -381,7 +339,7 @@ function EventDetailsPage({
                 {/* Main Image */}
                 <div className="relative w-full aspect-[3/2] rounded-b-2xl overflow-hidden shadow-lg mb-6">
                     <img
-                        src={"http://localhost:5066" + event.coverAddress}
+                        src={process.env.File_BaseURL + event.coverAddress}
                         alt={event.title}
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
@@ -404,7 +362,7 @@ function EventDetailsPage({
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm">
                                     <img
-                                        src={"http://localhost:5066" + event.userProfile}
+                                        src={process.env.File_BaseURL + event.userProfile}
                                         alt=""
                                         className="w-full h-full object-cover"
                                         referrerPolicy="no-referrer"
@@ -499,7 +457,9 @@ function EventDetailsPage({
                                             }}
                                         >
                                             <img
-                                                src={"http://localhost:5066/" + person.profileAddress}
+                                                src={process.env.File_BaseURL && person.profileAddress
+                                                    ? process.env.File_BaseURL + person.profileAddress
+                                                    : '/default-avatar.png'}
                                                 alt={person.fullname}
                                                 className={`w-10 h-10 rounded-full border-2 border-white shadow-sm transition-transform ${activeParticipantId === person.id ? 'scale-110 z-10' : 'z-0'}`}
                                             />
@@ -563,24 +523,39 @@ function EventDetailsPage({
                                     {event.isFree ? 'رایگان' : event.price}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 text-emerald-500">
-                                <Check className="w-4 h-4" />
-                                <span className="text-[10px] font-black">ظرفیت موجود</span>
-                            </div>
+                            {event.isCapacity ? (
+                                <div className="flex items-center gap-2 text-emerald-500">
+                                    <Check className="w-4 h-4" />
+                                    <span className="text-[10px] font-black">ظرفیت موجود</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-red-500">
+                                    <X className="w-4 h-4" />
+                                    <span className="text-[10px] font-black">ظرفیت تکمیل شده</span>
+                                </div>
+                            )}
+
                         </div>
 
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => isRegistered ? null : setIsConfirmDrawerOpen(true)}
-                            disabled={isRegistered}
-                            className={`w-full h-14 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 ${isRegistered
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    onOpenAuth();
+                                    return;
+                                }
+                                setIsConfirmDrawerOpen(true);
+                            }}
+                            disabled={event.isRegistered}
+                            className={`w-full h-14 rounded-2xl cursor-pointer font-black text-lg transition-all flex items-center justify-center gap-3 ${event.isRegistered
                                 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-none'
                                 : 'bg-gradient-to-r from-[#ED1C24] to-[#c4151b] text-white shadow-[#ED1C24]/20 shadow-lg'
                                 }`}>
-                            <span>{isRegistered ? 'قبلاً ثبت‌نام کرده‌اید' : 'شرکت در دورهمی'}</span>
-                            {!isRegistered && <ArrowRight className="w-5 h-5 rotate-180" />}
-                            {isRegistered && <Check className="w-5 h-5" />}
+
+                            <span>{event.isRegistered ? 'قبلاً ثبت‌نام کرده‌اید' : 'شرکت در دورهمی'}</span>
+                            {!event.isRegistered && <ArrowRight className="w-5 h-5 rotate-180" />}
+                            {event.isRegistered && <Check className="w-5 h-5" />}
                         </motion.button>
                     </div>
 
@@ -595,7 +570,10 @@ function EventDetailsPage({
                                     ${!comment.isActive ? "border-amber-100 bg-amber-50/30 opacity-70 border-red-200" : ""}`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <img src={"http://localhost:5066/" + comment.userProfileAddress} alt="" className="w-10 h-10 rounded-full" />
+                                                <img src={process.env.File_BaseURL && comment.userProfileAddress
+                                                    ? process.env.File_BaseURL + comment.userProfileAddress
+                                                    : '/default-avatar.png'}
+                                                    alt="" className="w-10 h-10 rounded-full" />
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-black text-gray-800">{comment.fullname}</span>
                                                     <span className="text-[10px] font-bold text-gray-400">{comment.createdDateTime}</span>
@@ -623,7 +601,7 @@ function EventDetailsPage({
                         {/* Rating Section */}
                         <div className="mt-12">
                             <CommentSection
-                                onSubmit={handleSubmitComment}/>
+                                onSubmit={handleSubmitComment} />
                         </div>
                     </div>
                 </div>
@@ -646,9 +624,21 @@ function EventDetailsPage({
                             exit={{ opacity: 0, y: 50, x: "-50%" }}
                             className="fixed bottom-24 left-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-xl z-50 font-black flex items-center gap-3 whitespace-nowrap">
                             <Check className="w-5 h-5" />
-                            <span>ثبت‌نام شما با موفقیت انجام شد</span>
+                            <span>{registrationMessage}</span>
                         </motion.div>
                     )}
+
+                    {isRegistrationFailed && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 50, x: "-50%" }}
+                            animate={{ opacity: 1, y: 0, x: "-50%" }}
+                            exit={{ opacity: 0, y: 50, x: "-50%" }}
+                            className="fixed bottom-24 left-1/2 bg-yellow-600 text-white px-6 py-3 rounded-2xl shadow-xl z-50 font-black flex items-center gap-3 whitespace-nowrap">
+                            <Check className="w-5 h-5" />
+                            <span>{registrationMessage}</span>
+                        </motion.div>
+                    )}
+
                 </AnimatePresence>
 
                 <AnimatePresence>

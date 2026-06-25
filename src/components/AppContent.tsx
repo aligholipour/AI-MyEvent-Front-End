@@ -343,7 +343,7 @@ function AppContent() {
                                                         <div className="flex gap-4 p-3 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] border border-transparent hover:border-gray-100">
                                                             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 shadow-sm">
                                                                 <img
-                                                                    src={"http://localhost:5066" + event.image}
+                                                                    src={process.env.File_BaseURL + event.image}
                                                                     alt={event.title}
                                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                                     referrerPolicy="no-referrer" />
@@ -484,11 +484,6 @@ function AppContent() {
             <CitySelectionDrawer
                 isOpen={isCityDrawerOpen}
                 onClose={() => setIsCityDrawerOpen(false)}
-            // onSelect={(city) => {
-            //     setSelectedCity(city);
-            //     setIsCityDrawerOpen(false);
-            // }}
-            //currentCity={selectedCity}
             />
 
             <AuthDrawer
@@ -496,7 +491,7 @@ function AppContent() {
                 onClose={() => setIsAuthDrawerOpen(false)}
                 onLoginSuccess={() => {
                     setIsAuthDrawerOpen(false);
-                    navigateToTab('profile');
+                    // navigateToTab('profile');
                 }}
                 onRegisterNeeded={(phone) => {
                     setIsAuthDrawerOpen(false);

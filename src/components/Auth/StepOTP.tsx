@@ -3,8 +3,9 @@ import { ArrowRight } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { User } from '../../services/Auth/Auth';
 
-function StepOTP({ phoneNumber, onBack, onSuccess }: {
+function StepOTP({ phoneNumber, token, onBack, onSuccess }: {
   phoneNumber: string;
+  token?: string;
   onBack: () => void;
   onSuccess: (user: User | undefined) => void;
 }) {
@@ -105,7 +106,8 @@ function StepOTP({ phoneNumber, onBack, onSuccess }: {
         </div>
 
         <p className="text-gray-500 text-sm font-bold leading-relaxed">
-          کد ۵ رقمی ارسال شده به شماره <span className="text-gray-900" dir="ltr">{phoneNumber}</span> را وارد کنید.
+          کد ارسال شده به شماره <span className="text-gray-900" dir="ltr">{phoneNumber}</span> را وارد کنید.
+          <span className="text-xs font-black transition-colors text-red-500 hover:text-blue-600"> {token} </span>
         </p>
 
         <div className="space-y-2">

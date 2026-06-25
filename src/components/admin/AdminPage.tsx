@@ -100,6 +100,13 @@ function AdminPage({
         var response = await approveEvent(eventId)
         if (response.success) {
             // onConfirm(eventId.toString());
+
+            setEvents(prev => prev.map(event =>
+                event.id === eventId
+                    ? { ...event, isActive: true, status: 2 }
+                    : event
+            ));
+
             setSelectedEventForDetails(null);
         }
     }
@@ -116,6 +123,20 @@ function AdminPage({
         var response = await changeStatusEvent(bahamId)
         if (response.success) {
             // onDisable(bahamId.toString());
+
+            setEvents(prev => prev.map(event =>
+                event.id === bahamId
+                    ? { ...event, isActive: !event.isActive }
+                    : event
+            ));
+            // همچنین selectedEventForDetails رو هم آپدیت کن
+            if (selectedEventForDetails && selectedEventForDetails.id === bahamId) {
+                setSelectedEventForDetails({
+                    ...selectedEventForDetails,
+                    isActive: !selectedEventForDetails.isActive
+                });
+            }
+
             setSelectedEventForDetails(null);
         }
     }
@@ -127,6 +148,8 @@ function AdminPage({
         fetchEvents(1, true);
         fetchUsers(1, true);
     }, []);
+
+    console.log('isActive:', selectedEventForDetails?.isActive);
 
     return (
         <motion.main
@@ -184,14 +207,14 @@ function AdminPage({
                                     onClick={() => getEventDetail(event.id)}
                                     className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex flex-col sm:flex-row transition-all hover:shadow-md cursor-pointer group items-stretch">
                                     <div className="w-full sm:w-28 relative flex-shrink-0 min-h-[100px] sm:h-auto">
-                                        <img src={"http://localhost:5066" + event.image} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
-                                        {event.status === 'pending' && (
+                                        <img src={process.env.File_BaseURL + event.image} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
+                                        {/* {event.status === 2 && (
                                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center backdrop-blur-[1px]">
                                                 <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">
-                                                    تایید
+                                                    تایید 2
                                                 </span>
                                             </div>
-                                        )}
+                                        )} */}
                                     </div>
 
                                     <div className="flex-1 p-3.5 flex flex-col justify-between min-w-0 bg-white">
@@ -205,23 +228,61 @@ function AdminPage({
                                             </div>
 
                                             <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1.5 ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' :
-                                                    event.isConfirmed == false ? 'bg-red-50 text-red-600' :
-                                                        'bg-amber-50 text-amber-600'
+                                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1.5 ${event.status === 1 ? 'bg-yellow-50 text-yellow-600' :
+                                                    event.status === 2 ? 'bg-emerald-50 text-emerald-600' :
+                                                        'bg-red-50 text-red-600'
                                                     }`}>
-                                                    <div className={`w-1 h-1 rounded-full ${event.isConfirmed ? 'bg-emerald-500' :
-                                                        event.status === 'rejected' ? 'bg-red-500' :
-                                                            'bg-amber-500 animate-pulse'
+                                                    <div className={`w-1 h-1 rounded-full ${event.status === 1 ? 'bg-yellow-500' : event.status === 2 ? 'bg-emerald-500' : 'bg-red-500'
+                                                        // 'bg-amber-500 animate-pulse'
                                                         }`} />
-                                                    {event.isConfirmed ? 'تایید شده' :
-                                                        event.isConfirmed == false ? 'رد شده' :
-                                                            'در انتظار'}
+                                                    {
+                                                        event.status === 1 ? 'منتظر تایید' : event.status === 2 ? 'تایید شده' : 'رد شده'}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-4">
-                                            {event.status === 'pending' || event.status === 'rejected' ? (
+
+                                            {event.status === 2 ? (
+                                                <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                                                    <button
+                                                        onClick={() => changeStatusEventHandle(event.id)}
+                                                        // onClick={() => onDisable(event.id.toString())}
+                                                        className={`flex-1 h-9 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 border-none 
+                                                            ${event.isActive
+                                                            ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                                            }`}
+                                                    >
+                                                        {event.isActive ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                                                        <span>{event.isActive ? 'غیرفعال کردن' : 'فعال کردن'}</span>
+                                                    </button>
+                                                    {/* <button
+                                                        onClick={() => setSelectedEventForReject(event.id)}
+                                                        className="bg-red-50 text-red-500 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-red-100 transition-all border-none"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button> */}
+                                                </div>
+                                            ) : (
+                                                <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                                                    <button
+                                                        // onClick={() => onConfirm(event.id.toString())}
+                                                        onClick={() => approveEventHandle(event.id)}
+                                                        className="flex-[2] bg-emerald-500 text-white h-9 rounded-xl text-[10px] font-black shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5 border-none">
+                                                        <Check className="w-3.5 h-3.5" />
+                                                        تایید رویداد
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedEventForReject(event.id)}
+                                                        className="flex-1 bg-red-50 text-red-500 h-9 rounded-xl text-[10px] font-black hover:bg-red-100 transition-all border-none">
+                                                        رد کردن
+                                                    </button>
+                                                </div>
+                                            )
+                                            }
+
+                                            {/* {event.status === 'pending' || event.status === 'rejected' ? (
                                                 <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
                                                     <button
                                                         // onClick={() => onConfirm(event.id.toString())}
@@ -239,13 +300,13 @@ function AdminPage({
                                                 <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
                                                     <button
                                                         // onClick={() => onDisable(event.id.toString())}
-                                                        className={`flex-1 h-9 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 border-none ${event.isDisabled
-                                                            ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                                            : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                                        className={`flex-1 h-9 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 border-none ${event.isActive
+                                                            ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                                                             }`}
                                                     >
-                                                        {event.isDisabled ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                                                        <span>{event.isDisabled ? 'فعالسازی' : 'غیرفعال‌سازی'}</span>
+                                                        {event.isActive ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                                                        <span>{event.isActive ? 'غیرفعال کردن' : 'فعال کردن'}</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setSelectedEventForReject(event.id)}
@@ -254,7 +315,7 @@ function AdminPage({
                                                         <X className="w-4 h-4" />
                                                     </button>
                                                 </div>
-                                            )}
+                                            )} */}
                                         </div>
                                     </div>
                                 </div>
@@ -274,7 +335,7 @@ function AdminPage({
                                     // onClick={() => setSelectedUser(user)}
                                     className="w-full flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 text-right hover:shadow-lg hover:shadow-gray-100 transition-all active:scale-[0.99]">
                                     <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-                                        <img src={"http://localhost:5066" + user.image} alt="" className="w-full h-full object-cover" />
+                                        <img src={process.env.File_BaseURL + user.image} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h4 className="text-sm font-black text-gray-900">{user.name}</h4>
@@ -315,7 +376,7 @@ function AdminPage({
                             <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-6">
                                 <div className="space-y-6">
                                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-md">
-                                        <img src={"http://localhost:5066" + selectedEventForDetails.image} alt="" className="w-full h-full object-cover" />
+                                        <img src={process.env.File_BaseURL + selectedEventForDetails.image} alt="" className="w-full h-full object-cover" />
                                         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-gray-900 border border-white/50 shadow-sm">
                                             {selectedEventForDetails.category}
                                         </div>
@@ -401,9 +462,12 @@ function AdminPage({
                                         <div className="space-y-2">
                                             <h4 className="text-xs font-black text-gray-400 px-1 italic">درباره رویداد</h4>
                                             <div className="bg-gray-100/50 p-4 rounded-2xl border border-gray-100">
-                                                <p className="text-[11px] font-black text-gray-700 truncate">
-                                                    {selectedEventForDetails.description || 'توضیحاتی برای این رویداد ثبت نشده است.'}
-                                                </p>
+                                                <p
+                                                    className="text-[11px] font-black text-gray-700 truncate"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: selectedEventForDetails?.description || 'توضیحاتی برای این رویداد ثبت نشده است.'
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -412,51 +476,43 @@ function AdminPage({
 
                             <div className="shrink-0 w-full p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 flex flex-col gap-2">
                                 <div className="flex gap-2">
-                                    {!selectedEventForDetails.isApprove ? (
+                                    {selectedEventForDetails.status === 2 ? (
                                         <>
                                             <button
-                                                onClick={() => approveEventHandle(selectedEventForDetails.id)}
-                                                className="flex-[2] bg-emerald-500 text-white h-11 rounded-xl text-[11px] font-black shadow-lg shadow-emerald-500/20">
-                                                تایید نهایی رویداد
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedEventForReject(selectedEventForDetails.id);
-                                                    setSelectedEventForDetails(null);
-                                                }}
-                                                className="flex-1 bg-red-50 text-red-500 h-11 rounded-xl text-[11px] font-black">
-                                                رد کردن
+                                                onClick={() => changeStatusEventHandle(selectedEventForDetails.id)}
+                                                className={`
+                                                        flex-1 h-11 cursor-pointer rounded-xl text-[11px] font-black w-full 
+                                                        transition-all flex items-center justify-center gap-2
+                                                        ${selectedEventForDetails.isActive
+                                                        ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'  // ← این رو عوض کنید
+                                                        : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'  // ← و این رو
+                                                    }
+                                                    `}
+                                            >
+                                                <span>{selectedEventForDetails.isActive ? 'غیرفعال کردن' : 'فعال کردن 2'}</span>
                                             </button>
                                         </>
                                     ) : (
                                         <>
                                             <button
+                                                disabled={selectedEventForDetails.status === 2}
+                                                onClick={() => approveEventHandle(selectedEventForDetails.id)}
+                                                className="flex-1 cursor-pointer bg-emerald-50 text-emerald-600 h-11 rounded-xl text-[11px] font-black disabled:opacity-50">
+                                                تایید رویداد 1
+                                            </button>
+                                            <button
                                                 onClick={() => {
                                                     setSelectedEventForReject(selectedEventForDetails.id);
                                                     setSelectedEventForDetails(null);
                                                 }}
-                                                className="flex-1 bg-red-50 text-red-500 h-11 rounded-xl text-[11px] font-black">
-                                                تغییر وضعیت به رد شده
-                                            </button>
-                                            <button
-                                                disabled={selectedEventForDetails.isApprove}
-                                                // onClick={() => { onConfirm(selectedEventForDetails.id.toString()); }}
-                                                className="flex-1 bg-emerald-50 text-emerald-600 h-11 rounded-xl text-[11px] font-black disabled:opacity-50">
-                                                تایید مجدد
+                                                className="flex-1 bg-red-50 cursor-pointer text-red-500 h-11 rounded-xl text-[11px] font-black">
+                                                رد کردن 2
                                             </button>
                                         </>
                                     )}
                                 </div>
 
-                                <button
-                                    onClick={() => changeStatusEventHandle(selectedEventForDetails.id)}
-                                    className={`w-full h-11 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-2 ${selectedEventForDetails.isActive
-                                        ? 'bg-emerald-50 text-emerald-600'
-                                        : 'bg-amber-50 text-amber-600'
-                                        }`}>
-                                    {selectedEventForDetails.isApprove ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                                    <span>{selectedEventForDetails.isActive ? 'فعالسازی مجدد رویداد' : 'غیرفعال کردن موقت رویداد'}</span>
-                                </button>
+
                             </div>
                         </motion.div>
                     </>
@@ -587,7 +643,7 @@ function AdminPage({
                                 <div className="space-y-6">
                                     <div className="flex flex-col items-center gap-4 mt-2">
                                         <div className="w-24 h-24 rounded-[32px] overflow-hidden shadow-xl ring-4 ring-gray-50 relative group">
-                                            <img src={"http://localhost:5066" + userDetail.profileImage} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                                            <img src={process.env.File_BaseURL + userDetail.profileImage} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
                                             {true && (
                                                 <div className="absolute bottom-2 right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-2 border-white shadow-lg">
                                                     <ShieldCheck className="w-4 h-4" />

@@ -51,7 +51,7 @@ function ParticipantsDrawer({
                     className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 border border-transparent hover:border-gray-100 hover:bg-white transition-all shadow-sm shadow-transparent hover:shadow-gray-200/50"
                   >
                     <div className="flex items-center gap-4">
-                      <img src={"http://localhost:5066/" + person.profileAddress} alt="" className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
+                      <img src={process.env.File_BaseURL + person.profileAddress} alt="" className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
                       <div className="flex flex-col">
                         <span className="text-sm font-black text-gray-800">{person.fullname}</span>
                         {/* <span className="text-[10px] font-bold text-gray-400">{person.role}</span> */}

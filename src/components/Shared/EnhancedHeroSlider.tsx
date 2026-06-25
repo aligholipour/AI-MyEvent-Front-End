@@ -79,7 +79,7 @@ function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?
                         >
                             <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex items-center p-8 text-right">
                                 <img
-                                    src={"http://localhost:5066" + banner.image}
+                                    src={process.env.File_BaseURL + banner.image}
                                     alt={banner.title}
                                     className="absolute inset-0 w-full h-full object-cover"
                                     referrerPolicy="no-referrer"

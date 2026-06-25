@@ -6,10 +6,11 @@ import { Favourite, Province, City, RegisterRequest } from '../../types';
 import { getAllProvince, getCityWithProvinceId } from '../../services/locations';
 import * as LucideIcons from 'lucide-react';
 import JobDrawer from '../Shared/JobDrawer';
-import { Register } from '../../services/users';
+// import { Register } from '../../services/users';
 import InterestsDrawer from '../Shared/InterestsDrawer';
 import FormInput from '../Shared/FormInput';
 import SelectionDrawer from '../Shared/SelectionDrawer';
+import { useAuth } from './AuthContext';
 
 function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: () => void; onComplete: (data: any) => void }) {
     const [formData, setFormData] = useState({
@@ -41,6 +42,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
     const [isProvinceOpen, setIsProvinceOpen] = useState(false);
     const [isCityOpen, setIsCityOpen] = useState(false);
     const [citiesList, setCitiesList] = useState<any[]>([]); // یا type مناسب خودتون
+    const { Register } = useAuth();
 
     const toggleInterest = (interest: number) => {
         console.log('toggle cityId: ' + interest)
@@ -133,7 +135,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
 
         setIsSubmitting(true);
         var response = await Register(newUser);
-        if (response.name) {
+        if (response.success) {
             onComplete(formData);
             setIsSubmitting(false);
         }

@@ -15,7 +15,7 @@ export const toastError = (message: string) => {
 
 // ایجاد instance axios
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5066/api',
+  baseURL: process.env.API_BaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -43,9 +43,9 @@ axiosInstance.interceptors.response.use(
     const status = error.response?.status;
 
     switch (status) {
-      case 400:
-        toastError("درخواست نامعتبر است");
-        break;
+      // case 400:
+      //   toastError("درخواست نامعتبر است");
+      //   break;
       case 401:
         break;
       case 403:

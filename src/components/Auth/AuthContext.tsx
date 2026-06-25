@@ -1,18 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authService, { User, AuthResponse } from '../../services/Auth/Auth';
 import { resourceLimits } from 'worker_threads';
+import { dataURLtoFile } from '../../lib/utils';
+import { RegisterResponse } from '../../types';
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     isLoggedIn: boolean;
-    login: (phoneNumber: string) => Promise<{ success: boolean; user?: User; needRegister?: boolean }>;
+    login: (phoneNumber: string) => Promise<{ success: boolean; token?: string; user?: User; needRegister?: boolean }>;
     resendOTPCode: (phoneNumber: string) => Promise<{ success: boolean, message: string }>;
     confirmLogin: (code: string, phoneNumber: string) => Promise<{ success: boolean; user?: User; needRegister?: boolean }>;
     logout: () => void;
     getAccessToken: () => string | null;
     updateUser: (user: User) => void;
+    Register: (registerData: any) => Promise<{success: boolean; user?: User; needRegister?: boolean}>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,21 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // مرحله اول: درخواست کد OTP
-    const login = async (phoneNumber: string): Promise<{ success: boolean; user?: User; needRegister?: boolean }> => {
+    const login = async (phoneNumber: string): Promise<{ success: boolean; token?: string; user?: User; needRegister?: boolean }> => {
         setIsLoading(true);
         try {
             const responseExistUser = await authService.login({ phoneNumber });
 
-            if (responseExistUser) {
+            if (responseExistUser.isExist) {
                 // کاربر وجود دارد - منتظر تایید کد هستیم
                 return {
                     success: true,
+                    token: responseExistUser.token,
                     needRegister: false
                 };
             } else {
                 // کاربر وجود ندارد - نیاز به ثبت‌نام
                 return {
                     success: true,
+                    token: responseExistUser.token,
                     needRegister: true
                 };
             }
@@ -92,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     needRegister: false
                 };
             }
+            else if (result.success) {
+                return {
+                    success: true,
+                    needRegister: false
+                };
+            }
 
             return { success: false };
         } catch (error) {
@@ -122,6 +133,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoggedIn(false);
     };
 
+    const Register = async (registerData: any): Promise<{ success: boolean; user?: User; needRegister?: boolean }> => {
+        try {
+            const result = await authService.Register(registerData);
+
+            if (result.registerData.accessToken) {
+                const newUser: User = {
+                    id: result.registerData.id,
+                    profileAddress: result.registerData.profileAddress || "",
+                    roles: result.registerData.roles || [],
+                    username: result.registerData.username,
+                    phone: result.registerData.phone
+                };
+                authService.saveAuthData(result.registerData.accessToken, result.registerData.refreshToken || '', newUser);
+                setUser(newUser);
+                setIsLoggedIn(true);
+
+                return {
+                    success: true,
+                    user: newUser,
+                    needRegister: false
+                };
+            }
+
+            return { success: false };
+
+        } catch (error) {
+            console.error('Confirm code error:', error);
+            return { success: false };
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     const getAccessToken = () => authService.getAccessToken();
 
     const updateUser = (updatedUser: User) => {
@@ -142,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
                 getAccessToken,
                 updateUser,
+                Register
             }}
         >
             {children}

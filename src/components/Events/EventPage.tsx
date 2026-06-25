@@ -241,7 +241,7 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
                 {/* بخش تصویر با ارتفاع کمتر و سایه از پایین */}
                 <div className="relative h-44 rounded-t-2xl overflow-hidden">
                   <img
-                    src={"http://localhost:5066" + event.image}
+                    src={process.env.File_BaseURL + event.image}
                     alt={event.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"

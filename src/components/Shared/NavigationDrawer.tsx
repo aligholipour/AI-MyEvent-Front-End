@@ -18,19 +18,19 @@ function NavigationDrawer({
         {
             id: 'google',
             name: 'Google Maps',
-            icon: 'http://localhost:5066/medias/maps/googlemap.png',
+            icon: `${process.env.File_BaseURL}/medias/maps/googlemap.png`,
             getUrl: (lat: number, lng: number) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
         },
         {
             id: 'neshan',
             name: 'نشان (Neshan)',
-            icon: 'http://localhost:5066/medias/maps/neshan.png',
+            icon: `${process.env.File_BaseURL}/medias/maps/neshan.png`,
             getUrl: (lat: number, lng: number) => `https://neshan.org/maps/@${lat},${lng},15z`
         },
         {
             id: 'balad',
             name: 'بلد (Balad)',
-            icon: 'http://localhost:5066/medias/maps/balad.png',
+            icon: `'${process.env.File_BaseURL}/medias/maps/balad.png`,
             getUrl: (lat: number, lng: number) => `https://balad.ir/location?lat=${lat}&lng=${lng}&zoom=15`
         },
     ];

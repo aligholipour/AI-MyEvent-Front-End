@@ -13,6 +13,7 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isExistUser, setIsExistUser] = useState(false);
+    const [token, setToken] = useState<string | undefined>('');
     // const [user, setUser] = useState<User | null>(null);
 
     // Reset step when opening
@@ -53,15 +54,17 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
                             {step === 'phone' ? (
                                 <Login
                                     onClose={onClose}
-                                    onContinue={(num, isNew) => {
+                                    onContinue={(num, isNew, token) => {
                                         setPhoneNumber(num);
                                         setIsExistUser(isNew);
+                                        setToken(token);
                                         setStep('otp');
                                     }}
                                 />
                             ) : (
                                 <StepOTP
                                     phoneNumber={phoneNumber}
+                                    token={token}
                                     onBack={() => setStep('phone')}
                                     onSuccess={(loggedInUser) => {
                                         if (!isExistUser) {

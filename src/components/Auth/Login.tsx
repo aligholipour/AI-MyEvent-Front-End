@@ -5,7 +5,7 @@ import { User } from '../../services/Auth/Auth';
 
 function Login({ onClose, onContinue }: {
   onClose: () => void;
-  onContinue: (num: string, isExist: boolean) => void;
+  onContinue: (num: string, isExist: boolean, token?: string) => void;
 }) {
   const [phoneNumber, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,9 +29,9 @@ function Login({ onClose, onContinue }: {
       
       if (result.success) {
         if (result.needRegister) {
-          onContinue(phoneNumber, false);
+          onContinue(phoneNumber, false, result.token);
         } else  {
-          onContinue(phoneNumber, true);
+          onContinue(phoneNumber, true, result.token);
         }
       } else {
         setError('خطا در ارتباط با سرور');

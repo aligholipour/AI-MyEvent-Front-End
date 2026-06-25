@@ -103,8 +103,12 @@ function CustomerEventsPage({
     try {
       const result = await cancelRegistration(eventToCancel);
       if (result.success) {
-        // حذف رویداد از لیست
-        setRegisteredEvents(prev => prev.filter(e => e.id !== eventToCancel));
+        // setRegisteredEvents(prev => prev.filter(e => e.id !== eventToCancel));
+        setRegisteredEvents(prev => prev.map(event =>
+          event.id === eventToCancel
+            ? { ...event, isCanceled: true }
+            : event
+        ));
       }
     } catch (error) {
       console.error('Error canceling registration:', error);
@@ -192,51 +196,72 @@ function CustomerEventsPage({
             className="px-6 space-y-4">
             {registeredEvents.length > 0 ? (
               <>
-                {registeredEvents.map(event => (
-                  <div key={event.id} className="group relative">
-                    <div
-                      className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-gray-100 transition-all cursor-pointer"
-                      onClick={() => onSelectEvent(event.id.toString())}>
-                      <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                        <img src={"http://localhost:5066" + event.image} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
-                        <p className="text-[10px] font-bold text-gray-400 mt-1">{event.date}</p>
-                        <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
-                          <Timer className="w-3 h-3" />
-                          <span className="text-gray-500">{event.eventTime}</span>
-                        </div>
-                        <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
-                          <MapPin className="w-3 h-3" />
-                          <span className="text-gray-500">{event.location}</span>
-                        </div>
-                      </div>
+                {registeredEvents.map(event => {
+                  const now = new Date();
+
+                  const eventStarted =
+                    new Date(event.startTime!) <= now;
+
+                  const eventFinished =
+                    new Date(event.endTime!) <= now;
+
+                  return (
+                    <div key={event.id} className="group relative">
                       <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEventToCancel(event.id);
-                        setIsCancelConfirmOpen(true);
-                      }}
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
-                        <div className="text-[10px] font-black p-1 text-red-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
-                          لغو ثبت نام
-                          <ChevronLeft className="w-3 h-3" />
+                        className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-gray-100 transition-all cursor-pointer"
+                        onClick={() => onSelectEvent(event.id.toString())}>
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                          <img src={process.env.File_BaseURL + event.image} alt="" className="w-full h-full object-cover" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                          <p className="text-[10px] font-bold text-gray-400 mt-1">{event.date}</p>
+                          <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                            <Timer className="w-3 h-3" />
+                            <span className="text-gray-500">{event.eventTime}</span>
+                          </div>
+                          <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-gray-500">{event.location}</span>
+                          </div>
+                          <div className="flex items-center text-gray-500 gap-1 mt-2 text-[10px] font-black text-[#ED1C24]">
+                            <User className="w-3 h-3" />
+                            <span className="text-gray-500">برگزارکننده: {event.organizer}</span>
+                          </div>
+                        </div>
+
+                        {event.isCanceled ? (
+                          <div className="text-[10px] font-black p-1 text-red-400">
+                            ثبت‌نام شما لغو شده است
+                          </div>
+                        ) : eventFinished ? (
+                          <div className="text-[10px] font-black p-1 text-gray-500">
+                            رویداد به پایان رسیده است
+                          </div>
+                        ) : eventStarted ? (
+                          <div className="text-[10px] font-black p-1 text-amber-500">
+                            رویداد در حال برگزاری است
+                          </div>
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEventToCancel(event.id);
+                              setIsCancelConfirmOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm"
+                          >
+                            <div className="text-[10px] font-black p-1 text-red-400 flex items-center gap-1">
+                              لغو ثبت‌نام
+                              <ChevronLeft className="w-3 h-3" />
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
-                    
-                    {/* <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEventToCancel(event.id);
-                        setIsCancelConfirmOpen(true);
-                      }}
-                      className="absolute top-2 left-2 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm">
-                      <X className="w-4 h-4" />
-                    </button> */}
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* دکمه بارگذاری بیشتر */}
                 {registeredHasMore && (
@@ -289,11 +314,11 @@ function CustomerEventsPage({
                       className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all cursor-pointer"
                       onClick={() => onSelectEvent(event.id.toString())}>
                       <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
-                        <img src={"http://localhost:5066" + event.image} alt="" className="w-full h-full object-cover" />
-                        {!event.isConfirmed && (
+                        <img src={process.env.File_BaseURL + event.image} alt="" className="w-full h-full object-cover" />
+                        {event.status !== 2 && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-                            <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}>
-                              {event.status === 'rejected' ? 'رد شده' : 'منتظر تایید'}
+                            <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 3 ? 'bg-red-500' : 'bg-amber-500'}`}>
+                              {event.status === 3 ? 'رد شده' : 'منتظر تایید'}
                             </span>
                           </div>
                         )}
@@ -301,10 +326,10 @@ function CustomerEventsPage({
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' : (event.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
-                            {event.isConfirmed ? 'تایید شده' : (event.status === 'rejected' ? 'رد شده' : 'در انتظار بررسی')}
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.status === 2 ? 'bg-emerald-50 text-emerald-600' : (event.status === 3 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
+                            {event.status === 2 ? 'تایید شده' : (event.status === 3 ? 'رد شده' : 'در انتظار بررسی')}
                           </span>
-                          {event.isDisabled && (
+                          {event.isActive && (
                             <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-600">غیرفعال</span>
                           )}
                         </div>
@@ -322,19 +347,34 @@ function CustomerEventsPage({
                       {/* <ChevronLeft className="w-5 h-5 text-gray-300" /> */}
                     </div>
 
-                    {event.status === 'rejected' && (
+                    {event.status === 3 && (
                       <div className="bg-red-50 rounded-2xl p-4 border border-red-100 space-y-3">
                         <div className="flex items-center gap-2 text-red-600">
                           <AlertCircle className="w-4 h-4" />
                           <span className="text-[10px] font-black">علت رد شدن توسط ناظر</span>
                         </div>
-                        <p className="text-xs font-bold text-red-500 leading-relaxed italic pr-2 border-r-2 border-red-200">
-                          {event.rejectionReason || 'توضیحات بیشتری ثبت نشده است.'}
-                        </p>
+
+                        {event.reasons && event.reasons.length > 0 ? (
+                          event.reasons.map((reason, index) => (
+                            <div key={index} className="space-y-1">
+                              <p className="text-xs font-bold text-black-500 leading-relaxed italic pr-2 border-r-2 border-red-200">
+                                {reason.reason || 'توضیحات بیشتری ثبت نشده است.'}
+                              </p>
+                              {reason.createDateTime && (
+                                <p className="text-[9px] font-bold text-black-700 pr-2">
+                                  تاریخ ثبت: {new Date(reason.createDateTime).toLocaleDateString('fa-IR')}
+                                </p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs font-bold text-black-500 leading-relaxed italic pr-2 border-r-2 border-red-200">
+                            توضیحات بیشتری ثبت نشده است.
+                          </p>
+                        )}
                         <button
                           onClick={() => onReRequestApproval?.(event.id.toString())}
-                          className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
-                        >
+                          className="w-full cursor-pointer bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-[10px] font-black hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm">
                           درخواست بررسی مجدد رویداد
                         </button>
                       </div>

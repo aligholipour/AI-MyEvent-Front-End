@@ -10,7 +10,10 @@ export default defineConfig(({mode}) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GOOGLE_MAPS_PLATFORM_KEY': JSON.stringify(env.GOOGLE_MAPS_PLATFORM_KEY || env.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''),
-      'process.env.API_BaseURL': JSON.stringify("http://localhost:5066/api")
+      // 'process.env.API_BaseURL': JSON.stringify("https://myeventapi.aligholipour.ir/api"),
+      'process.env.API_BaseURL': JSON.stringify("http://localhost:5066/api"),
+      // 'process.env.File_BaseURL': JSON.stringify("https://myeventapi.aligholipour.ir")
+      'process.env.File_BaseURL': JSON.stringify("http://localhost:5066")
     },
     resolve: {
       alias: {
@@ -18,8 +21,6 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

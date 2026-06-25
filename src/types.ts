@@ -28,10 +28,10 @@ export interface AppEvent {
   lat?: number;
   lng?: number;
   categoryId: number | null;
-  status?: 'pending' | 'approved' | 'rejected';
+  status: number;
   rejectionReason?: string;
-  isConfirmed?: boolean;
-  isDisabled?: boolean;
+  isApprove?: boolean;
+  isActive?: boolean;
   description?: string;
   interests?: number[];
   startTime?: string;
@@ -46,7 +46,13 @@ export interface AppEvent {
   isOnline?: boolean;
   onlineLink?: string;
   address?: string;
-  eventTime: string
+  eventTime: string;
+  reasons?: CustomerBahamRejected[];
+  isCanceled: boolean;
+}
+export interface CustomerBahamRejected {
+  reason: string;
+  createDateTime: string;
 }
 
 export interface AppCategory {
@@ -59,7 +65,7 @@ export interface AppCategory {
 export interface AppUsers {
   id: number;
   name: string;
-  title: string;
+  jobTitle: string;
   rating: number;
   badge: string;
   image: string;
@@ -127,7 +133,17 @@ export interface RegisterRequest {
   favouriteIds: number[],
   profileImageAddress: string
 }
-export interface EventDetailForAdminResponse{
+export interface RegisterResponse {
+  id: number,
+  accessToken: string,
+  refreshToken: string,
+  profileAddress: string,
+  fullName: string,
+  username: string,
+  roles: string[],
+  phone: string
+}
+export interface EventDetailForAdminResponse {
   id: number
   title: string,
   description: string,
@@ -139,14 +155,15 @@ export interface EventDetailForAdminResponse{
   capacity: string,
   isOnline: boolean,
   city: string,
-  isApprove: boolean,
+  isApproved: boolean,
+  status: number,
   isFree: boolean,
   isActive: boolean,
   price: string,
   category: string,
   favourites: string[]
 }
-export interface UserCityResponse{
+export interface UserCityResponse {
   cityId: number,
   cityName: string
 }

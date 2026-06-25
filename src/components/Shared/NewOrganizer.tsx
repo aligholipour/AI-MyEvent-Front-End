@@ -53,11 +53,15 @@ function NewOrganizer({ isLoading }: { isLoading?: boolean }) {
     fetchUsers();
   }, []);
 
+  if (userList.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-8 bg-gray-50/30 overflow-hidden" dir="rtl">
       <div className="px-6 flex items-center justify-between mb-6">
         <h2 className="text-xl font-black text-gray-900">میزبان های دورهمی</h2>
-        <button className="text-[#ED1C24] font-black text-xs">مشاهده همه</button>
+        {/* <button className="text-[#ED1C24] font-black text-xs">مشاهده همه</button> */}
       </div>
 
       <div
