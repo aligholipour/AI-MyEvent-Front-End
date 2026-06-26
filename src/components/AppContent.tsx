@@ -22,6 +22,7 @@ import CitySelectionDrawer from "./Shared/CitySelectionDrawer";
 import FooterItem from "./Shared/FooterItem";
 import EnhancedHeroSlider from "./Shared/EnhancedHeroSlider";
 import { useCity } from "./Shared/CityContext";
+import { AUTH_REQUIRED_EVENT } from "../services/Auth/authEvents";
 
 function AppContent() {
 
@@ -87,13 +88,16 @@ function AppContent() {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        const handleAuthRequired = () => {
+            setIsRegisterPageOpen(false);
+            setIsCreateEventOpen(false);
+            setIsAuthDrawerOpen(true);
+        };
 
-
-
-
-
-
-
+        window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
+        return () => window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
+    }, []);
 
     const [activeFilters, setActiveFilters] = useState({
         categoryId: undefined as number | undefined,
@@ -224,9 +228,10 @@ function AppContent() {
                             onBack={() => setSelectedEventId(null)}
                             isLoggedIn={isLoggedIn}
                             onOpenAuth={() => setIsAuthDrawerOpen(true)}
-                            registeredEventIds={registeredEventIds}
+                            // registeredEventIds={registeredEventIds}
                             onRegister={(id) => setRegisteredEventIds(prev => [...prev, id])}
-                            onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))} />
+                        // onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))} 
+                        />
                     ) : activeTab === 'profile' ? (
                         <ProfilePage
                             key="profile"

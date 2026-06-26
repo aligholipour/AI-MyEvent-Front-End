@@ -1,5 +1,6 @@
 import { dataURLtoFile } from "@/src/lib/utils";
 import { RegisterResponse } from "@/src/types";
+import { notifyAuthRequired } from "./authEvents";
 
 export interface LoginRequest {
     phoneNumber: string
@@ -33,6 +34,72 @@ class AuthService {
     private userKey = 'user';
     private isLoggedInKey = 'is_logged_in';
     private baseUrl = process.env.API_BaseURL + '/User';
+    private refreshTokenRequest: Promise<string | null> | null = null;
+
+    private decodeJwtPayload(token: string): { exp?: number } | null {
+        try {
+            const payload = token.split('.')[1];
+            if (!payload) return null;
+
+            const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedPayload = normalizedPayload.padEnd(
+                normalizedPayload.length + ((4 - normalizedPayload.length % 4) % 4),
+                '='
+            );
+
+            return JSON.parse(atob(paddedPayload));
+        } catch {
+            return null;
+        }
+    }
+
+    private isTokenExpired(token: string, clockSkewSeconds = 30): boolean {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload?.exp) return false;
+
+        return payload.exp <= Math.floor(Date.now() / 1000) + clockSkewSeconds;
+    }
+
+    private requireLogin() {
+        this.logout();
+        notifyAuthRequired();
+    }
+
+    private hasStoredSession(): boolean {
+        return Boolean(
+            this.getAccessToken() ||
+            this.getRefreshToken() ||
+            this.getUser() ||
+            localStorage.getItem(this.isLoggedInKey) === 'true'
+        );
+    }
+
+    private extractTokens(data: any): { accessToken?: string; refreshToken?: string } {
+        const tokenData = data?.data ?? data;
+
+        return {
+            accessToken: tokenData?.accessToken ?? tokenData?.AccessToken ?? tokenData?.token ?? tokenData?.Token,
+            refreshToken: tokenData?.refreshToken ?? tokenData?.RefreshToken,
+        };
+    }
+
+    private async requestRefreshToken(refreshToken: string): Promise<Response> {
+        const endpoint = `${this.baseUrl}/refresh`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refreshToken }),
+        });
+
+        if (response.status !== 404 && response.status !== 405) {
+            return response;
+        }
+
+        return response as Response;
+    }
 
     setTokens(accessToken: string, refreshToken: string) {
         localStorage.setItem(this.accessTokenKey, accessToken);
@@ -66,6 +133,23 @@ class AuthService {
         return !!this.getAccessToken() && localStorage.getItem(this.isLoggedInKey) === 'true';
     }
 
+    async ensureValidAccessToken(): Promise<string | null> {
+        const accessToken = this.getAccessToken();
+        if (accessToken && !this.isTokenExpired(accessToken)) {
+            return accessToken;
+        }
+
+        const refreshToken = this.getRefreshToken();
+        if (!refreshToken) {
+            if (this.hasStoredSession()) {
+                this.requireLogin();
+            }
+            return null;
+        }
+
+        return this.refreshToken();
+    }
+
     // ذخیره کامل اطلاعات پس از لاگین موفق
     saveAuthData(accessToken: string, refreshToken: string, user: User) {
         this.setTokens(accessToken, refreshToken);
@@ -92,29 +176,48 @@ class AuthService {
 
     async refreshToken(): Promise<string | null> {
         const refreshToken = this.getRefreshToken();
-        if (!refreshToken) return null;
+        if (!refreshToken) {
+            if (this.hasStoredSession()) {
+                this.requireLogin();
+            }
+            return null;
+        }
 
-        try {
-            const response = await fetch(`${this.baseUrl}/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ refreshToken }),
-            });
+        if (this.refreshTokenRequest) {
+            return this.refreshTokenRequest;
+        }
+
+        this.refreshTokenRequest = (async () => {
+            const response = await this.requestRefreshToken(refreshToken);
+
+            if (response.status === 401 || response.status === 403) {
+                this.requireLogin();
+                return null;
+            }
 
             if (!response.ok) {
-                this.logout();
                 return null;
             }
 
             const data = await response.json();
-            this.setTokens(data.accessToken, data.refreshToken);
-            return data.accessToken;
+            const tokens = this.extractTokens(data);
+
+            if (!tokens.accessToken) {
+                this.requireLogin();
+                return null;
+            }
+
+            this.setTokens(tokens.accessToken, tokens.refreshToken ?? refreshToken);
+            return tokens.accessToken;
+        })();
+
+        try {
+            return await this.refreshTokenRequest;
         } catch (error) {
             console.error('Refresh token failed:', error);
-            this.logout();
             return null;
+        } finally {
+            this.refreshTokenRequest = null;
         }
     }
 

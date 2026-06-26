@@ -1,4 +1,5 @@
 import { Province, City, UserCityResponse } from '../types';
+import { authenticatedFetch } from './Auth/authenticatedFetch';
 
 export const STATIC_Provinces: Province[] = [
   { id: 1, name: 'تهران' },
@@ -93,12 +94,10 @@ export async function getCityForHomePage() {
 }
 
 export const getUserCity = async (): Promise<UserCityResponse> => {
-  const token = localStorage.getItem('accessToken');
-
   try {
-    const res = await fetch(`${process.env.API_BaseURL}/User/GetUserCity`, {
+    const res = await authenticatedFetch(`${process.env.API_BaseURL}/User/GetUserCity`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

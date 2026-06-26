@@ -5,6 +5,7 @@ import { Participant } from '../components/Events/EventDetails';
 import axiosInstance from './Auth/AxiosConfigs';
 import { EventDetailForAdminResponse } from '../types';
 import { User } from './Auth/Auth';
+import { authenticatedFetch } from './Auth/authenticatedFetch';
 
 export interface UserEventsResponse {
   registeredEvents: AppEvent[];
@@ -95,13 +96,8 @@ export async function createEvent(eventData: any) {
       formData.append('image', imageFile);
     }
 
-    const token = localStorage.getItem('access_token');
-
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/Add`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/Add`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
       body: formData,
     });
 
@@ -254,14 +250,11 @@ export async function registerForEvent(
 ): Promise<{ success: boolean; message: string }> {
   try {
     // const response = await axiosInstance.post(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`);
-    const token = localStorage.getItem('access_token');
-
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/Register/${bahamId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
       }
     });
 
@@ -282,18 +275,16 @@ export async function getRegisteredEvents(
   request: GetUserEventsRequest = {}
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
-    const token = localStorage.getItem('access_token');
     const params = new URLSearchParams();
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
     if (request.status && request.status !== 'all') params.append('status', request.status);
 
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/CustomerGuestBaham?${params.toString()}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/CustomerGuestBaham?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -318,18 +309,16 @@ export async function getHostedEvents(
   request: GetUserEventsRequest = {}
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
-    const token = localStorage.getItem('access_token');
     const params = new URLSearchParams();
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
     if (request.status && request.status !== 'all') params.append('status', request.status);
 
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/CustomerHostBaham?${params.toString()}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/CustomerHostBaham?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -354,14 +343,11 @@ export async function cancelRegistration(
   bahamId: number
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const token = localStorage.getItem('access_token');
-
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/CancelRegistration/${bahamId}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/CancelRegistration/${bahamId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -382,17 +368,15 @@ export async function getEventsFormAdminPage(
   request: GetEventsForAdminPageRequest
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
   try {
-    const token = localStorage.getItem('access_token');
     const params = new URLSearchParams();
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
     if (request.pageSize) params.append('pageSize', request.pageSize.toString());
 
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/EventsForAdminPage?${params.toString()}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/EventsForAdminPage?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -416,14 +400,11 @@ export async function getEventsFormAdminPage(
 export async function getEventDetailForAdmin(bahamId: number)
   : Promise<{ data: EventDetailForAdminResponse; }> {
   try {
-    const token = localStorage.getItem('access_token');
-
-    const response = await fetch(`${process.env.API_BaseURL}/Baham/EventDetailForAdminPage/${bahamId}`, {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/EventDetailForAdminPage/${bahamId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -459,14 +440,11 @@ export async function approveEvent(bahamId: number)
 export async function rejectEvent(request: RejectEventRequest)
   : Promise<{ success: boolean; message: string }> {
 
-  const token = localStorage.getItem('access_token');
-
-  const response = await fetch(`${process.env.API_BaseURL}/Baham/RejectEvent`, {
+  const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/RejectEvent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
     },
     body: JSON.stringify(request)
   });

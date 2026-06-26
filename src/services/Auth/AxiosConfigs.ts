@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import authService from '../Auth/Auth';
+import { notifyAuthRequired } from './authEvents';
 
 let showToast: (message: string, type?: "success" | "error") => void;
 
@@ -23,8 +24,13 @@ const axiosInstance = axios.create({
 
 // Interceptor برای افزودن توکن به درخواست‌ها
 axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = authService.getAccessToken();
+  async (config: InternalAxiosRequestConfig) => {
+    const token = await authService.ensureValidAccessToken();
+    if (!token) {
+      notifyAuthRequired();
+      return Promise.reject(new Error('Authentication is required'));
+    }
+
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -77,7 +83,7 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // اگر refresh token هم失效 شد، کاربر را logout کن
         authService.logout();
-        window.location.href = '/login';
+        notifyAuthRequired();
         return Promise.reject(refreshError);
       }
     }

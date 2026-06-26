@@ -59,19 +59,21 @@ export const CityProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const loadCity = async () => {
             setIsLoading(true);
 
-            const hasLocalData = loadFromLocalStorage();
+            loadFromLocalStorage();
 
-            try {
-                const userCity = await getUserCity();
-                if (userCity && userCity.cityId && userCity.cityName) {
+            if (isLoggedIn) {
+                try {
+                    const userCity = await getUserCity();
+                    if (userCity && userCity.cityId && userCity.cityName) {
                     // اگر اطلاعات سرور با localStorage متفاوت است، به‌روزرسانی کن
-                    const storedCityId = localStorage.getItem(STORAGE_CITY_ID_KEY);
-                    if (storedCityId === "0" && userCity.cityId !== parseInt(storedCityId || '0', 10)) {
-                        handleSetSelectedCity(userCity.cityName, userCity.cityId);
+                        const storedCityId = localStorage.getItem(STORAGE_CITY_ID_KEY);
+                        if (storedCityId === "0" && userCity.cityId !== parseInt(storedCityId || '0', 10)) {
+                            handleSetSelectedCity(userCity.cityName, userCity.cityId);
+                        }
                     }
+                } catch (error) {
+                    console.error('Error loading city from server:', error);
                 }
-            } catch (error) {
-                console.error('Error loading city from server:', error);
             }
 
             if (isMounted.current) {
@@ -86,7 +88,7 @@ export const CityProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => {
             isMounted.current = false;
         };
-    }, []);
+    }, [isLoggedIn, loadFromLocalStorage, handleSetSelectedCity]);
 
     useEffect(() => {
         if (!initialLoadDone.current || !isLoggedIn) {

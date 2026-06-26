@@ -3,6 +3,7 @@ import authService, { User, AuthResponse } from '../../services/Auth/Auth';
 import { resourceLimits } from 'worker_threads';
 import { dataURLtoFile } from '../../lib/utils';
 import { RegisterResponse } from '../../types';
+import { AUTH_REQUIRED_EVENT } from '../../services/Auth/authEvents';
 
 interface AuthContextType {
     user: User | null;
@@ -42,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         checkAuth();
+    }, []);
+
+    useEffect(() => {
+        const handleAuthRequired = () => {
+            setUser(null);
+            setIsLoggedIn(false);
+            setIsLoading(false);
+        };
+
+        window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
+        return () => window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
     }, []);
 
     // مرحله اول: درخواست کد OTP

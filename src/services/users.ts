@@ -1,5 +1,6 @@
 import { AppUsers } from '../types';
 import { dataURLtoFile } from '../lib/utils';
+import { authenticatedFetch } from './Auth/authenticatedFetch';
 
 export const STATIC_EVENTS: AppUsers[] = [
   {
@@ -83,14 +84,11 @@ export async function getUserDetailForAdmin(userId: number
 
 ): Promise<{ data: GetUserDetailForAdminResponse }> {
 
-  const token = localStorage.getItem('access_token');
-
-  const response = await fetch(`${process.env.API_BaseURL}/User/UserDetailForAdmin/${userId}`, {
+  const response = await authenticatedFetch(`${process.env.API_BaseURL}/User/UserDetailForAdmin/${userId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`
     },
   });
 

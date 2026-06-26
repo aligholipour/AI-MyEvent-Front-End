@@ -230,10 +230,11 @@ function CreateEvent({ onBack }: {
             isFree: !formData.isPaid,
             price: formData.isPaid ? `${formData.price} تومان` : 'رایگان',
             isApprove: false, // New events need confirmation
-            status: 'pending',
+            status: 1,
             isActive: true, // Pending events are disabled by default
             eventTime: '',
-            cityId: formData.cityId
+            cityId: formData.cityId,
+            isCanceled: false
         };
 
         console.log(newEvent);
