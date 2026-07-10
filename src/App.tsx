@@ -23,6 +23,7 @@ import {
   User as UserIcon, 
   ChevronLeft, 
   ChevronRight, 
+  Edit3, 
   MapPin, 
   Clock,
   Briefcase,
@@ -71,7 +72,8 @@ import {
   Inbox,
   Filter
 } from 'lucide-react';
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import Cropper, { Area, Point } from 'react-easy-crop';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -648,10 +650,18 @@ export default function App() {
   const [selectedCity, setSelectedCity] = useState('تهران');
   const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AppEvent | null>(null);
 
   // Helper to open create event page uniquely
   const openCreateEvent = () => {
     setSelectedEventId(null);
+    setEditingEvent(null);
+    setIsCreateEventOpen(true);
+  };
+
+  const openEditEvent = (event: AppEvent) => {
+    setSelectedEventId(null);
+    setEditingEvent(event);
     setIsCreateEventOpen(true);
   };
 
@@ -673,6 +683,13 @@ export default function App() {
 
   const [allEvents, setAllEvents] = useState<AppEvent[]>(EVENTS);
   const [allUsers, setAllUsers] = useState<AppUser[]>(USERS_DATA);
+  const [eventRegistrations, setEventRegistrations] = useState<Record<string, string[]>>({
+    '1': ['1', '2', '3'],
+    '2': ['2', '4'],
+    '3': ['1', '3', '4'],
+    '4': ['2', '3'],
+    '5': ['1', '4'],
+  });
 
   const filteredEvents = searchQuery 
     ? allEvents.filter(e => {
@@ -713,9 +730,19 @@ export default function App() {
         <AnimatePresence mode="wait">
           {isCreateEventOpen ? (
             <CreateEventPage 
-              key="create-event"
-              onBack={() => setIsCreateEventOpen(false)}
-              onSave={(newEvent) => setAllEvents(prev => [newEvent, ...prev])}
+              key={editingEvent ? `edit-event-${editingEvent.id}` : "create-event"}
+              editingEvent={editingEvent}
+              onBack={() => {
+                setIsCreateEventOpen(false);
+                setEditingEvent(null);
+              }}
+              onSave={(savedEvent) => {
+                if (editingEvent) {
+                  setAllEvents(prev => prev.map(e => e.id === savedEvent.id ? savedEvent : e));
+                } else {
+                  setAllEvents(prev => [savedEvent, ...prev]);
+                }
+              }}
             />
           ) : isRegisterPageOpen ? (
             <RegisterPage 
@@ -747,8 +774,22 @@ export default function App() {
               isLoggedIn={isLoggedIn}
               onOpenAuth={() => setIsAuthDrawerOpen(true)}
               registeredEventIds={registeredEventIds}
-              onRegister={(id) => setRegisteredEventIds(prev => [...prev, id])}
-              onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
+              onRegister={(id) => {
+                setRegisteredEventIds(prev => [...prev, id]);
+                const userId = currentUser?.id || '1';
+                setEventRegistrations(prev => ({
+                  ...prev,
+                  [id]: Array.from(new Set([...(prev[id] || []), userId]))
+                }));
+              }}
+              onUnregister={(id) => {
+                setRegisteredEventIds(prev => prev.filter(eid => eid !== id));
+                const userId = currentUser?.id || '1';
+                setEventRegistrations(prev => ({
+                  ...prev,
+                  [id]: (prev[id] || []).filter(uid => uid !== userId)
+                }));
+              }}
             />
           ) : activeTab === 'profile' ? (
             <ProfilePage 
@@ -1022,9 +1063,17 @@ export default function App() {
                   onSelectEvent={(id) => setSelectedEventId(id)} 
                   events={allEvents}
                   registeredEventIds={registeredEventIds}
-                  onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))}
+                  onUnregister={(id) => {
+                    setRegisteredEventIds(prev => prev.filter(eid => eid !== id));
+                    const userId = currentUser?.id || '1';
+                    setEventRegistrations(prev => ({
+                      ...prev,
+                      [id]: (prev[id] || []).filter(uid => uid !== userId)
+                    }));
+                  }}
                   onNavigate={navigateToTab}
                   onCreateEvent={openCreateEvent}
+                  onEditEvent={openEditEvent}
                   onReRequestApproval={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'pending', isConfirmed: false, rejectionReason: '' } : e))}
                 />
               ) : activeTab === 'admin' ? (
@@ -1032,6 +1081,7 @@ export default function App() {
                   key="admin"
                   events={allEvents}
                   users={allUsers}
+                  eventRegistrations={eventRegistrations}
                   onConfirm={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isConfirmed: true, status: 'approved', isDisabled: false } : e))}
                   onReject={(id, reason) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isConfirmed: false, status: 'rejected', rejectionReason: reason, isDisabled: true } : e))}
                   onDisable={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, isDisabled: !e.isDisabled } : e))}
@@ -1390,12 +1440,132 @@ function MapPickerDrawer({
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [address, setAddress] = useState('');
   
-  const handleMapClick = (e: any) => {
-    const lat = e.detail.latLng.lat;
-    const lng = e.detail.latLng.lng;
-    setSelectedLocation({ lat, lng });
-    // In a real app, you'd use a geocoding service here
-    setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (!containerRef.current || mapRef.current) return;
+
+      const initialLat = selectedLocation?.lat || 35.6892;
+      const initialLng = selectedLocation?.lng || 51.3890;
+
+      const map = L.map(containerRef.current, {
+        center: [initialLat, initialLng],
+        zoom: 13,
+        zoomControl: false,
+      });
+
+      mapRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      const customMarkerIcon = L.divIcon({
+        html: `<div class="relative flex items-center justify-center">
+                 <div class="absolute w-10 h-10 bg-red-500/30 rounded-full animate-ping"></div>
+                 <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+                   <div class="w-3 h-3 bg-white rounded-full"></div>
+                 </div>
+               </div>`,
+        className: '',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      });
+
+      if (selectedLocation) {
+        markerRef.current = L.marker([selectedLocation.lat, selectedLocation.lng], { icon: customMarkerIcon }).addTo(map);
+      }
+
+      const reverseGeocode = async (lat: number, lng: number) => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fa`);
+          const data = await res.json();
+          if (data && data.display_name) {
+            setAddress(data.display_name);
+          } else {
+            setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+          }
+        } catch (err) {
+          setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        }
+      };
+
+      map.on('click', (e) => {
+        const { lat, lng } = e.latlng;
+        setSelectedLocation({ lat, lng });
+        
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+        } else {
+          markerRef.current = L.marker([lat, lng], { icon: customMarkerIcon }).addTo(map);
+        }
+        
+        reverseGeocode(lat, lng);
+      });
+
+      map.invalidateSize();
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isOpen]);
+
+  const handleMyLocation = () => {
+    if (navigator.geolocation && mapRef.current) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        mapRef.current?.flyTo([lat, lng], 15);
+        setSelectedLocation({ lat, lng });
+        
+        const customMarkerIcon = L.divIcon({
+          html: `<div class="relative flex items-center justify-center">
+                   <div class="absolute w-10 h-10 bg-red-500/30 rounded-full animate-ping"></div>
+                   <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+                     <div class="w-3 h-3 bg-white rounded-full"></div>
+                   </div>
+                 </div>`,
+          className: '',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+        });
+
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+        } else if (mapRef.current) {
+          markerRef.current = L.marker([lat, lng], { icon: customMarkerIcon }).addTo(mapRef.current);
+        }
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fa`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.display_name) {
+              setAddress(data.display_name);
+            } else {
+              setAddress(`موقعیت شما در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+            }
+          })
+          .catch(() => {
+            setAddress(`موقعیت شما در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+          });
+      }, () => {
+        alert("امکان دریافت موقعیت شما وجود ندارد.");
+      });
+    }
   };
 
   const handleConfirm = () => {
@@ -1409,8 +1579,8 @@ function MapPickerDrawer({
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" />
-          <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[110] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" dir="rtl">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/40 z-[300] backdrop-blur-[2px]" />
+          <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[310] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" dir="rtl">
             <div className="p-6 border-b border-gray-50 flex items-center justify-between">
                <h3 className="text-xl font-black text-gray-900">انتخاب لوکیشن</h3>
                <button onClick={onClose} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
@@ -1419,56 +1589,50 @@ function MapPickerDrawer({
             </div>
             
             <div className="flex-1 relative">
-              {!hasValidKey ? (
-                <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center p-10 text-center gap-4">
-                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-amber-500">
-                    <AlertCircle className="w-8 h-8" />
-                  </div>
-                  <h4 className="text-lg font-black text-gray-900">اتصال به نقشه برقرار نشد</h4>
-                  <p className="text-sm font-bold text-gray-400">لطفا تنظیمات کلید API نقشه گوگل را بررسی کنید.</p>
-                  <button onClick={() => {
-                    setSelectedLocation({ lat: 35.6892, lng: 51.3890 });
-                    setAddress("تهران، میدان آزادی (دمو)");
-                  }} className="mt-4 px-6 py-3 bg-gray-900 text-white rounded-xl text-xs font-black">انتخاب لوکیشن فرضی (دمو)</button>
-                </div>
-              ) : (
-                <APIProvider apiKey={API_KEY} version="weekly">
-                  <Map
-                    defaultCenter={{ lat: 35.6892, lng: 51.3890 }}
-                    defaultZoom={13}
-                    mapId="DEMO_MAP_ID"
-                    onClick={handleMapClick}
-                    internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
-                    style={{ width: '100%', height: '100%' }}
-                  >
-                    {selectedLocation && (
-                      <AdvancedMarker position={selectedLocation}>
-                        <Pin background="#ED1C24" borderColor="#fff" glyphColor="#fff" />
-                      </AdvancedMarker>
-                    )}
-                  </Map>
-                </APIProvider>
-              )}
+              <div ref={containerRef} className="w-full h-full z-0" />
+
+              {/* Custom Map Controls */}
+              <div className="absolute top-4 right-4 z-[999] flex flex-col gap-2">
+                <button 
+                  onClick={() => mapRef.current?.zoomIn()}
+                  className="w-10 h-10 bg-white hover:bg-gray-50 text-gray-800 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center font-black text-lg transition-all cursor-pointer"
+                >
+                  ＋
+                </button>
+                <button 
+                  onClick={() => mapRef.current?.zoomOut()}
+                  className="w-10 h-10 bg-white hover:bg-gray-50 text-gray-800 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center font-black text-lg transition-all cursor-pointer"
+                >
+                  －
+                </button>
+                <button 
+                  onClick={handleMyLocation}
+                  className="w-10 h-10 bg-white hover:bg-gray-50 text-blue-600 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center transition-all cursor-pointer"
+                  title="موقعیت من"
+                >
+                  <Compass className="w-5 h-5" />
+                </button>
+              </div>
               
               {address && (
-                <div className="absolute bottom-24 left-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4">
-                  <div className="w-8 h-8 bg-[#ED1C24]/10 rounded-lg flex flex-shrink-0 items-center justify-center text-[#ED1C24]">
+                <div className="absolute bottom-24 left-6 right-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-white shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4 z-[999]">
+                  <div className="w-8 h-8 bg-red-500/10 rounded-lg flex flex-shrink-0 items-center justify-center text-red-500">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <span className="text-[10px] font-black text-gray-400 uppercase block mb-0.5">آدرس انتخاب شده</span>
-                    <p className="text-xs font-bold text-gray-900 leading-relaxed">{address}</p>
+                    <p className="text-xs font-bold text-gray-900 leading-relaxed truncate-2-lines">{address}</p>
                   </div>
                 </div>
               )}
 
-              <div className="absolute bottom-6 left-6 right-6">
+              <div className="absolute bottom-6 left-6 right-6 z-[999]">
                 <button 
                   disabled={!selectedLocation}
                   onClick={handleConfirm}
-                  className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all ${
+                  className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all cursor-pointer ${
                     selectedLocation 
-                    ? 'bg-[#ED1C24] text-white shadow-[#ED1C24]/20 hover:opacity-90' 
+                    ? 'bg-red-500 text-white shadow-red-500/20 hover:opacity-90' 
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                   }`}
                 >
@@ -1578,6 +1742,328 @@ function ImageCropperDrawer({
                 className="w-full py-4 bg-[#ED1C24] text-white rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all hover:opacity-90"
               >
                 تایید و برش
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+const toFarsiNumber = (num: number | string) => {
+  return num.toString().replace(/\d/g, x => farsiDigits[parseInt(x)]);
+};
+
+const PERSIAN_MONTHS = [
+  { name: 'فروردین', id: 1 },
+  { name: 'اردیبهشت', id: 2 },
+  { name: 'خرداد', id: 3 },
+  { name: 'تیر', id: 4 },
+  { name: 'مرداد', id: 5 },
+  { name: 'شهریور', id: 6 },
+  { name: 'مهر', id: 7 },
+  { name: 'آبان', id: 8 },
+  { name: 'آذر', id: 9 },
+  { name: 'دی', id: 10 },
+  { name: 'بهمن', id: 11 },
+  { name: 'اسفند', id: 12 },
+];
+
+function PersianDatePickerDrawer({
+  isOpen,
+  onClose,
+  value,
+  onSelect,
+  title = "انتخاب تاریخ",
+  minYear = 1340,
+  maxYear = 1406
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  value: string;
+  onSelect: (val: string) => void;
+  title?: string;
+  minYear?: number;
+  maxYear?: number;
+}) {
+  const cleanVal = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+  const parts = cleanVal.split('/');
+  
+  const initialYear = parts.length === 3 ? parseInt(parts[0]) : (minYear === 1340 ? 1375 : 1405);
+  const initialMonth = parts.length === 3 ? parseInt(parts[1]) : 1;
+  const initialDay = parts.length === 3 ? parseInt(parts[2]) : 1;
+
+  const [year, setYear] = useState(initialYear);
+  const [month, setMonth] = useState(initialMonth);
+  const [day, setDay] = useState(initialDay);
+
+  useEffect(() => {
+    if (isOpen) {
+      const clean = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+      const p = clean.split('/');
+      setYear(p.length === 3 ? parseInt(p[0]) : (minYear === 1340 ? 1375 : 1405));
+      setMonth(p.length === 3 ? parseInt(p[1]) : 1);
+      setDay(p.length === 3 ? parseInt(p[2]) : 1);
+    }
+  }, [isOpen, value, minYear]);
+
+  let maxDays = 31;
+  if (month >= 7 && month <= 11) {
+    maxDays = 30;
+  } else if (month === 12) {
+    const isLeap = [1, 5, 9, 13, 17, 22, 26, 30].includes(year % 33);
+    maxDays = isLeap ? 30 : 29;
+  }
+
+  useEffect(() => {
+    if (day > maxDays) {
+      setDay(maxDays);
+    }
+  }, [month, year, maxDays, day]);
+
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
+  const days = Array.from({ length: maxDays }, (_, i) => i + 1);
+
+  const handleConfirm = () => {
+    const formattedYear = year.toString();
+    const formattedMonth = month.toString().padStart(2, '0');
+    const formattedDay = day.toString().padStart(2, '0');
+    const formattedVal = `${formattedYear}/${formattedMonth}/${formattedDay}`;
+    const farsiVal = formattedVal.replace(/\d/g, x => farsiDigits[parseInt(x)]);
+    onSelect(farsiVal);
+    onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-[4px]"
+          />
+          <motion.div
+            initial={{ y: "100%", x: "-50%" }}
+            animate={{ y: 0, x: "-50%" }}
+            exit={{ y: "100%", x: "-50%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[310] rounded-t-[32px] shadow-2xl flex flex-col h-[52vh]"
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+            
+            <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-gray-900">{title}</h2>
+                  <p className="text-[10px] font-bold text-gray-400">
+                    تاریخ انتخابی: {toFarsiNumber(year)}/{toFarsiNumber(month.toString().padStart(2, '0'))}/{toFarsiNumber(day.toString().padStart(2, '0'))} ({PERSIAN_MONTHS[month - 1].name})
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 grid grid-cols-3 gap-3 px-6 py-4 overflow-hidden h-full">
+              {/* Day */}
+              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
+                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
+                  روز
+                </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+                  {days.map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setDay(d)}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${day === d ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {toFarsiNumber(d)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Month */}
+              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
+                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
+                  ماه
+                </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+                  {PERSIAN_MONTHS.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => setMonth(m.id)}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${month === m.id ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Year */}
+              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
+                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
+                  سال
+                </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+                  {years.map(y => (
+                    <button
+                      key={y}
+                      onClick={() => setYear(y)}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${year === y ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {toFarsiNumber(y)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-50 flex-shrink-0 bg-white">
+              <button
+                onClick={handleConfirm}
+                className="w-full bg-blue-600 text-white h-12 rounded-2xl text-sm font-black shadow-lg shadow-blue-600/10 border-none cursor-pointer hover:bg-blue-700 transition-colors"
+              >
+                تایید تاریخ
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function PersianTimePickerDrawer({
+  isOpen,
+  onClose,
+  value,
+  onSelect,
+  title = "انتخاب ساعت"
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  value: string;
+  onSelect: (val: string) => void;
+  title?: string;
+}) {
+  const cleanVal = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+  const parts = cleanVal.split(':');
+  
+  const initialHour = parts.length === 2 ? parseInt(parts[0]) : 12;
+  const initialMinute = parts.length === 2 ? parseInt(parts[1]) : 0;
+
+  const [hour, setHour] = useState(initialHour);
+  const [minute, setMinute] = useState(initialMinute);
+
+  useEffect(() => {
+    if (isOpen) {
+      const clean = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+      const p = clean.split(':');
+      setHour(p.length === 2 ? parseInt(p[0]) : 12);
+      setMinute(p.length === 2 ? parseInt(p[1]) : 0);
+    }
+  }, [isOpen, value]);
+
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  const handleConfirm = () => {
+    const formattedHour = hour.toString().padStart(2, '0');
+    const formattedMinute = minute.toString().padStart(2, '0');
+    const formattedVal = `${formattedHour}:${formattedMinute}`;
+    const farsiVal = formattedVal.replace(/\d/g, x => farsiDigits[parseInt(x)]);
+    onSelect(farsiVal);
+    onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-[4px]"
+          />
+          <motion.div
+            initial={{ y: "100%", x: "-50%" }}
+            animate={{ y: 0, x: "-50%" }}
+            exit={{ y: "100%", x: "-50%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[310] rounded-t-[32px] shadow-2xl flex flex-col h-[50vh]"
+            dir="rtl"
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+            
+            <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-gray-900">{title}</h2>
+                  <p className="text-[10px] font-bold text-gray-400">
+                    ساعت انتخابی: {toFarsiNumber(hour.toString().padStart(2, '0'))}:{toFarsiNumber(minute.toString().padStart(2, '0'))}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 grid grid-cols-2 gap-4 px-6 py-4 overflow-hidden h-full">
+              {/* Hour */}
+              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
+                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
+                  ساعت
+                </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+                  {hours.map(h => (
+                    <button
+                      key={h}
+                      onClick={() => setHour(h)}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${hour === h ? 'bg-rose-500 text-white shadow-md shadow-rose-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {toFarsiNumber(h.toString().padStart(2, '0'))}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Minute */}
+              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
+                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
+                  دقیقه
+                </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
+                  {minutes.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setMinute(m)}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${minute === m ? 'bg-rose-500 text-white shadow-md shadow-rose-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {toFarsiNumber(m.toString().padStart(2, '0'))}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-50 flex-shrink-0 bg-white">
+              <button
+                onClick={handleConfirm}
+                className="w-full bg-rose-500 text-white h-12 rounded-2xl text-sm font-black shadow-lg shadow-rose-500/10 border-none cursor-pointer hover:bg-rose-600 transition-colors"
+              >
+                تایید ساعت
               </button>
             </div>
           </motion.div>
@@ -1816,6 +2302,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1946,13 +2433,14 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-gray-400 mr-1">تاریخ تولد</label>
                 <div className="relative">
-                  <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
                   <input 
                     type="text" 
+                    readOnly
+                    onClick={() => setIsDatePickerOpen(true)}
                     value={formData.birthDate}
-                    onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
                     placeholder="۱۳۷۰/۰۱/۰۱"
-                    className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all`}
+                    className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer`}
                   />
                 </div>
               </div>
@@ -2163,33 +2651,46 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
           onCropComplete={(croppedImage) => setFormData({...formData, avatar: croppedImage})}
           aspectRatio={1} // Profile is usually 1:1
         />
+
+        <PersianDatePickerDrawer
+          isOpen={isDatePickerOpen}
+          onClose={() => setIsDatePickerOpen(false)}
+          value={formData.birthDate}
+          onSelect={(val) => {
+            setFormData({...formData, birthDate: val});
+            if (errors.birthDate) setErrors({...errors, birthDate: ''});
+          }}
+          title="انتخاب تاریخ تولد"
+          minYear={1340}
+          maxYear={1406}
+        />
     </motion.div>
   );
 }
 
-function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (event: any) => void; key?: React.Key }) {
+function CreateEventPage({ onBack, onSave, editingEvent }: { onBack: () => void; onSave: (event: any) => void; editingEvent?: AppEvent | null; key?: React.Key }) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    interests: [] as string[],
-    address: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    isPaid: false,
-    price: '',
-    minCapacity: '',
-    maxCapacity: '',
+    title: editingEvent?.title || '',
+    description: editingEvent?.description || '',
+    category: editingEvent?.category || '',
+    interests: editingEvent?.interests || [] as string[],
+    address: editingEvent?.address || '',
+    date: editingEvent?.date || '',
+    startTime: editingEvent?.startTime || '',
+    endTime: editingEvent?.endTime || '',
+    isPaid: editingEvent ? !editingEvent.isFree : false,
+    price: editingEvent?.price ? (editingEvent.price === 'رایگان' ? '' : editingEvent.price.replace(' تومان', '')) : '',
+    minCapacity: editingEvent?.minCapacity || '',
+    maxCapacity: editingEvent?.maxCapacity || '',
     hasWaitlist: false,
-    minAge: '',
-    maxAge: '',
-    provinceId: '',
-    city: '',
-    isOnline: false,
-    onlineLink: '',
-    image: null as string | null,
-    location: null as { lat: number; lng: number } | null,
+    minAge: editingEvent?.minAge || '',
+    maxAge: editingEvent?.maxAge || '',
+    provinceId: editingEvent?.provinceId || '',
+    city: editingEvent?.city || '',
+    isOnline: editingEvent?.isOnline || false,
+    onlineLink: editingEvent?.onlineLink || '',
+    image: editingEvent?.image || null as string | null,
+    location: editingEvent ? (editingEvent.lat && editingEvent.lng ? { lat: editingEvent.lat, lng: editingEvent.lng } : null) : null as { lat: number; lng: number } | null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -2200,6 +2701,9 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
   const [isCityOpen, setIsCityOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
+  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -2297,7 +2801,7 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
     // Simulate server request
     setTimeout(() => {
       const newEvent: AppEvent = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: editingEvent?.id || Math.random().toString(36).substr(2, 9),
         title: formData.title,
         description: formData.description,
         category: formData.category,
@@ -2315,11 +2819,13 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
         maxCapacity: formData.maxCapacity,
         minAge: formData.minAge,
         maxAge: formData.maxAge,
-        organizer: 'من کاربر', // Hardcoded for simulation
+        organizer: editingEvent?.organizer || 'من کاربر', 
         image: formData.image || 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
         isFree: !formData.isPaid,
         price: formData.isPaid ? `${formData.price} تومان` : 'رایگان',
-        isConfirmed: false, // New events need confirmation
+        lat: formData.location?.lat,
+        lng: formData.location?.lng,
+        isConfirmed: false, // Re-verify on edit or keep pending
         status: 'pending',
         isDisabled: true // Pending events are disabled by default
       };
@@ -2342,9 +2848,13 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
         >
           <Check className="w-12 h-12" />
         </motion.div>
-        <h2 className="text-2xl font-black text-gray-900">رویداد با موفقیت ایجاد شد!</h2>
+        <h2 className="text-2xl font-black text-gray-900">
+          {editingEvent ? "رویداد با موفقیت ویرایش شد!" : "رویداد با موفقیت ایجاد شد!"}
+        </h2>
         <p className="text-gray-500 font-bold leading-relaxed">
-          رویداد شما تایید شد و به زودی در لیست رویدادها نمایش داده خواهد شد.
+          {editingEvent 
+            ? "تغییرات شما ثبت شد و پس از بررسی مجدد ناظر اعمال خواهد شد."
+            : "رویداد شما تایید شد و به زودی در لیست رویدادها نمایش داده خواهد شد."}
         </p>
       </div>
     );
@@ -2362,7 +2872,9 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
           >
             <ArrowRight className="w-6 h-6" />
           </motion.button>
-          <h1 className="text-xl font-black text-gray-900">ایجاد دورهمی جدید</h1>
+          <h1 className="text-xl font-black text-gray-900">
+            {editingEvent ? "ویرایش دورهمی" : "ایجاد دورهمی جدید"}
+          </h1>
         </div>
       </div>
 
@@ -2598,9 +3110,11 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
             <div className="flex gap-4">
               <FormInput 
                 label="تاریخ رویداد" 
-                type="date" 
+                isSelect
+                onSelectClick={() => setIsDatePickerOpen(true)}
+                placeholder="انتخاب تاریخ رویداد"
                 value={formData.date} 
-                onChange={(val) => { setFormData({...formData, date: val}); if(errors.date) setErrors({...errors, date: ''}); }} 
+                onChange={() => {}} 
                 error={errors.date}
                 className="flex-1"
               />
@@ -2608,17 +3122,21 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
             <div className="flex gap-4">
               <FormInput 
                 label="از ساعت" 
-                type="time" 
+                isSelect
+                onSelectClick={() => setIsStartTimePickerOpen(true)}
+                placeholder="ساعت شروع"
                 value={formData.startTime} 
-                onChange={(val) => { setFormData({...formData, startTime: val}); if(errors.startTime) setErrors({...errors, startTime: ''}); }} 
+                onChange={() => {}} 
                 error={errors.startTime}
                 className="flex-1"
               />
               <FormInput 
                 label="تا ساعت" 
-                type="time" 
+                isSelect
+                onSelectClick={() => setIsEndTimePickerOpen(true)}
+                placeholder="ساعت پایان"
                 value={formData.endTime} 
-                onChange={(val) => { setFormData({...formData, endTime: val}); if(errors.endTime) setErrors({...errors, endTime: ''}); }} 
+                onChange={() => {}} 
                 error={errors.endTime}
                 className="flex-1"
               />
@@ -2727,7 +3245,7 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
           {isLoading ? (
             <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <span>ایجاد دورهمی</span>
+            <span>{editingEvent ? "ویرایش رویداد" : "ایجاد دورهمی"}</span>
           )}
         </motion.button>
       </div>
@@ -2808,17 +3326,60 @@ function CreateEventPage({ onBack, onSave }: { onBack: () => void; onSave: (even
             <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
               <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto" />
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-black text-gray-900">آیا از ایجاد این رویداد مطمئن هستید؟</h3>
-                <p className="text-sm font-bold text-gray-500 leading-relaxed">پس از تایید، رویداد شما در برنامه نمایش داده میشود.</p>
+                <h3 className="text-xl font-black text-gray-900">
+                  {editingEvent ? "آیا از ویرایش این رویداد مطمئن هستید؟" : "آیا از ایجاد این رویداد مطمئن هستید؟"}
+                </h3>
+                <p className="text-sm font-bold text-gray-500 leading-relaxed">
+                  {editingEvent 
+                    ? "پس از تایید، تغییرات رویداد شما ذخیره و برای بررسی مجدد ارسال می‌شود." 
+                    : "پس از تایید، رویداد شما در برنامه نمایش داده میشود."}
+                </p>
               </div>
               <div className="flex gap-4 pt-2">
                  <button onClick={() => setIsConfirmDrawerOpen(false)} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black transition-all">انصراف</button>
-                 <button onClick={handleConfirm} className="flex-1 bg-[#ED1C24] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all">تایید و ایجاد</button>
+                 <button onClick={handleConfirm} className="flex-1 bg-[#ED1C24] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all">
+                   {editingEvent ? "تایید و ویرایش" : "تایید و ایجاد"}
+                 </button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      <PersianDatePickerDrawer
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        value={formData.date}
+        onSelect={(val) => {
+          setFormData({...formData, date: val});
+          if(errors.date) setErrors({...errors, date: ''});
+        }}
+        title="انتخاب تاریخ رویداد"
+        minYear={1405}
+        maxYear={1406}
+      />
+
+      <PersianTimePickerDrawer
+        isOpen={isStartTimePickerOpen}
+        onClose={() => setIsStartTimePickerOpen(false)}
+        value={formData.startTime}
+        onSelect={(val) => {
+          setFormData({...formData, startTime: val});
+          if(errors.startTime) setErrors({...errors, startTime: ''});
+        }}
+        title="ساعت شروع"
+      />
+
+      <PersianTimePickerDrawer
+        isOpen={isEndTimePickerOpen}
+        onClose={() => setIsEndTimePickerOpen(false)}
+        value={formData.endTime}
+        onSelect={(val) => {
+          setFormData({...formData, endTime: val});
+          if(errors.endTime) setErrors({...errors, endTime: ''});
+        }}
+        title="ساعت پایان"
+      />
     </div>
   );
 }
@@ -5184,232 +5745,234 @@ function EventsPage({
                     </div>
                   </section>
 
-      {/* Latest Events Page List */}
-      <section className="px-6 py-4">
-        <h2 className="text-xl font-black mb-6">لیست رویدادها</h2>
-        <div className="flex flex-col gap-6">
-          {isInitialLoading ? (
-            <div className="flex flex-col gap-8 animate-in fade-in duration-500">
-              <EventCardSkeleton />
-              <EventCardSkeleton />
-              <EventCardSkeleton />
-            </div>
-          ) : events.length > 0 ? (
-            events.slice(0, visibleEventsCount).map((event) => (
-              <motion.div 
-                key={event.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="group cursor-pointer"
-                onClick={() => onSelectEvent(event.id)}
-              >
-                <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                  {event.isFree && (
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black">
-                      رایگان
+                  {/* Latest Events Page List */}
+                  <section className="px-6 py-4">
+                    <h2 className="text-xl font-black mb-6">لیست رویدادها</h2>
+                    <div className="flex flex-col gap-6">
+                      {isInitialLoading ? (
+                        <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </div>
+                      ) : events.length > 0 ? (
+                        events.slice(0, visibleEventsCount).map((event) => (
+                          <motion.div 
+                            key={event.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="group cursor-pointer"
+                            onClick={() => onSelectEvent(event.id)}
+                          >
+                            <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
+                              <img 
+                                src={event.image} 
+                                alt={event.title} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                referrerPolicy="no-referrer"
+                              />
+                              {event.isFree && (
+                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black">
+                                  رایگان
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors">{event.title}</h3>
+                              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                                <Clock className="w-4 h-4" />
+                                <span>{event.date}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-400 text-xs">
+                                <MapPin className="w-4 h-4" />
+                                <span>{event.location}</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <EmptyState message="رویدادی یافت نشد" />
+                      )}
+                      
+                      {isFetching && (
+                        <div className="flex flex-col gap-6 py-4">
+                          <EventCardSkeleton />
+                          <EventCardSkeleton />
+                        </div>
+                      )}
+                      
+                      {!isFetching && !isInitialLoading && visibleEventsCount >= events.length && events.length > 0 && (
+                        <div className="py-10 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-8 h-1 bg-gray-100 rounded-full" />
+                            <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors">{event.title}</h3>
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <Clock className="w-4 h-4" />
-                    <span>{event.date}</span>
+                  </section>
+                </motion.main>
+              );
+            }
+
+            function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?: boolean }) {
+              const [index, setIndex] = useState(0);
+              const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+              const total = banners.length;
+              const timerRef = useRef<any>(null);
+              const pauseTimeoutRef = useRef<any>(null);
+
+              // Auto-play logic
+              useEffect(() => {
+                if (!isAutoPlaying || isLoading) return;
+                
+                timerRef.current = setInterval(() => {
+                  setIndex((prev) => (prev + 1) % total);
+                }, 4000);
+
+                return () => {
+                  if (timerRef.current) clearInterval(timerRef.current);
+                };
+              }, [isAutoPlaying, total, isLoading]);
+
+              const handleManualInteraction = () => {
+                setIsAutoPlaying(false);
+                if (timerRef.current) clearInterval(timerRef.current);
+                if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+
+                pauseTimeoutRef.current = setTimeout(() => {
+                  setIsAutoPlaying(true);
+                }, 6000); // Resume after 6 seconds
+              };
+
+              const handleDragEnd = (event: any, info: any) => {
+                const threshold = 50;
+                const velocity = info.velocity.x;
+                const offset = info.offset.x;
+
+                if (offset > threshold || velocity > 500) {
+                  setIndex((prev) => (prev - 1 + total) % total);
+                } else if (offset < -threshold || velocity < -500) {
+                  setIndex((prev) => (prev + 1) % total);
+                }
+                handleManualInteraction();
+              };
+
+              if (isLoading) {
+                return (
+                  <div className="w-full px-4 py-4">
+                    <div className="w-full h-[200px] sm:h-[240px] bg-gray-100 rounded-2xl animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-2 text-gray-400 text-xs">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
+                );
+              }
+
+              return (
+                <div 
+                  className="relative w-full overflow-hidden py-4 select-none touch-pan-y" 
+                  onMouseEnter={() => setIsAutoPlaying(false)}
+                  onMouseLeave={() => {
+                    if (!pauseTimeoutRef.current) setIsAutoPlaying(true);
+                  }}
+                >
+                  <div className="relative h-[200px] sm:h-[240px] px-2.5 overflow-visible">
+                    <motion.div 
+                      className="flex h-full"
+                      style={{ width: `${total * 100}%` }}
+                      animate={{ x: `${index * (100 / total)}%` }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.1}
+                      onDragEnd={handleDragEnd}
+                      onDragStart={() => setIsAutoPlaying(false)}
+                    >
+                      {banners.map((banner) => (
+                        <div 
+                          key={banner.id} 
+                          className="px-1 h-full"
+                          style={{ width: `calc(100% / ${total})` }}
+                        >
+                          <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex items-center p-8 text-right">
+                            <img 
+                              src={banner.image} 
+                              alt="" 
+                              className="absolute inset-0 w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
+                            <div className="z-10 relative flex-1 space-y-2">
+                              <h3 className="text-white text-3xl font-black leading-tight drop-shadow-lg">
+                                {banner.title}
+                              </h3>
+                              <p className="text-white/90 text-sm font-bold leading-relaxed max-w-[85%]">
+                                {banner.subtitle}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  </div>
+
+                  <div className="flex justify-center items-center gap-2 mt-5">
+                    {banners.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setIndex(i); handleManualInteraction(); }}
+                        className={`transition-all duration-300 rounded-full h-1.5 ${
+                          i === index ? 'w-8 bg-gray-900' : 'w-1.5 bg-gray-200'
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
-              </motion.div>
-            ))
+              );
+            }
 
-          ) : (
-            <EmptyState message="رویدادی یافت نشد" />
-          )}
-          
-          {isFetching && (
-            <div className="flex flex-col gap-6 py-4">
-              <EventCardSkeleton />
-              <EventCardSkeleton />
-            </div>
-          )}
-          
-          {!isFetching && !isInitialLoading && visibleEventsCount >= events.length && events.length > 0 && (
-            <div className="py-10 text-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-1 bg-gray-100 rounded-full" />
-                <p className="text-gray-400 text-sm font-bold">بیش از این رویدادی وجود ندارد</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-    </motion.main>
-  );
-}
+            function OfferCard({ item }: { item: any }) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="flex-shrink-0 w-52 bg-white rounded-2xl overflow-hidden shadow-md snap-center relative border border-gray-100"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden">
+                    <img 
+                      src={item.image} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-3 right-0 z-10">
+                      <div className="bg-[#ED1C24] text-white text-[9px] font-black px-3 py-1 rounded-l-lg">
+                        {item.badge}
+                      </div>
+                    </div>
+                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                      <span>{item.rating}</span>
+                      <span className="text-yellow-500">★</span>
+                    </div>
+                  </div>
+                  <div className="p-5 pt-8 space-y-1">
+                    <h3 className="text-sm font-black text-gray-900 leading-tight truncate">{item.title}</h3>
+                    <p className="text-[11px] font-bold text-gray-400 truncate">{item.description}</p>
+                  </div>
+                </motion.div>
+              );
+            }
 
-function EnhancedHeroSlider({ banners, isLoading }: { banners: any[]; isLoading?: boolean }) {
-  const [index, setIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const total = banners.length;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-play logic
-  useEffect(() => {
-    if (!isAutoPlaying || isLoading) return;
-    
-    timerRef.current = setInterval(() => {
-      setIndex((prev) => (prev + 1) % total);
-    }, 4000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isAutoPlaying, total, isLoading]);
-
-  const handleManualInteraction = () => {
-    setIsAutoPlaying(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-
-    pauseTimeoutRef.current = setTimeout(() => {
-      setIsAutoPlaying(true);
-    }, 6000); // Resume after 6 seconds
-  };
-
-  const handleDragEnd = (event: any, info: any) => {
-    const threshold = 50;
-    const velocity = info.velocity.x;
-    const offset = info.offset.x;
-
-    if (offset > threshold || velocity > 500) {
-      setIndex((prev) => (prev - 1 + total) % total);
-    } else if (offset < -threshold || velocity < -500) {
-      setIndex((prev) => (prev + 1) % total);
-    }
-    handleManualInteraction();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="w-full px-4 py-4">
-        <div className="w-full h-[200px] sm:h-[240px] bg-gray-100 rounded-2xl animate-pulse" />
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      className="relative w-full overflow-hidden py-4 select-none touch-pan-y" 
-      onMouseEnter={() => setIsAutoPlaying(false)}
-      onMouseLeave={() => {
-        if (!pauseTimeoutRef.current) setIsAutoPlaying(true);
-      }}
-    >
-      <div className="relative h-[200px] sm:h-[240px] px-2.5 overflow-visible">
-        <motion.div 
-          className="flex h-full"
-          style={{ width: `${total * 100}%` }}
-          animate={{ x: `${index * (100 / total)}%` }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.1}
-          onDragEnd={handleDragEnd}
-          onDragStart={() => setIsAutoPlaying(false)}
-        >
-          {banners.map((banner) => (
-            <div 
-              key={banner.id} 
-              className="px-1 h-full"
-              style={{ width: `calc(100% / ${total})` }}
-            >
-              <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex items-center p-8 text-right">
-                <img 
-                  src={banner.image} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
-                <div className="z-10 relative flex-1 space-y-2">
-                  <h3 className="text-white text-3xl font-black leading-tight drop-shadow-lg">
-                    {banner.title}
-                  </h3>
-                  <p className="text-white/90 text-sm font-bold leading-relaxed max-w-[85%]">
-                    {banner.subtitle}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-
-      <div className="flex justify-center items-center gap-2 mt-5">
-        {banners.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { setIndex(i); handleManualInteraction(); }}
-            className={`transition-all duration-300 rounded-full h-1.5 ${
-              i === index ? 'w-8 bg-gray-900' : 'w-1.5 bg-gray-200'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function OfferCard({ item }: { item: any }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      whileInView={{ opacity: 1, scale: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="flex-shrink-0 w-52 bg-white rounded-2xl overflow-hidden shadow-md snap-center relative border border-gray-100"
-    >
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
-        <img 
-          src={item.image} 
-          alt={item.title} 
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute top-3 right-0 z-10">
-          <div className="bg-[#ED1C24] text-white text-[9px] font-black px-3 py-1 rounded-l-lg">
-            {item.badge}
-          </div>
-        </div>
-        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
-          <span>{item.rating}</span>
-          <span className="text-yellow-500">★</span>
-        </div>
-      </div>
-      <div className="p-5 pt-8 space-y-1">
-        <h3 className="text-sm font-black text-gray-900 leading-tight truncate">{item.title}</h3>
-        <p className="text-[11px] font-bold text-gray-400 truncate">{item.description}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-function MyEventsPage({ 
+            function MyEventsPage({ 
   onSelectEvent,
   events = [],
   registeredEventIds = [],
   onUnregister,
   onNavigate,
   onCreateEvent,
-  onReRequestApproval
+  onReRequestApproval,
+  onEditEvent,
+  users = [],
+  eventRegistrations = {},
 }: { 
   onSelectEvent: (id: string) => void;
   events?: AppEvent[];
@@ -5418,10 +5981,16 @@ function MyEventsPage({
   onNavigate: (tab: string) => void;
   onCreateEvent: () => void;
   onReRequestApproval?: (id: string) => void;
+  onEditEvent?: (event: AppEvent) => void;
+  users?: AppUser[];
+  eventRegistrations?: Record<string, string[]>;
 }) {
   const [activeSubTab, setActiveSubTab] = useState<'registered' | 'hosted'>('registered');
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [eventToCancel, setEventToCancel] = useState<string | null>(null);
+  
+  // State for attendees drawer
+  const [selectedEventForAttendees, setSelectedEventForAttendees] = useState<AppEvent | null>(null);
 
   const registeredEvents = events.filter(e => registeredEventIds.includes(e.id));
   const hostedEvents = events.filter(e => !EVENTS.some(initial => initial.id === e.id));
@@ -5544,36 +6113,62 @@ function MyEventsPage({
                 </div>
                 {hostedEvents.map(event => (
                   <div key={event.id} className="group flex flex-col gap-3">
-                    <div 
-                      className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all cursor-pointer"
-                      onClick={() => onSelectEvent(event.id)}
-                    >
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
-                        <img src={event.image} alt="" className="w-full h-full object-cover" />
-                        {!event.isConfirmed && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-                            <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}>
-                              {event.status === 'rejected' ? 'رد شده' : 'منتظر تایید'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' : (event.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
-                            {event.isConfirmed ? 'تایید شده' : (event.status === 'rejected' ? 'رد شده' : 'در انتظار بررسی')}
-                          </span>
-                          {event.isDisabled && (
-                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-600">غیرفعال</span>
+                    <div className="flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div 
+                        className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-all cursor-pointer"
+                        onClick={() => onSelectEvent(event.id)}
+                      >
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative">
+                          <img src={event.image} alt="" className="w-full h-full object-cover" />
+                          {!event.isConfirmed && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+                              <span className={`text-[8px] font-black text-white px-1.5 py-0.5 rounded-lg ${event.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}>
+                                {event.status === 'rejected' ? 'رد شده' : 'منتظر تایید'}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-gray-400">
-                          <Clock className="w-3 h-3" />
-                          <span>{event.date}</span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-black text-gray-900 truncate">{event.title}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.isConfirmed ? 'bg-emerald-50 text-emerald-600' : (event.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}`}>
+                              {event.isConfirmed ? 'تایید شده' : (event.status === 'rejected' ? 'رد شده' : 'در انتظار بررسی')}
+                            </span>
+                            {event.isDisabled && (
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-50 text-red-600">غیرفعال</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-2 text-[10px] font-black text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            <span>{event.date}</span>
+                          </div>
                         </div>
+                        <ChevronLeft className="w-5 h-5 text-gray-300" />
                       </div>
-                      <ChevronLeft className="w-5 h-5 text-gray-300" />
+
+                      {/* Action buttons section */}
+                      <div className="flex gap-2.5 px-4 pb-4 border-t border-gray-50/50 pt-3 bg-gray-50/30">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditEvent?.(event);
+                          }}
+                          className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>ویرایش رویداد</span>
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEventForAttendees(event);
+                          }}
+                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Users className="w-3.5 h-3.5 text-gray-500" />
+                          <span>شرکت‌کنندگان ({(eventRegistrations[event.id] || []).length})</span>
+                        </button>
+                      </div>
                     </div>
 
                     {event.status === 'rejected' && (
@@ -5638,6 +6233,105 @@ function MyEventsPage({
           }
         }}
       />
+
+      {/* Hosted Event Attendees Drawer */}
+      <AnimatePresence>
+        {selectedEventForAttendees && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForAttendees(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-[4px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[32px] shadow-2xl flex flex-col max-h-[80vh]"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+              
+              <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-black text-gray-900">لیست شرکت‌کنندگان</h2>
+                    <p className="text-[11px] font-bold text-gray-400 truncate max-w-[340px]">{selectedEventForAttendees.title}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4 space-y-3 pb-24">
+                {(() => {
+                  const attendeeIds = eventRegistrations[selectedEventForAttendees.id] || [];
+                  const registeredUsers = users.filter(user => attendeeIds.includes(user.id));
+
+                  if (registeredUsers.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300">
+                          <Users className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-gray-600">شرکت‌کننده‌ای وجود ندارد</p>
+                          <p className="text-xs font-bold text-gray-400">هنوز کسی در این رویداد ثبت‌نام نکرده است.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return registeredUsers.map(user => (
+                    <div 
+                      key={user.id}
+                      className="flex items-center gap-4 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-100"
+                    >
+                      <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 border border-white shadow-sm">
+                        <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-black text-gray-900">{user.name}</h4>
+                          {user.isVerified && (
+                            <span className="bg-emerald-50 text-emerald-600 p-0.5 rounded-md text-[8px]">✓</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                            <Phone className="w-3 h-3 text-gray-400" />
+                            <span>{user.phone}</span>
+                          </div>
+                          {user.email && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                              <Mail className="w-3 h-3 text-gray-400" />
+                              <span className="truncate max-w-[140px]">{user.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              <div className="absolute bottom-0 left-0 w-full p-6 bg-white/90 backdrop-blur-md border-t border-gray-50 flex-shrink-0">
+                <button 
+                  onClick={() => setSelectedEventForAttendees(null)}
+                  className="w-full bg-gray-900 text-white h-12 rounded-2xl text-sm font-black shadow-xl border-none cursor-pointer"
+                >
+                  بستن لیست
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.main>
   );
 }
@@ -5645,6 +6339,7 @@ function MyEventsPage({
 function AdminPage({ 
   events, 
   users,
+  eventRegistrations = {},
   onConfirm, 
   onReject,
   onDisable,
@@ -5652,6 +6347,7 @@ function AdminPage({
 }: { 
   events: AppEvent[]; 
   users: AppUser[];
+  eventRegistrations?: Record<string, string[]>;
   onConfirm: (id: string) => void;
   onReject: (id: string, reason: string) => void;
   onDisable: (id: string) => void;
@@ -5661,6 +6357,7 @@ function AdminPage({
   const [selectedEventForReject, setSelectedEventForReject] = useState<string | null>(null);
   const [selectedEventForReason, setSelectedEventForReason] = useState<AppEvent | null>(null);
   const [selectedEventForDetails, setSelectedEventForDetails] = useState<AppEvent | null>(null);
+  const [selectedEventForAttendees, setSelectedEventForAttendees] = useState<AppEvent | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
@@ -5765,6 +6462,20 @@ function AdminPage({
                            'در انتظار'}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Attendees Section */}
+                    <div className="mt-3 pt-2.5 border-t border-gray-50 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => setSelectedEventForAttendees(event)}
+                        className="flex items-center gap-1.5 text-[11px] font-black text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-all border-none cursor-pointer"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>شرکت‌کنندگان ({(eventRegistrations[event.id] || []).length} نفر)</span>
+                      </button>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        ظرفیت: {event.maxCapacity || 'نامحدود'}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2 mt-4">
@@ -6272,6 +6983,105 @@ function AdminPage({
                   className="w-full bg-gray-900 text-white h-12 rounded-2xl text-sm font-black shadow-xl"
                 >
                   بستن پروفایل کاربر
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Event Attendees Drawer */}
+      <AnimatePresence>
+        {selectedEventForAttendees && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForAttendees(null)}
+              className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-[4px]"
+            />
+            <motion.div
+              initial={{ y: "100%", x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: "100%", x: "-50%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[32px] shadow-2xl flex flex-col max-h-[80vh]"
+              dir="rtl"
+            >
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
+              
+              <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-black text-gray-900">لیست شرکت‌کنندگان</h2>
+                    <p className="text-[11px] font-bold text-gray-400 truncate max-w-[340px]">{selectedEventForAttendees.title}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4 space-y-3 pb-24">
+                {(() => {
+                  const attendeeIds = eventRegistrations[selectedEventForAttendees.id] || [];
+                  const registeredUsers = users.filter(user => attendeeIds.includes(user.id));
+
+                  if (registeredUsers.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300">
+                          <Users className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-gray-600">شرکت‌کننده‌ای وجود ندارد</p>
+                          <p className="text-xs font-bold text-gray-400">هنوز کسی در این رویداد ثبت‌نام نکرده است.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return registeredUsers.map(user => (
+                    <div 
+                      key={user.id}
+                      className="flex items-center gap-4 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-100"
+                    >
+                      <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 border border-white shadow-sm">
+                        <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-black text-gray-900">{user.name}</h4>
+                          {user.isVerified && (
+                            <span className="bg-emerald-50 text-emerald-600 p-0.5 rounded-md text-[8px]">✓</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                            <Phone className="w-3 h-3 text-gray-400" />
+                            <span>{user.phone}</span>
+                          </div>
+                          {user.email && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                              <Mail className="w-3 h-3 text-gray-400" />
+                              <span className="truncate max-w-[140px]">{user.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              <div className="absolute bottom-0 left-0 w-full p-6 bg-white/90 backdrop-blur-md border-t border-gray-50 flex-shrink-0">
+                <button 
+                  onClick={() => setSelectedEventForAttendees(null)}
+                  className="w-full bg-gray-900 text-white h-12 rounded-2xl text-sm font-black shadow-xl border-none cursor-pointer"
+                >
+                  بستن لیست
                 </button>
               </div>
             </motion.div>
