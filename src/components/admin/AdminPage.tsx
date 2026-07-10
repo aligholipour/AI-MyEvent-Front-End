@@ -7,7 +7,7 @@ import {
     Pause, Check, ChevronLeft, MapPin, Calendar, X, Users, PlusCircle, Compass, Store, AlertCircle, Heart,
     Phone, ShieldCheck, Share2, Briefcase, Tickets
 } from "lucide-react";
-import { getUserDetailForAdmin, GetUserDetailForAdminResponse, getUsers } from "../../services/users";
+import { getUserDetailForAdmin, GetUserDetailForAdminResponse, getUsereForAdmin, getUsers } from "../../services/users";
 
 function AdminPage({
     // onConfirm,
@@ -61,7 +61,7 @@ function AdminPage({
 
     const fetchUsers = async (page: number, isRefresh = false) => {
         try {
-            const result = await getUsers({ pageNumber: page, pageSize: 10 });
+            const result = await getUsereForAdmin({ pageNumber: page, pageSize: 10 });
 
             if (isRefresh) {
                 setUsers(result.data);

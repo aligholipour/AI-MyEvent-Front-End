@@ -100,3 +100,33 @@ export async function getUserDetailForAdmin(userId: number
   const data = await response.json();
   return { data: data };
 }
+
+export async function getUsereForAdmin(
+  request: GetUsersRequest = {}
+): Promise<{ data: AppUsers[]; totalCount: number; hasNextPage: boolean }> {
+
+  const params = new URLSearchParams();
+  if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
+  if (request.pageSize) params.append('pageSize', request.pageSize.toString());
+
+  const response = await fetch(`${process.env.API_BaseURL}/User/UsersForAdmin?${params.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: خطا در دریافت کاربران`);
+  }
+
+  const data = await response.json();
+  return {
+    data: data.data,
+    totalCount: data.totalCount,
+    hasNextPage: data.HasNextPage,
+  };
+}

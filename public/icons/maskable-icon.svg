@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MyEvent">
+  <rect width="512" height="512" fill="#ED1C24"/>
+  <circle cx="256" cy="256" r="148" fill="#fff"/>
+  <path fill="#ED1C24" d="M172 180h58v65h52v-65h58v152h-58v-62h-52v62h-58z"/>
+</svg>
