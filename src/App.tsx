@@ -111,6 +111,12 @@ const NEARBY_EVENTS_DATA = [
 ];
 
 import { type AppEvent, type AppCategory, type AppUser } from './types';
+import { CategoriesPage } from './components/CategoriesPage';
+import { BottomNavigation } from './components/BottomNavigation';
+import { HomeHeroSlider } from './components/HomeHeroSlider';
+import { KhitananEventCard } from './components/KhitananEventCard';
+import { ScrollToTop } from './components/ScrollToTop';
+import { AuthDrawer } from './components/AuthDrawer';
 
 const EVENTS: AppEvent[] = [
   {
@@ -676,6 +682,7 @@ export default function App() {
   const [isFetching, setIsFetching] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string | null>(null);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [sortBy, setSortBy] = useState('closest');
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
@@ -691,13 +698,21 @@ export default function App() {
     '5': ['1', '4'],
   });
 
-  const filteredEvents = searchQuery 
-    ? allEvents.filter(e => {
-        const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-        const searchableText = `${e.title} ${e.location} ${e.category || ''} ${e.organizer}`.toLowerCase();
-        return words.every(word => searchableText.includes(word));
-      })
-    : allEvents;
+  const filteredEvents = allEvents.filter(e => {
+    const matchSearch = !searchQuery 
+      ? true 
+      : (() => {
+          const words = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+          const searchableText = `${e.title} ${e.location} ${e.category || ''} ${e.organizer}`.toLowerCase();
+          return words.every(word => searchableText.includes(word));
+        })();
+    
+    const matchCategory = !selectedCategoryTab 
+      ? true 
+      : e.category === selectedCategoryTab;
+
+    return matchSearch && matchCategory;
+  });
 
   const publicEvents = filteredEvents.filter(e => e.isConfirmed && !e.isDisabled);
 
@@ -727,6 +742,9 @@ export default function App() {
       {/* Mobile Container Wraps */}
       <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
         
+        {/* Reset scroll on page or tab transition */}
+        <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen]} />
+
         <AnimatePresence mode="wait">
           {isCreateEventOpen ? (
             <CreateEventPage 
@@ -904,7 +922,7 @@ export default function App() {
                 >
                   {/* Enhanced Hero Slider Section */}
                   <section>
-                    <EnhancedHeroSlider banners={HERO_BANNERS} isLoading={isInitialLoading} />
+                    <HomeHeroSlider />
                   </section>
 
                   {/* Category Grid Section */}
@@ -1007,6 +1025,9 @@ export default function App() {
                       )}
                     </div>
                   </section>
+
+                  {/* Khitanan Special Traditional Event Card Section */}
+                  <KhitananEventCard />
                   
 
                   {/* Event Organizers Section */}
@@ -1057,24 +1078,17 @@ export default function App() {
                   {/* Consultant Slider Section */}
                   <ConsultantSlider isLoading={isInitialLoading} />
                 </motion.main>
-              ) : activeTab === 'my-events' ? (
-                <MyEventsPage 
-                  key="my-events" 
-                  onSelectEvent={(id) => setSelectedEventId(id)} 
-                  events={allEvents}
-                  registeredEventIds={registeredEventIds}
-                  onUnregister={(id) => {
-                    setRegisteredEventIds(prev => prev.filter(eid => eid !== id));
-                    const userId = currentUser?.id || '1';
-                    setEventRegistrations(prev => ({
-                      ...prev,
-                      [id]: (prev[id] || []).filter(uid => uid !== userId)
-                    }));
+              ) : activeTab === 'categories' ? (
+                <CategoriesPage 
+                  key="categories"
+                  categories={CATEGORIES}
+                  currentUser={currentUser}
+                  onSelectCategory={(categoryTitle) => {
+                    setSelectedCategoryTab(categoryTitle);
+                    navigateToTab('events');
                   }}
-                  onNavigate={navigateToTab}
-                  onCreateEvent={openCreateEvent}
-                  onEditEvent={openEditEvent}
-                  onReRequestApproval={(id) => setAllEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'pending', isConfirmed: false, rejectionReason: '' } : e))}
+                  activeCategory={selectedCategoryTab}
+                  onClearCategory={() => setSelectedCategoryTab(null)}
                 />
               ) : activeTab === 'admin' ? (
                 <AdminPage 
@@ -1099,51 +1113,14 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Footer Navigation */}
-        {!selectedEventId && (
-          <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
-            <FooterItem 
-              icon={<Home className="w-9 h-9" />} 
-              label="خانه" 
-              isActive={activeTab === 'home'} 
-              onClick={() => navigateToTab('home')} 
-            />
-            <FooterItem 
-              icon={<Calendar className="w-9 h-9" />} 
-              label="رویدادها" 
-              isActive={activeTab === 'events'} 
-              onClick={() => navigateToTab('events')} 
-            />
-            <div className="relative -top-7 flex-shrink-0">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={openCreateEvent}
-                className="w-16 h-16 bg-gradient-to-br from-[#ED1C24] to-[#c4151b] rounded-full shadow-2xl shadow-[#ED1C24]/40 flex items-center justify-center text-white border-[6px] border-white active:shadow-inner transition-shadow"
-              >
-                <Plus className="w-9 h-9" />
-              </motion.button>
-            </div>
-            <FooterItem 
-              icon={<Ticket className="w-9 h-9" />} 
-              label="رویدادهای من" 
-              isActive={activeTab === 'my-events'} 
-              onClick={() => navigateToTab('my-events')} 
-            />
-            <FooterItem 
-              icon={<UserIcon className="w-9 h-9" />} 
-              label="پروفایل" 
-              isActive={activeTab === 'profile'} 
-              onClick={() => {
-                if (isLoggedIn) {
-                  navigateToTab('profile');
-                } else {
-                  setIsAuthDrawerOpen(true);
-                }
-              }} 
-            />
-          </footer>
-        )}
+        {/* Footer Navigation Redesigned */}
+        <BottomNavigation
+          activeTab={activeTab}
+          isLoggedIn={isLoggedIn}
+          onNavigate={navigateToTab}
+          onOpenAuth={() => setIsAuthDrawerOpen(true)}
+          onOpenCreateEvent={openCreateEvent}
+        />
       </div>
 
       <FilterDrawer 
@@ -5009,220 +4986,7 @@ function CitySelectionDrawer({
   );
 }
 
-function AuthDrawer({ isOpen, onClose, onLoginSuccess }: { isOpen: boolean; onClose: () => void; onLoginSuccess: (phone: string) => void }) {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  
-  // Reset step when opening
-  useEffect(() => {
-    if (isOpen) setStep('phone');
-  }, [isOpen]);
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[60] backdrop-blur-[2px]"
-          />
-          
-          {/* Slider Container */}
-          <motion.div
-            initial={{ y: "100%", x: "-50%" }}
-            animate={{ y: 0, x: "-50%" }}
-            exit={{ y: "100%", x: "-50%" }}
-            transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[70] rounded-t-2xl shadow-2xl overflow-y-auto no-scrollbar pt-2"
-            dir="rtl"
-          >
-            {/* Handle for visual identification of bottom sheet */}
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
-            
-            <div className="flex flex-col min-h-[45vh] px-6 pb-20">
-               {step === 'phone' ? (
-                 <StepPhoneNumber 
-                   onClose={onClose} 
-                   onContinue={(num) => {
-                     setPhoneNumber(num);
-                     setStep('otp');
-                   }} 
-                 />
-               ) : (
-                 <StepOTP 
-                   phoneNumber={phoneNumber}
-                   onBack={() => setStep('phone')}
-                   onSuccess={() => onLoginSuccess(phoneNumber)}
-                 />
-               )
-               }
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function StepPhoneNumber({ onClose, onContinue }: { onClose: () => void; onContinue: (num: string) => void }) {
-  const [phone, setPhone] = useState('');
-  const [error, setError] = useState('');
-
-  const handleContinue = () => {
-    if (/^09\d{9}$/.test(phone)) {
-       onContinue(phone);
-    } else {
-       setError('شماره موبایل اشتباه است (مثال: 09123456789)');
-    }
-  };
-
-  return (
-    <div className="flex flex-col flex-1">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-gray-900">ورود / ثبت نام</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-gray-500 text-sm font-bold leading-relaxed">
-          برای ورود یا ثبت‌نام شماره تلفن همراه خود را وارد کنید.
-        </p>
-
-        <div className="relative mt-2">
-          <label className="absolute -top-2.5 right-4 bg-white px-2 text-[10px] font-black text-blue-500 z-10">
-            شماره موبایل
-          </label>
-          <input 
-            type="tel"
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              setError('');
-            }}
-            placeholder="0912 123 4567"
-            className={`w-full border ${error ? 'border-red-500' : 'border-blue-200'} rounded-xl py-3 px-6 text-lg font-black tracking-[0.1em] focus:ring-2 focus:ring-blue-100 outline-none transition-all`}
-          />
-          {error && <p className="text-red-500 text-[10px] font-bold mt-2 mr-2">{error}</p>}
-        </div>
-      </div>
-        
-      <div>
-        <button 
-          onClick={handleContinue}
-          className="w-full mt-4 bg-[#00A1F1] hover:bg-blue-600 text-white py-3 rounded-xl font-black text-sm shadow-blue-200 active:scale-[0.98] transition-all"
-        >
-          ادامه
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StepOTP({ phoneNumber, onBack, onSuccess }: { phoneNumber: string; onBack: () => void; onSuccess: () => void }) {
-  const [code, setCode] = useState(['', '', '', '', '']);
-  const [timer, setTimer] = useState(60);
-  const [error, setError] = useState('');
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timer > 0) {
-      interval = setInterval(() => setTimer(prev => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
-
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
-
-    if (value && index < 4) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    if (newCode.every(v => v !== '')) {
-       // Auto-submit
-       setTimeout(() => handleVerify(newCode.join('')), 100);
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = (finalCode: string) => {
-    if (finalCode === '12345') { // Mock validation
-      onSuccess();
-    } else {
-      setError('کد اشتباه است، دوباره تلاش کنید');
-    }
-  };
-
-  return (
-    <div className="flex flex-col flex-1">
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <h2 className="text-xl font-black text-gray-900">کد تایید</h2>
-        </div>
-
-        <p className="text-gray-500 text-sm font-bold leading-relaxed">
-          کد ۵ رقمی ارسال شده به شماره <span className="text-gray-900" dir="ltr">{phoneNumber}</span> را وارد کنید.
-        </p>
-
-        <div className="space-y-2">
-          <div className="flex justify-between gap-2" dir="ltr">
-            {code.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={(el) => { inputRefs.current[idx] = el; }}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleChange(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                className="w-12 h-14 border border-gray-200 rounded-2xl text-center text-xl font-black focus:border-[#007AFF] focus:ring-4 focus:ring-blue-50/50 outline-none transition-all"
-              />
-            ))}
-          </div>
-          
-          {error && <p className="text-red-500 text-[10px] font-bold text-center mt-2">{error}</p>}
-        </div>
-      </div>
-
-      <div className="mt-auto py-4 flex flex-col gap-4">
-        <button 
-          disabled={timer > 0}
-          onClick={() => { setTimer(60); setError(''); setCode(['', '', '', '', '']); }}
-          className={`text-xs font-black transition-colors ${timer > 0 ? 'text-gray-400' : 'text-blue-500 hover:text-blue-600 outline-none'}`}
-        >
-          {timer > 0 ? `ارسال مجدد کد تا (${timer} ثانیه)` : 'ارسال مجدد کد'}
-        </button>
-
-        <button 
-          onClick={() => handleVerify(code.join(''))}
-          className="w-full bg-[#00A1F1] hover:bg-blue-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-[0.98] transition-all"
-        >
-          تایید
-        </button>
-      </div>
-    </div>
-  );
-}
+// Redesigned AuthDrawer is imported from external component ./components/AuthDrawer.tsx
 
 function FooterItem({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) {
   return (
