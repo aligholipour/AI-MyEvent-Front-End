@@ -1,6 +1,6 @@
 {
   "name": "Dorehami - Event & Meeting Registration",
   "description": "A mobile-first Persian event registration platform featuring local events, interest categories, and community meetings.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

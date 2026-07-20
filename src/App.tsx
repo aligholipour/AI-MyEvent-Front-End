@@ -117,6 +117,19 @@ import { HomeHeroSlider } from './components/HomeHeroSlider';
 import { KhitananEventCard } from './components/KhitananEventCard';
 import { ScrollToTop } from './components/ScrollToTop';
 import { AuthDrawer } from './components/AuthDrawer';
+import { EventDetailsPage } from './components/EventDetailsPage';
+import { MemoriesSection } from './components/MemoriesSection';
+import { CinematicMemories } from './components/CinematicMemories';
+import { CitySelectionDrawer } from './components/CitySelectionDrawer';
+import { FiltersDrawer } from './components/FiltersDrawer';
+import { ImageCropperDrawer } from './components/ImageCropperDrawer';
+import { MapPickerDrawer } from './components/MapPickerDrawer';
+import { PersianDatePickerDrawer, PersianTimePickerDrawer } from './components/PersianDateTimePickers';
+import { InterestsDrawer } from './components/InterestsDrawer';
+import { CategoryDrawer } from './components/CategoryDrawer';
+import { SelectionDrawer } from './components/SelectionDrawer';
+import { JobSelectionDrawer } from './components/JobSelectionDrawer';
+import { SupportTickets } from './components/SupportTickets';
 
 const EVENTS: AppEvent[] = [
   {
@@ -656,6 +669,7 @@ export default function App() {
   const [selectedCity, setSelectedCity] = useState('تهران');
   const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const [isSupportTicketsOpen, setIsSupportTicketsOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AppEvent | null>(null);
 
   // Helper to open create event page uniquely
@@ -678,6 +692,7 @@ export default function App() {
   };
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [isAnyDetailDrawerOpen, setIsAnyDetailDrawerOpen] = useState(false);
   const [visibleEventsCount, setVisibleEventsCount] = useState(4);
   const [isFetching, setIsFetching] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -743,26 +758,10 @@ export default function App() {
       <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
         
         {/* Reset scroll on page or tab transition */}
-        <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen]} />
+        <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen, isSupportTicketsOpen]} />
 
         <AnimatePresence mode="wait">
-          {isCreateEventOpen ? (
-            <CreateEventPage 
-              key={editingEvent ? `edit-event-${editingEvent.id}` : "create-event"}
-              editingEvent={editingEvent}
-              onBack={() => {
-                setIsCreateEventOpen(false);
-                setEditingEvent(null);
-              }}
-              onSave={(savedEvent) => {
-                if (editingEvent) {
-                  setAllEvents(prev => prev.map(e => e.id === savedEvent.id ? savedEvent : e));
-                } else {
-                  setAllEvents(prev => [savedEvent, ...prev]);
-                }
-              }}
-            />
-          ) : isRegisterPageOpen ? (
+          {isRegisterPageOpen ? (
             <RegisterPage 
               phone={pendingPhone}
               onBack={() => setIsRegisterPageOpen(false)}
@@ -783,12 +782,36 @@ export default function App() {
                 navigateToTab('profile');
               }}
             />
+          ) : isSupportTicketsOpen ? (
+            <SupportTickets 
+              key="support-tickets"
+              onBack={() => setIsSupportTicketsOpen(false)}
+            />
+          ) : isCreateEventOpen ? (
+            <CreateEventPage 
+              key={editingEvent ? `edit-event-${editingEvent.id}` : "create-event"}
+              editingEvent={editingEvent}
+              onBack={() => {
+                setIsCreateEventOpen(false);
+                setEditingEvent(null);
+              }}
+              onSave={(savedEvent) => {
+                if (editingEvent) {
+                  setAllEvents(prev => prev.map(e => e.id === savedEvent.id ? savedEvent : e));
+                } else {
+                  setAllEvents(prev => [savedEvent, ...prev]);
+                }
+              }}
+            />
           ) : selectedEventId ? (
             <EventDetailsPage 
               key="event-details"
               eventId={selectedEventId}
               events={allEvents}
-              onBack={() => setSelectedEventId(null)}
+              onBack={() => {
+                setSelectedEventId(null);
+                setIsAnyDetailDrawerOpen(false);
+              }}
               isLoggedIn={isLoggedIn}
               onOpenAuth={() => setIsAuthDrawerOpen(true)}
               registeredEventIds={registeredEventIds}
@@ -808,6 +831,7 @@ export default function App() {
                   [id]: (prev[id] || []).filter(uid => uid !== userId)
                 }));
               }}
+              onDrawerStateChange={setIsAnyDetailDrawerOpen}
             />
           ) : activeTab === 'profile' ? (
             <ProfilePage 
@@ -820,6 +844,7 @@ export default function App() {
                 navigateToTab('home');
               }}
               onUpdateUser={(updatedUser) => setCurrentUser(updatedUser)}
+              onOpenSupportTickets={() => setIsSupportTicketsOpen(true)}
             />
           ) : (
             <>
@@ -1114,16 +1139,18 @@ export default function App() {
         </AnimatePresence>
 
         {/* Footer Navigation Redesigned */}
-        <BottomNavigation
-          activeTab={activeTab}
-          isLoggedIn={isLoggedIn}
-          onNavigate={navigateToTab}
-          onOpenAuth={() => setIsAuthDrawerOpen(true)}
-          onOpenCreateEvent={openCreateEvent}
-        />
+        {!isAnyDetailDrawerOpen && (
+          <BottomNavigation
+            activeTab={activeTab}
+            isLoggedIn={isLoggedIn}
+            onNavigate={navigateToTab}
+            onOpenAuth={() => setIsAuthDrawerOpen(true)}
+            onOpenCreateEvent={openCreateEvent}
+          />
+        )}
       </div>
 
-      <FilterDrawer 
+      <FiltersDrawer 
         isOpen={isFilterDrawerOpen}
         onClose={() => setIsFilterDrawerOpen(false)}
       />
@@ -1312,956 +1339,13 @@ function RichTextEditor({
   );
 }
 
-function InterestsDrawer({ 
-  isOpen, 
-  onClose, 
-  selectedInterests, 
-  onToggle 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  selectedInterests: string[]; 
-  onToggle: (interest: string) => void;
-}) {
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredInterests = INTERESTS_DATA.filter(interest => 
-    interest.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            onClick={onClose} 
-            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
-          />
-          <motion.div 
-            initial={{ y: "100%", x: "-50%" }} 
-            animate={{ y: 0, x: "-50%" }} 
-            exit={{ y: "100%", x: "-50%" }} 
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
-            
-            <div className="flex items-center justify-between shrink-0">
-               <div className="space-y-1">
-                 <h3 className="text-xl font-black text-gray-900">انتخاب علاقه‌مندی‌ها</h3>
-                 <p className="text-sm font-bold text-gray-400">یک یا چند مورد را انتخاب کنید</p>
-               </div>
-               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                 <X className="w-5 h-5 text-gray-400" />
-               </button>
-            </div>
 
-            <div className="relative shrink-0">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="جستجوی علاقه‌مندی..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
-              />
-            </div>
-            
-            <div className="flex-1 overflow-y-auto no-scrollbar py-2">
-              <div className="flex flex-wrap gap-2">
-                {filteredInterests.length > 0 ? (
-                  filteredInterests.map(interest => (
-                    <button
-                      key={interest}
-                      onClick={() => onToggle(interest)}
-                      className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all border ${
-                        selectedInterests.includes(interest)
-                        ? 'bg-gray-900 border-gray-900 text-white shadow-md shadow-gray-900/10'
-                        : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'
-                      }`}
-                    >
-                      {interest}
-                    </button>
-                  ))
-                ) : (
-                  <div className="w-full py-10 text-center text-gray-400 font-bold text-sm">موردی یافت نشد</div>
-                )}
-              </div>
-            </div>
 
-            <button 
-              onClick={onClose}
-              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg transition-all shrink-0 active:scale-[0.98]"
-            >
-              تایید انتخاب‌ها
-            </button>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
 
-function MapPickerDrawer({ 
-  isOpen, 
-  onClose, 
-  onSelect 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSelect: (location: { lat: number, lng: number }, address: string) => void;
-}) {
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [address, setAddress] = useState('');
-  
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+// CategoryDrawer is now imported from ./components/CategoryDrawer
 
-  useEffect(() => {
-    if (!isOpen) {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      }
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      if (!containerRef.current || mapRef.current) return;
-
-      const initialLat = selectedLocation?.lat || 35.6892;
-      const initialLng = selectedLocation?.lng || 51.3890;
-
-      const map = L.map(containerRef.current, {
-        center: [initialLat, initialLng],
-        zoom: 13,
-        zoomControl: false,
-      });
-
-      mapRef.current = map;
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
-
-      const customMarkerIcon = L.divIcon({
-        html: `<div class="relative flex items-center justify-center">
-                 <div class="absolute w-10 h-10 bg-red-500/30 rounded-full animate-ping"></div>
-                 <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                   <div class="w-3 h-3 bg-white rounded-full"></div>
-                 </div>
-               </div>`,
-        className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-      });
-
-      if (selectedLocation) {
-        markerRef.current = L.marker([selectedLocation.lat, selectedLocation.lng], { icon: customMarkerIcon }).addTo(map);
-      }
-
-      const reverseGeocode = async (lat: number, lng: number) => {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fa`);
-          const data = await res.json();
-          if (data && data.display_name) {
-            setAddress(data.display_name);
-          } else {
-            setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-          }
-        } catch (err) {
-          setAddress(`لوکیشن انتخاب شده در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-        }
-      };
-
-      map.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        setSelectedLocation({ lat, lng });
-        
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
-        } else {
-          markerRef.current = L.marker([lat, lng], { icon: customMarkerIcon }).addTo(map);
-        }
-        
-        reverseGeocode(lat, lng);
-      });
-
-      map.invalidateSize();
-    }, 250);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [isOpen]);
-
-  const handleMyLocation = () => {
-    if (navigator.geolocation && mapRef.current) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        mapRef.current?.flyTo([lat, lng], 15);
-        setSelectedLocation({ lat, lng });
-        
-        const customMarkerIcon = L.divIcon({
-          html: `<div class="relative flex items-center justify-center">
-                   <div class="absolute w-10 h-10 bg-red-500/30 rounded-full animate-ping"></div>
-                   <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                     <div class="w-3 h-3 bg-white rounded-full"></div>
-                   </div>
-                 </div>`,
-          className: '',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
-        });
-
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
-        } else if (mapRef.current) {
-          markerRef.current = L.marker([lat, lng], { icon: customMarkerIcon }).addTo(mapRef.current);
-        }
-
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fa`)
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.display_name) {
-              setAddress(data.display_name);
-            } else {
-              setAddress(`موقعیت شما در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-            }
-          })
-          .catch(() => {
-            setAddress(`موقعیت شما در (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-          });
-      }, () => {
-        alert("امکان دریافت موقعیت شما وجود ندارد.");
-      });
-    }
-  };
-
-  const handleConfirm = () => {
-    if (selectedLocation) {
-      onSelect(selectedLocation, address);
-      onClose();
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/40 z-[300] backdrop-blur-[2px]" />
-          <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[310] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" dir="rtl">
-            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-               <h3 className="text-xl font-black text-gray-900">انتخاب لوکیشن</h3>
-               <button onClick={onClose} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
-                  <X className="w-5 h-5" />
-               </button>
-            </div>
-            
-            <div className="flex-1 relative">
-              <div ref={containerRef} className="w-full h-full z-0" />
-
-              {/* Custom Map Controls */}
-              <div className="absolute top-4 right-4 z-[999] flex flex-col gap-2">
-                <button 
-                  onClick={() => mapRef.current?.zoomIn()}
-                  className="w-10 h-10 bg-white hover:bg-gray-50 text-gray-800 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center font-black text-lg transition-all cursor-pointer"
-                >
-                  ＋
-                </button>
-                <button 
-                  onClick={() => mapRef.current?.zoomOut()}
-                  className="w-10 h-10 bg-white hover:bg-gray-50 text-gray-800 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center font-black text-lg transition-all cursor-pointer"
-                >
-                  －
-                </button>
-                <button 
-                  onClick={handleMyLocation}
-                  className="w-10 h-10 bg-white hover:bg-gray-50 text-blue-600 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center transition-all cursor-pointer"
-                  title="موقعیت من"
-                >
-                  <Compass className="w-5 h-5" />
-                </button>
-              </div>
-              
-              {address && (
-                <div className="absolute bottom-24 left-6 right-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-white shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4 z-[999]">
-                  <div className="w-8 h-8 bg-red-500/10 rounded-lg flex flex-shrink-0 items-center justify-center text-red-500">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-black text-gray-400 uppercase block mb-0.5">آدرس انتخاب شده</span>
-                    <p className="text-xs font-bold text-gray-900 leading-relaxed truncate-2-lines">{address}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="absolute bottom-6 left-6 right-6 z-[999]">
-                <button 
-                  disabled={!selectedLocation}
-                  onClick={handleConfirm}
-                  className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all cursor-pointer ${
-                    selectedLocation 
-                    ? 'bg-red-500 text-white shadow-red-500/20 hover:opacity-90' 
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                  }`}
-                >
-                  تایید این موقعیت
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function ImageCropperDrawer({
-  image,
-  isOpen,
-  onClose,
-  onCropComplete,
-  aspectRatio = 16 / 9
-}: {
-  image: string | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onCropComplete: (croppedImage: string) => void;
-  aspectRatio?: number;
-}) {
-  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-
-  const onCropChange = (crop: Point) => {
-    setCrop(crop);
-  };
-
-  const onZoomChange = (zoom: number) => {
-    setZoom(zoom);
-  };
-
-  const onCropCompleteInternal = (croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  };
-
-  const handleDone = async () => {
-    if (image && croppedAreaPixels) {
-      try {
-        const croppedImage = await getCroppedImg(image, croppedAreaPixels);
-        onCropComplete(croppedImage);
-        onClose();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && image && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/80 z-[200] backdrop-blur-md" />
-          <motion.div 
-            initial={{ y: "100%", x: "-50%" }} 
-            animate={{ y: 0, x: "-50%" }} 
-            exit={{ y: "100%", x: "-50%" }} 
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[210] rounded-t-[2.5rem] overflow-hidden flex flex-col shadow-2xl" 
-            dir="rtl"
-          >
-            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-               <h3 className="text-xl font-black text-gray-900">برش تصویر</h3>
-               <button onClick={onClose} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
-                  <X className="w-5 h-5" />
-               </button>
-            </div>
-            
-            <div className="flex-1 relative bg-gray-900">
-              <Cropper
-                image={image}
-                crop={crop}
-                zoom={zoom}
-                aspect={aspectRatio}
-                onCropChange={onCropChange}
-                onCropComplete={onCropCompleteInternal}
-                onZoomChange={onZoomChange}
-              />
-            </div>
-            
-            <div className="p-6 space-y-6 bg-white">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-gray-500">میزان زوم</span>
-                  <span className="text-xs font-bold text-gray-900">{Math.round(zoom * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  value={zoom}
-                  min={1}
-                  max={3}
-                  step={0.1}
-                  aria-labelledby="Zoom"
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#ED1C24]"
-                />
-              </div>
-              
-              <button 
-                onClick={handleDone}
-                className="w-full py-4 bg-[#ED1C24] text-white rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all hover:opacity-90"
-              >
-                تایید و برش
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-const toFarsiNumber = (num: number | string) => {
-  return num.toString().replace(/\d/g, x => farsiDigits[parseInt(x)]);
-};
-
-const PERSIAN_MONTHS = [
-  { name: 'فروردین', id: 1 },
-  { name: 'اردیبهشت', id: 2 },
-  { name: 'خرداد', id: 3 },
-  { name: 'تیر', id: 4 },
-  { name: 'مرداد', id: 5 },
-  { name: 'شهریور', id: 6 },
-  { name: 'مهر', id: 7 },
-  { name: 'آبان', id: 8 },
-  { name: 'آذر', id: 9 },
-  { name: 'دی', id: 10 },
-  { name: 'بهمن', id: 11 },
-  { name: 'اسفند', id: 12 },
-];
-
-function PersianDatePickerDrawer({
-  isOpen,
-  onClose,
-  value,
-  onSelect,
-  title = "انتخاب تاریخ",
-  minYear = 1340,
-  maxYear = 1406
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  value: string;
-  onSelect: (val: string) => void;
-  title?: string;
-  minYear?: number;
-  maxYear?: number;
-}) {
-  const cleanVal = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
-  const parts = cleanVal.split('/');
-  
-  const initialYear = parts.length === 3 ? parseInt(parts[0]) : (minYear === 1340 ? 1375 : 1405);
-  const initialMonth = parts.length === 3 ? parseInt(parts[1]) : 1;
-  const initialDay = parts.length === 3 ? parseInt(parts[2]) : 1;
-
-  const [year, setYear] = useState(initialYear);
-  const [month, setMonth] = useState(initialMonth);
-  const [day, setDay] = useState(initialDay);
-
-  useEffect(() => {
-    if (isOpen) {
-      const clean = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
-      const p = clean.split('/');
-      setYear(p.length === 3 ? parseInt(p[0]) : (minYear === 1340 ? 1375 : 1405));
-      setMonth(p.length === 3 ? parseInt(p[1]) : 1);
-      setDay(p.length === 3 ? parseInt(p[2]) : 1);
-    }
-  }, [isOpen, value, minYear]);
-
-  let maxDays = 31;
-  if (month >= 7 && month <= 11) {
-    maxDays = 30;
-  } else if (month === 12) {
-    const isLeap = [1, 5, 9, 13, 17, 22, 26, 30].includes(year % 33);
-    maxDays = isLeap ? 30 : 29;
-  }
-
-  useEffect(() => {
-    if (day > maxDays) {
-      setDay(maxDays);
-    }
-  }, [month, year, maxDays, day]);
-
-  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
-  const days = Array.from({ length: maxDays }, (_, i) => i + 1);
-
-  const handleConfirm = () => {
-    const formattedYear = year.toString();
-    const formattedMonth = month.toString().padStart(2, '0');
-    const formattedDay = day.toString().padStart(2, '0');
-    const formattedVal = `${formattedYear}/${formattedMonth}/${formattedDay}`;
-    const farsiVal = formattedVal.replace(/\d/g, x => farsiDigits[parseInt(x)]);
-    onSelect(farsiVal);
-    onClose();
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-[4px]"
-          />
-          <motion.div
-            initial={{ y: "100%", x: "-50%" }}
-            animate={{ y: 0, x: "-50%" }}
-            exit={{ y: "100%", x: "-50%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[310] rounded-t-[32px] shadow-2xl flex flex-col h-[52vh]"
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
-            
-            <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-gray-900">{title}</h2>
-                  <p className="text-[10px] font-bold text-gray-400">
-                    تاریخ انتخابی: {toFarsiNumber(year)}/{toFarsiNumber(month.toString().padStart(2, '0'))}/{toFarsiNumber(day.toString().padStart(2, '0'))} ({PERSIAN_MONTHS[month - 1].name})
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 grid grid-cols-3 gap-3 px-6 py-4 overflow-hidden h-full">
-              {/* Day */}
-              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
-                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
-                  روز
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-                  {days.map(d => (
-                    <button
-                      key={d}
-                      onClick={() => setDay(d)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${day === d ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      {toFarsiNumber(d)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Month */}
-              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
-                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
-                  ماه
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-                  {PERSIAN_MONTHS.map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setMonth(m.id)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${month === m.id ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      {m.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Year */}
-              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
-                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
-                  سال
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-                  {years.map(y => (
-                    <button
-                      key={y}
-                      onClick={() => setYear(y)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${year === y ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      {toFarsiNumber(y)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-50 flex-shrink-0 bg-white">
-              <button
-                onClick={handleConfirm}
-                className="w-full bg-blue-600 text-white h-12 rounded-2xl text-sm font-black shadow-lg shadow-blue-600/10 border-none cursor-pointer hover:bg-blue-700 transition-colors"
-              >
-                تایید تاریخ
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function PersianTimePickerDrawer({
-  isOpen,
-  onClose,
-  value,
-  onSelect,
-  title = "انتخاب ساعت"
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  value: string;
-  onSelect: (val: string) => void;
-  title?: string;
-}) {
-  const cleanVal = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
-  const parts = cleanVal.split(':');
-  
-  const initialHour = parts.length === 2 ? parseInt(parts[0]) : 12;
-  const initialMinute = parts.length === 2 ? parseInt(parts[1]) : 0;
-
-  const [hour, setHour] = useState(initialHour);
-  const [minute, setMinute] = useState(initialMinute);
-
-  useEffect(() => {
-    if (isOpen) {
-      const clean = value ? value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
-      const p = clean.split(':');
-      setHour(p.length === 2 ? parseInt(p[0]) : 12);
-      setMinute(p.length === 2 ? parseInt(p[1]) : 0);
-    }
-  }, [isOpen, value]);
-
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
-
-  const handleConfirm = () => {
-    const formattedHour = hour.toString().padStart(2, '0');
-    const formattedMinute = minute.toString().padStart(2, '0');
-    const formattedVal = `${formattedHour}:${formattedMinute}`;
-    const farsiVal = formattedVal.replace(/\d/g, x => farsiDigits[parseInt(x)]);
-    onSelect(farsiVal);
-    onClose();
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-[4px]"
-          />
-          <motion.div
-            initial={{ y: "100%", x: "-50%" }}
-            animate={{ y: 0, x: "-50%" }}
-            exit={{ y: "100%", x: "-50%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[310] rounded-t-[32px] shadow-2xl flex flex-col h-[50vh]"
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
-            
-            <div className="px-6 pb-4 border-b border-gray-50 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-gray-900">{title}</h2>
-                  <p className="text-[10px] font-bold text-gray-400">
-                    ساعت انتخابی: {toFarsiNumber(hour.toString().padStart(2, '0'))}:{toFarsiNumber(minute.toString().padStart(2, '0'))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 grid grid-cols-2 gap-4 px-6 py-4 overflow-hidden h-full">
-              {/* Hour */}
-              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
-                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
-                  ساعت
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-                  {hours.map(h => (
-                    <button
-                      key={h}
-                      onClick={() => setHour(h)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${hour === h ? 'bg-rose-500 text-white shadow-md shadow-rose-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      {toFarsiNumber(h.toString().padStart(2, '0'))}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Minute */}
-              <div className="flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100/50 overflow-hidden">
-                <div className="bg-gray-100/70 py-2 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
-                  دقیقه
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-                  {minutes.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setMinute(m)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${minute === m ? 'bg-rose-500 text-white shadow-md shadow-rose-500/10' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      {toFarsiNumber(m.toString().padStart(2, '0'))}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-50 flex-shrink-0 bg-white">
-              <button
-                onClick={handleConfirm}
-                className="w-full bg-rose-500 text-white h-12 rounded-2xl text-sm font-black shadow-lg shadow-rose-500/10 border-none cursor-pointer hover:bg-rose-600 transition-colors"
-              >
-                تایید ساعت
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function CategoryDrawer({ 
-  isOpen, 
-  onClose, 
-  selectedCategory, 
-  onSelect 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  selectedCategory: string; 
-  onSelect: (category: string) => void;
-}) {
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredCategories = CATEGORIES.filter(cat => 
-    cat.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            onClick={onClose} 
-            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
-          />
-          <motion.div 
-            initial={{ y: "100%", x: "-50%" }} 
-            animate={{ y: 0, x: "-50%" }} 
-            exit={{ y: "100%", x: "-50%" }} 
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
-            
-            <div className="flex items-center justify-between shrink-0">
-               <div className="space-y-1">
-                 <h3 className="text-xl font-black text-gray-900">انتخاب دسته‌بندی</h3>
-                 <p className="text-xs font-bold text-gray-400">یک دسته‌بندی برای رویداد خود انتخاب کنید</p>
-               </div>
-               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                 <X className="w-5 h-5 text-gray-400" />
-               </button>
-            </div>
-
-            <div className="relative shrink-0">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="جستجوی دسته‌بندی..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
-              />
-            </div>
-            
-            <div className="flex-1 overflow-y-auto no-scrollbar py-2">
-              <div className="grid grid-cols-2 gap-4">
-                {filteredCategories.map(cat => {
-                  const IconComponent = (LucideIcons as any)[cat.icon];
-                  const isSelected = selectedCategory === cat.title;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        onSelect(cat.title);
-                        onClose();
-                      }}
-                      className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all gap-3 ${
-                        isSelected 
-                        ? 'bg-gray-900/5 border-gray-900 shadow-sm' 
-                        : 'bg-gray-50 border-transparent hover:bg-gray-100'
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center bg-white ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {IconComponent && <IconComponent className="w-6 h-6" />}
-                      </div>
-                      <span className={`text-xs font-black ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{cat.title}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button 
-              onClick={onClose}
-              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg transition-all shrink-0 active:scale-[0.98]"
-            >
-              بستن
-            </button>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function SelectionDrawer({
-  isOpen,
-  onClose,
-  title,
-  subtitle,
-  options,
-  selectedValue,
-  onSelect,
-  showSearch = false
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  subtitle?: string;
-  options: { label: string; value: string }[];
-  selectedValue: string;
-  onSelect: (value: string) => void;
-  showSearch?: boolean;
-}) {
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" 
-          />
-          <motion.div 
-            initial={{ y: "100%", x: "-50%" }} 
-            animate={{ y: 0, x: "-50%" }} 
-            exit={{ y: "100%", x: "-50%" }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 pb-10 space-y-6 shadow-2xl flex flex-col max-h-[90vh]" 
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto shrink-0" />
-            
-            <div className="flex items-center justify-between shrink-0">
-               <div className="space-y-1">
-                 <h3 className="text-xl font-black text-gray-900">{title}</h3>
-                 {subtitle && <p className="text-xs font-bold text-gray-400">{subtitle}</p>}
-               </div>
-               <button onClick={onClose} className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                 <X className="w-5 h-5 text-gray-400" />
-               </button>
-            </div>
-
-            {showSearch && (
-              <div className="relative shrink-0">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="جستجو..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-10 pl-4 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none"
-                />
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto no-scrollbar py-2 space-y-1">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => {
-                  const isSelected = selectedValue === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => { onSelect(opt.value); onClose(); }}
-                      className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group border-b border-gray-50 last:border-0 ${
-                        isSelected ? 'bg-gray-100 shadow-sm' : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className={`text-sm font-bold transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
-                        {opt.label}
-                      </span>
-                      {isSelected && (
-                        <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-gray-900/20 animate-in zoom-in-50 duration-300">
-                          <Check className="w-4 h-4" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="py-20 text-center space-y-3">
-                   <div className="w-16 h-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex items-center justify-center mx-auto text-gray-200">
-                      <Search className="w-8 h-8" />
-                   </div>
-                   <p className="text-xs font-bold text-gray-400">موردی یافت نشد</p>
-                </div>
-              )}
-            </div>
-
-            <button 
-              onClick={onClose}
-              className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-xl shadow-gray-900/10 transition-all shrink-0 active:scale-[0.98]"
-            >
-              تایید و بازگشت
-            </button>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
+// SelectionDrawer is now imported from ./components/SelectionDrawer
 
 function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: () => void; onComplete: (data: any) => void }) {
   const [formData, setFormData] = useState({
@@ -2280,6 +1364,9 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isProvinceOpen, setIsProvinceOpen] = useState(false);
+  const [isCityOpen, setIsCityOpen] = useState(false);
+  const [isOccupationOpen, setIsOccupationOpen] = useState(false);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2333,6 +1420,8 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
     '4': ['مشهد', 'نیشابور', 'سبزوار', 'تربت حیدریه'],
     '5': ['ساری', 'بابل', 'آمل', 'قائم‌شهر'],
   };
+
+  const selectedProvinceObj = PROVINCES.find(p => p.id === formData.provinceId);
 
   return (
     <motion.div 
@@ -2426,14 +1515,16 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-gray-400 mr-1">شغل</label>
                 <div className="relative">
-                  <Briefcase className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Briefcase className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
                   <input 
                     type="text" 
+                    readOnly
+                    onClick={() => setIsOccupationOpen(true)}
                     value={formData.occupation}
-                    onChange={e => setFormData({ ...formData, occupation: e.target.value })}
-                    placeholder="مثال: برنامه‌نویس"
-                    className="w-full bg-gray-50 border border-gray-100 h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all"
+                    placeholder="انتخاب شغل"
+                    className="w-full bg-gray-50 border border-gray-100 h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer text-right"
                   />
+                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -2482,30 +1573,32 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
               {/* Province */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-gray-400 mr-1">استان محل سکونت</label>
-                <select 
-                  value={formData.provinceId}
-                  onChange={e => setFormData({ ...formData, provinceId: e.target.value, city: '' })}
-                  className="w-full bg-gray-50 border border-gray-100 h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all"
+                <button
+                  type="button"
+                  onClick={() => setIsProvinceOpen(true)}
+                  className="w-full bg-gray-50 border border-gray-100 h-12 px-4 rounded-2xl text-[12px] font-black flex items-center justify-between hover:bg-white hover:border-gray-200 transition-all text-right outline-none cursor-pointer shadow-sm shadow-gray-100/5"
                 >
-                  <option value="">انتخاب استان</option>
-                  {PROVINCES.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                  <span className={formData.provinceId ? 'text-gray-900 font-black' : 'text-gray-400 font-bold'}>
+                    {selectedProvinceObj?.name || 'انتخاب استان'}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
               </div>
 
               {/* City */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-gray-400 mr-1">شهر</label>
-                <select 
-                  value={formData.city}
+                <button
+                  type="button"
                   disabled={!formData.provinceId}
-                  onChange={e => setFormData({ ...formData, city: e.target.value })}
-                  className={`w-full bg-gray-50 border ${errors.city ? 'border-red-500' : 'border-gray-100'} h-12 px-4 rounded-2xl text-[12px] font-black focus:bg-white outline-none ring-blue-100/50 focus:ring-4 transition-all disabled:opacity-50`}
+                  onClick={() => setIsCityOpen(true)}
+                  className={`w-full bg-gray-50 border ${errors.city ? 'border-red-500' : 'border-gray-100'} h-12 px-4 rounded-2xl text-[12px] font-black flex items-center justify-between hover:bg-white hover:border-gray-200 transition-all text-right outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm shadow-gray-100/5`}
                 >
-                  <option value="">انتخاب شهر</option>
-                  {formData.provinceId && (CITIES as any)[formData.provinceId].map((c: string) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                  <span className={formData.city ? 'text-gray-900 font-black' : 'text-gray-400 font-bold'}>
+                    {formData.city || 'انتخاب شهر'}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
               </div>
             </div>
 
@@ -2640,6 +1733,43 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
           title="انتخاب تاریخ تولد"
           minYear={1340}
           maxYear={1406}
+          />
+
+        <SelectionDrawer
+          isOpen={isProvinceOpen}
+          onClose={() => setIsProvinceOpen(false)}
+          title="انتخاب استان"
+          subtitle="استان مورد نظر خود را انتخاب کنید"
+          showSearch
+          options={PROVINCES.map(p => ({ label: p.name, value: p.id }))}
+          selectedValue={formData.provinceId}
+          onSelect={(val) => {
+            setFormData({...formData, provinceId: val, city: ''});
+            if (errors.provinceId) setErrors({...errors, provinceId: ''});
+          }}
+        />
+
+        <SelectionDrawer
+          isOpen={isCityOpen}
+          onClose={() => setIsCityOpen(false)}
+          title="انتخاب شهر"
+          subtitle="شهر مورد نظر خود را انتخاب کنید"
+          showSearch
+          options={selectedProvinceObj ? (CITIES as any)[selectedProvinceObj.id].map((c: string) => ({ label: c, value: c })) : []}
+          selectedValue={formData.city}
+          onSelect={(val) => {
+            setFormData({...formData, city: val});
+            if (errors.city) setErrors({...errors, city: ''});
+          }}
+        />
+
+        <JobSelectionDrawer
+          isOpen={isOccupationOpen}
+          onClose={() => setIsOccupationOpen(false)}
+          selectedValue={formData.occupation}
+          onSelect={(val) => {
+            setFormData({...formData, occupation: val});
+          }}
         />
     </motion.div>
   );
@@ -3551,7 +2681,7 @@ function FormSelect({
   );
 }
 
-function EventDetailsPage({ 
+function OldEventDetailsPage({ 
   eventId, 
   events = [],
   onBack, 
@@ -4222,14 +3352,14 @@ function ParticipantsDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-[2px]"
+            className="fixed inset-0 bg-black/40 z-[400] backdrop-blur-[2px]"
           />
           <motion.div
             initial={{ y: "100%", x: "-50%" }}
             animate={{ y: 0, x: "-50%" }}
             exit={{ y: "100%", x: "-50%" }}
             transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[130] rounded-t-2xl shadow-2xl flex flex-col pt-2"
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-white z-[410] rounded-t-2xl shadow-2xl flex flex-col pt-2"
             dir="rtl"
           >
             <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
@@ -4294,14 +3424,14 @@ function ConfirmationDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]"
+            className="fixed inset-0 bg-black/40 z-[400] backdrop-blur-[2px]"
           />
           <motion.div
             initial={{ y: "100%", x: "-50%" }}
             animate={{ y: 0, x: "-50%" }}
             exit={{ y: "100%", x: "-50%" }}
             transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-2xl shadow-2xl flex flex-col pt-2"
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[410] rounded-t-2xl shadow-2xl flex flex-col pt-2"
             dir="rtl"
           >
             <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
@@ -4400,14 +3530,14 @@ function ReportDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]"
+            className="fixed inset-0 bg-black/40 z-[400] backdrop-blur-[2px]"
           />
           <motion.div
             initial={{ y: "100%", x: "-50%" }}
             animate={{ y: 0, x: "-50%" }}
             exit={{ y: "100%", x: "-50%" }}
             transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-2xl shadow-2xl flex flex-col pt-2 max-h-[90vh] overflow-y-auto no-scrollbar"
+            className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[410] rounded-t-2xl shadow-2xl flex flex-col pt-2 max-h-[90vh] overflow-y-auto no-scrollbar"
             dir="rtl"
           >
             <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
@@ -4888,104 +4018,6 @@ function FilterDrawer({
   );
 }
 
-function CitySelectionDrawer({ 
-  isOpen, 
-  onClose, 
-  onSelect, 
-  currentCity 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSelect: (city: string) => void;
-  currentCity: string;
-}) {
-  const allCities = [
-    'تهران', 'شیراز', 'اصفهان', 'رشت', 'گرگان', 
-    'تبریز', 'مشهد', 'کرج', 'اهواز', 'قم', 
-    'کرمانشاه', 'یزد', 'اردبیل', 'بندرعباس', 'همدان',
-    'زنجان', 'سنندج', 'قزوین', 'خرم‌آباد', 'ساری'
-  ];
-  
-  const [search, setSearch] = useState('');
-  
-  const filteredCities = allCities.filter(city => 
-    city.includes(search)
-  );
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-[80] backdrop-blur-[2px]"
-          />
-          <motion.div
-            initial={{ y: "100%", x: "-50%" }}
-            animate={{ y: 0, x: "-50%" }}
-            exit={{ y: "100%", x: "-50%" }}
-            transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[70vh] bg-white z-[90] rounded-t-2xl shadow-2xl flex flex-col"
-            dir="rtl"
-          >
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4 flex-shrink-0" />
-            
-            <div className="px-6 pb-4 space-y-4 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-gray-900">انتخاب شهر</h2>
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="relative">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="text"
-                  placeholder="جستجوی نام شهر..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pr-12 pl-4 text-sm font-bold focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 pb-12 bg-gray-50/50 no-scrollbar">
-              <div className="space-y-1 mt-2">
-                {filteredCities.length > 0 ? (
-                  filteredCities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => onSelect(city)}
-                      className={`w-full text-right px-6 py-4 rounded-2xl flex items-center justify-between transition-all ${
-                        city === currentCity 
-                        ? 'bg-white shadow-sm border border-blue-100 text-blue-600' 
-                        : 'hover:bg-white/60 text-gray-700'
-                      }`}
-                    >
-                      <span className="font-black">{city}</span>
-                      {city === currentCity && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                      )}
-                    </button>
-                  ))
-                ) : (
-                  <div className="py-10 text-center">
-                    <p className="text-gray-400 font-bold">شهری پیدا نشد</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
 // Redesigned AuthDrawer is imported from external component ./components/AuthDrawer.tsx
 
 function FooterItem({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) {
@@ -5229,7 +4261,7 @@ function ConsultantCard({ consultant }: { consultant: any; key?: React.Key }) {
   );
 }
 
-function ProfilePage({ onBack, onLogout, user, onUpdateUser }: { onBack: () => void; onLogout?: () => void; user: AppUser | null; onUpdateUser?: (user: AppUser) => void; key?: React.Key }) {
+function ProfilePage({ onBack, onLogout, user, onUpdateUser, onOpenSupportTickets }: { onBack: () => void; onLogout?: () => void; user: AppUser | null; onUpdateUser?: (user: AppUser) => void; onOpenSupportTickets: () => void; key?: React.Key }) {
   const [isInterestsDrawerOpen, setIsInterestsDrawerOpen] = useState(false);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -5330,6 +4362,7 @@ function ProfilePage({ onBack, onLogout, user, onUpdateUser }: { onBack: () => v
         <MenuItem icon={<Mail className="w-5 h-5" />} title="پیام‌ها" />
         <div className="h-4 bg-gray-50 my-2" />
         <MenuItem icon={<Headphones className="w-5 h-5" />} title="ارتباط با پشتیبانی" subtitle="همه سرویس‌های اسنپ" secondaryBadge="جدید" />
+        <MenuItem icon={<Mail className="w-5 h-5 text-red-500" />} title="تیکت‌های پشتیبانی" subtitle="ثبت و پیگیری تیکت‌های شما" onClick={onOpenSupportTickets} />
         <MenuItem icon={<Settings className="w-5 h-5" />} title="تنظیمات" />
         <MenuItem icon={<Gift className="w-5 h-5" />} title="دعوت از دوستان" />
         <MenuItem icon={<Info className="w-5 h-5" />} title="درباره اسنپ!" />
@@ -5463,6 +4496,12 @@ function EventsPage({
       <section>
         <EnhancedHeroSlider banners={EVENT_BANNERS} isLoading={isInitialLoading} />
       </section>
+
+      {/* Memories Section */}
+      <MemoriesSection onSelectEvent={onSelectEvent} />
+
+      {/* Cinematic Memories Carousel Section */}
+      <CinematicMemories />
 
                         {/* Event Organizers Section */}
                   <section className="px-6 bg-white border-t border-gray-50">
