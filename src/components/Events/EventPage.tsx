@@ -4,7 +4,7 @@ import { type AppEvent } from '../../types';
 import { getEventsWithPagination } from '../../services/events'
 import EventCardSkeleton from './EventCardSkeleton'
 import EmptyState from './EmptyState'
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Heart, User } from 'lucide-react';
 import { useCity } from '../Shared/CityContext';
 
 interface EventsPageProps {
@@ -213,33 +213,37 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto no-scrollbar pb-10"
     >
-      <section className="px-6 py-4">
-        {/* <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-black">لیست رویدادها</h2>
-          <div className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-            {selectedCityId ? `شهر: ${selectedCityId}` : 'انتخاب شهر'}
+      <section className="px-4 py-4">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+            <span className="w-1.5 h-3.5 bg-[#ED1C24] rounded-full inline-block"></span>
+            دورهمی ها
+          </h2>
+          <div className="text-[10px] text-gray-400 font-bold bg-gray-100 px-3 py-1 rounded-full">
+            {events.length} رویداد
           </div>
-        </div> */}
+        </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-3">
           {isInitialLoading ? (
-            <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+            <>
               <EventCardSkeleton />
               <EventCardSkeleton />
               <EventCardSkeleton />
-            </div>
+              <EventCardSkeleton />
+            </>
           ) : events.length > 0 ? (
             events.map((event, index) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.05, 0.5) }}
-                className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
-                onClick={() => onSelectEvent(event.id)}>
-
-                {/* بخش تصویر با ارتفاع کمتر و سایه از پایین */}
-                <div className="relative h-44 rounded-t-2xl overflow-hidden">
+                transition={{ delay: Math.min(index * 0.03, 0.3) }}
+                className="group cursor-pointer bg-white rounded-[20px] overflow-hidden shadow-sm hover:shadow-md border border-slate-100/80 transition-all duration-300"
+                onClick={() => onSelectEvent(event.id)}
+              >
+                {/* ===== بخش تصویر ===== */}
+                <div className="relative h-28 w-full bg-slate-100 overflow-hidden">
                   <img
                     src={process.env.File_BaseURL + event.image}
                     alt={event.title}
@@ -247,58 +251,77 @@ function EventsPage({ onSelectEvent, searchQuery = '', filters = {} }: EventsPag
                     referrerPolicy="no-referrer"
                   />
 
-                  {/* سایه مشکی کمرنگ از پایین به بالا */}
-                  <div className="absolute inset-0 bg-gradient-to-t   to-transparent pointer-events-none" />
+                  {/* ===== سایه مشکی از پایین به بالا (گرادیانت) ===== */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
 
+                  {/* ===== تگ رایگان (با بک‌گراند قرمز و افکت شیشه‌ای) ===== */}
                   {event.isFree && (
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black z-10">
+                    <div className="absolute top-2 left-2 bg-[#ffffff]/90 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[8px] font-black text-black z-10 shadow-sm border border-white/10">
                       رایگان
                     </div>
                   )}
                 </div>
 
-                {/* بخش محتوای متنی */}
-                <div className="p-4 space-y-2">
-                  <h3 className="text-lg font-black group-hover:text-[#ED1C24] transition-colors line-clamp-2">
+                {/* ===== بخش محتوای متنی ===== */}
+                <div className="p-2.5 space-y-1.5">
+                  {/* عنوان رویداد */}
+                  <h3 className="text-xs font-black text-slate-800 leading-tight line-clamp-2 group-hover:text-[#ED1C24] transition-colors">
                     {event.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <Clock className="w-4 h-4 flex-shrink-0" />
-                    <span>{event.date}</span>
+
+                  {/* ===== ردیف تاریخ و مکان برگزاری (کنار هم) ===== */}
+                  <div className="flex items-center justify-between">
+                    {/* تاریخ */}
+                    <div className="flex items-center gap-0.5 text-gray-400">
+                      <Clock size={9} className="text-teal-500" />
+                      <span className="text-[10px] font-bold font-medium">{event.date}</span>
+                    </div>
+
+                    {/* مکان برگزاری */}
+                    <div className="flex items-center gap-0.5 text-gray-400 max-w-[100px]">
+                      <MapPin size={9} className="text-teal-500 flex-shrink-0" />
+                      <span className="text-[10px] font-bold truncate">{event.location || 'تهران، تهران'}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-400 text-xs">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="line-clamp-1">{event.location}</span>
+
+                  {/* ===== ردیف برگزارکننده ===== */}
+                  <div className="flex items-center gap-0.5 text-gray-400">
+                    <User size={9} className="text-teal-500" />
+                    <span className="text-[10px] font-bold truncate max-w-[160px]">برگزارکننده: {event.organizer || 'علی قلی پور'}</span>
                   </div>
+
                 </div>
               </motion.div>
             ))
           ) : (
-            <EmptyState message="رویدادی یافت نشد" />
-          )}
-
-          {isLoadingMore && (
-            <div className="flex flex-col gap-6 py-4">
-              <EventCardSkeleton />
-              <EventCardSkeleton />
+            <div className="col-span-2">
+              <EmptyState message="رویدادی یافت نشد" />
             </div>
-          )}
-
-          {!isLoadingMore && !isInitialLoading && !hasMore && events.length > 0 && (
-            <div className="py-10 text-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-1 bg-gray-100 rounded-full" />
-                <p className="text-gray-400 text-sm font-bold">
-                  {events.length} رویداد - پایان لیست
-                </p>
-              </div>
-            </div>
-          )}
-
-          {hasMore && !isInitialLoading && events.length > 0 && (
-            <div ref={loadMoreRef} className="h-10 w-full" />
           )}
         </div>
+
+        {isLoadingMore && (
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <EventCardSkeleton />
+            <EventCardSkeleton />
+          </div>
+        )}
+
+        {/* پایان لیست */}
+        {!isLoadingMore && !isInitialLoading && !hasMore && events.length > 0 && (
+          <div className="py-6 text-center">
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-8 h-0.5 bg-gray-100 rounded-full" />
+              <p className="text-gray-400 text-[10px] font-bold">
+                {events.length} رویداد - پایان لیست
+              </p>
+            </div>
+          </div>
+        )}
+
+        {hasMore && !isInitialLoading && events.length > 0 && (
+          <div ref={loadMoreRef} className="h-6 w-full" />
+        )}
       </section>
     </motion.main>
   );

@@ -1,28 +1,133 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { AppEvent, HomeSlider } from "../types";
+import { AppCategory, AppEvent, HomeSlider } from "../types";
 import { useAuth } from "./Auth/AuthContext";
-import { getEventsByCity, initEventsLates } from "../services/events";
+import { getEventsByCity } from "../services/events";
 import { initHomeSlider } from "../services/homesliders";
 import AuthDrawer from "./Auth/AuthDrawer";
 import FilterDrawer from "./Search/Filter";
-import { Calendar, ChevronDown, ChevronLeft, Clock, Filter, Home, MapPin, Plus, Search, Ticket, UserIcon, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, Clock, Filter, Heart, MapPin, Search, Star, User, X } from "lucide-react";
 import EventsPage from "./Events/EventPage";
 import CustomerEventsPage from "./Events/CustomerEventsPage";
 import EmptyState from "./Events/EmptyState";
 import EventCardSkeleton from "./Events/EventCardSkeleton";
-import CategoryForHomePage from "./Shared/CategoriesHomePage";
 import { AnimatePresence, motion } from "motion/react";
 import CreateEvent from "./Events/CreateEvent";
+import EditEvent from "./Events/EditEvent";
 import RegisterPage from "./Auth/Register";
 import EventDetailsPage from "./Events/EventDetails";
 import ProfilePage from "./Users/ProfilePage";
 import NewOrganizer from "./Shared/NewOrganizer";
 import AdminPage from "./admin/AdminPage";
 import CitySelectionDrawer from "./Shared/CitySelectionDrawer";
-import FooterItem from "./Shared/FooterItem";
-import EnhancedHeroSlider from "./Shared/EnhancedHeroSlider";
 import { useCity } from "./Shared/CityContext";
 import { AUTH_REQUIRED_EVENT } from "../services/Auth/authEvents";
+import { CategoriesPage } from "./Categories/CategoryPage";
+import { BottomNavigation } from "./Shared/BottomNavigation";
+import { HomeHeroSlider } from "./Shared/HomeHeroSlider";
+import { ScrollToTop } from "./Shared/ScrollToTopProps";
+import { KhitananEventCard } from "./Events/SpecialHomeEvent";
+import { CinematicMemories } from "./Events/CinematicMemories";
+import { SupportTickets } from "./Support/SupportTickets";
+import { EditProfilePage } from "./Users/EditProfile";
+
+
+const TOP_PICKS_DATA = [
+    {
+        id: 'tp-1',
+        name: 'کافه سنتی تهرون',
+        category: 'کافه دنج قدیمی و نوستالژیک',
+        image: '/images/event1.jpg',
+        rating: 4.9,
+        reviewsCount: 480,
+        distance: '۳۰۰ متر',
+        location: 'خیابان ویلا، تهران'
+    },
+    {
+        id: 'tp-2',
+        name: 'رستوران ایتالیایی بونو',
+        category: 'پیتزاهای هیزمی و پاستای خانگی',
+        image: '/images/event1.jpg',
+        rating: 4.8,
+        reviewsCount: 920,
+        distance: '۱.۲ کیلومتر',
+        location: 'نیاوران، تهران'
+    },
+    {
+        id: 'tp-3',
+        name: 'آرایشگاه لوکس قیچی',
+        category: 'خدمات تخصصی پوست و موی آقایان',
+        image: '/images/event1.jpg',
+        rating: 4.7,
+        reviewsCount: 310,
+        distance: '۲.۵ کیلومتر',
+        location: 'بلوار جردن، تهران'
+    },
+    {
+        id: 'tp-4',
+        name: 'کلوپ ورزشی توچال',
+        category: 'تفریحات زمستانی و تله‌کابین',
+        image: '/images/event1.jpg',
+        rating: 4.9,
+        reviewsCount: 2500,
+        distance: '۵.۸ کیلومتر',
+        location: 'ولنجک، تهران'
+    },
+    {
+        id: 'tp-5',
+        name: 'شکلات‌فروشی لوکس مایا',
+        category: 'دست‌سازهای شکلاتی فرنگی لوکس',
+        image: '/images/event1.jpg',
+        rating: 4.8,
+        reviewsCount: 290,
+        distance: '۸۰۰ متر',
+        location: 'خیابان الهیه، تهران'
+    },
+    {
+        id: 'tp-6',
+        name: 'مجموعه اسپا و سلامت ریلکس',
+        category: 'ماساژ حرفه‌ای و حمام سنتی',
+        image: '/images/event1.jpg',
+        rating: 4.7,
+        reviewsCount: 180,
+        distance: '۳.۴ کیلومتر',
+        location: 'پاسداران، تهران'
+    },
+    {
+        id: 'tp-7',
+        name: 'شیرینی‌فروشی بیبی',
+        category: 'کیک‌های شکلاتی نوستالژیک پایتخت',
+        image: '/images/event1.jpg',
+        rating: 4.9,
+        reviewsCount: 3500,
+        distance: '۴ کیلومتر',
+        location: 'یوسف‌آباد، تهران'
+    },
+    {
+        id: 'tp-8',
+        name: 'کتاب‌فروشی خانه فرهنگ',
+        category: 'کافه کتاب دنج و نشریات نایاب',
+        image: '/images/event1.jpg',
+        rating: 4.8,
+        reviewsCount: 670,
+        distance: '۱.۱ کیلومتر',
+        location: 'خیابان انقلاب، تهران'
+    }
+];
+
+const CATEGORIES: AppCategory[] = [
+    { id: 1, title: 'علمی', icon: 'Atom', color: 'text-purple-600' },
+    { id: 2, title: 'کنسرت', icon: 'Music', color: 'text-rose-600' },
+    { id: 3, title: 'هنر', icon: 'Palette', color: 'text-amber-600' },
+    { id: 4, title: 'ورزش', icon: 'Trophy', color: 'text-emerald-600' },
+    { id: 5, title: 'فنی', icon: 'Cpu', color: 'text-indigo-600' },
+    { id: 6, title: 'آموزش', icon: 'GraduationCap', color: 'text-blue-600' },
+    { id: 7, title: 'عکس', icon: 'Image', color: 'text-orange-600' },
+    { id: 8, title: 'بازی', icon: 'Gamepad2', color: 'text-cyan-600' },
+    { id: 9, title: 'مذهبی', icon: 'Moon', color: 'text-teal-600' },
+    { id: 10, title: 'تجاری', icon: 'Briefcase', color: 'text-rose-600' },
+    { id: 11, title: 'سلامت', icon: 'Heart', color: 'text-pink-600' },
+    { id: 12, title: 'سفر', icon: 'Compass', color: 'text-emerald-600' },
+];
 
 function AppContent() {
 
@@ -34,9 +139,11 @@ function AppContent() {
     const [isCityDrawerOpen, setIsCityDrawerOpen] = useState(false);
     const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+    const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [visibleEventsCount, setVisibleEventsCount] = useState(4);
     const [isFetching, setIsFetching] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isBottomNavHidden, setIsBottomNavHidden] = useState(false);
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [registeredEventIds, setRegisteredEventIds] = useState<string[]>(['1', '5']);
     const [eventsLates, setEventLates] = useState<AppEvent[]>([])
@@ -44,9 +151,15 @@ function AppContent() {
     const [searchQuery, setSearchQuery] = useState('');
     const { isLoggedIn, user: currentUser, logout: authLogout, updateUser } = useAuth();
     const [isEventsLoading, setIsEventsLoading] = useState(false);
+    const [selectedCategoryTab, setSelectedCategoryTab] = useState<string | null>(null);
+    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
     const isRequesting = useRef(false);
     const previousTab = useRef<string>('home');
+
+    const [likedPicks, setLikedPicks] = useState<string[]>([]);
+    const [isSupportTicketsOpen, setIsSupportTicketsOpen] = useState(false);
+
 
     const loadEventsByCity = useCallback(async (cityId: number) => {
         if (!cityId || cityId === 0) return;
@@ -118,7 +231,14 @@ function AppContent() {
 
     const openCreateEvent = () => {
         setSelectedEventId(null);
+        setEditingEventId(null);
         setIsCreateEventOpen(true);
+    };
+
+    const openEditEvent = (eventId: number) => {
+        setSelectedEventId(null);
+        setIsCreateEventOpen(false);
+        setEditingEventId(eventId);
     };
 
     const navigateToTab = (tab: string) => {
@@ -201,10 +321,11 @@ function AppContent() {
     }
 
     return (
-
         <div className="flex justify-center bg-gray-200 min-h-screen font-vazir" dir="rtl">
             {/* Mobile Container Wraps */}
             <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
+
+                <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen, isSupportTicketsOpen, isEditProfileOpen]} />
 
                 <AnimatePresence mode="wait">
                     {isCreateEventOpen ? (
@@ -221,6 +342,27 @@ function AppContent() {
                                 navigateToTab('profile');
                             }}
                         />
+                    ) : isEditProfileOpen && currentUser ? (
+                        <EditProfilePage
+                            key="edit-profile"
+                            user={currentUser}
+                            onBack={() => setIsEditProfileOpen(false)}
+                            onSave={(updatedUser) => {
+                                setCurrentUser(updatedUser);
+                                setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+                            }}
+                        />
+                    ) : isSupportTicketsOpen ? (
+                        <SupportTickets
+                            key="support-tickets"
+                            onBack={() => setIsSupportTicketsOpen(false)}
+                        />
+                    ) : editingEventId ? (
+                        <EditEvent
+                            key={`edit-event-${editingEventId}`}
+                            eventId={editingEventId}
+                            onBack={() => setEditingEventId(null)}
+                        />
                     ) : selectedEventId ? (
                         <EventDetailsPage
                             key="event-details"
@@ -228,6 +370,7 @@ function AppContent() {
                             onBack={() => setSelectedEventId(null)}
                             isLoggedIn={isLoggedIn}
                             onOpenAuth={() => setIsAuthDrawerOpen(true)}
+                            onOverlayStateChange={setIsBottomNavHidden}
                             // registeredEventIds={registeredEventIds}
                             onRegister={(id) => setRegisteredEventIds(prev => [...prev, id])}
                         // onUnregister={(id) => setRegisteredEventIds(prev => prev.filter(eid => eid !== id))} 
@@ -244,6 +387,9 @@ function AppContent() {
                             onUpdateUser={(updatedUser) => {
                                 updateUser(updatedUser);
                             }}
+                            navigateToTab={navigateToTab}
+                            onOpenSupportTickets={() => setIsSupportTicketsOpen(true)}
+                            onOpenEditProfile={() => setIsEditProfileOpen(true)}
                         />
                     ) : (
                         <>
@@ -257,14 +403,14 @@ function AppContent() {
                                     </div>
 
                                     <div className="flex items-center gap-4">
-                                        <button
+                                        {/* <button
                                             onClick={() => navigateToTab('admin')}
                                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeTab === 'admin'
                                                 ? 'bg-gray-800 text-white shadow-sm'
                                                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                                         >
                                             مدیر سایت
-                                        </button>
+                                        </button> */}
                                         <div className="flex flex-col items-center">
                                             <span className="text-[10px] font-bold text-gray-400">استان/شهر</span>
                                             <button
@@ -322,14 +468,15 @@ function AppContent() {
                                     className="flex-1 overflow-y-auto no-scrollbar"
                                 >
                                     <section>
-                                        <EnhancedHeroSlider banners={homeSliders} isLoading={isInitialLoading} />
+                                        {/* <EnhancedHeroSlider banners={homeSliders} isLoading={isInitialLoading} /> */}
+                                        <HomeHeroSlider />
                                     </section>
 
-                                    <CategoryForHomePage />
+                                    {/* <CategoryForHomePage /> */}
 
-                                    <section className="px-6 py-4">
+                                    <section className="px-4 py-4">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h2 className="text-xl font-black">دورهمی های اخیر</h2>
+                                            <h2 className="text-sm font-extrabold font-black">دورهمی های اخیر</h2>
                                         </div>
                                         <div className="flex flex-col gap-3">
                                             {(isInitialLoading || isEventsLoading) ? (
@@ -357,25 +504,26 @@ function AppContent() {
                                                                 <div className="space-y-1.5">
                                                                     <div className="flex items-center justify-between">
                                                                         <h3 className="text-sm font-black text-gray-900 group-hover:text-[#ED1C24] transition-colors line-clamp-1">{event.title}</h3>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
-                                                                            <Clock className="w-3 h-3 text-[#ED1C24]" />
-                                                                            <span>{event.date}</span>
-                                                                        </div>
                                                                         {event.isFree && (
                                                                             <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/50">رایگان</span>
                                                                         )}
                                                                     </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-sm">
+                                                                            <Clock className="w-3 h-3 text-[#ED1C24]" />
+                                                                            <span>زمان برگزاری: {event.date}</span>
+                                                                        </div>
+
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center justify-between mt-2">
+                                                                <div className="flex items-center mt-2 gap-3">
                                                                     <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
                                                                         <MapPin className="w-3 h-3" />
                                                                         <span className="truncate max-w-[120px]">{event.location}</span>
                                                                     </div>
-                                                                    <div className="text-[10px] font-black text-gray-400 group-hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-tighter">
-                                                                        مشاهده جزییات
-                                                                        <ChevronLeft className="w-3 h-3" />
+                                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                                                        <User className="w-3 h-3" />
+                                                                        <span className="text-gray-500">برگزارکننده: {event.organizer}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -401,15 +549,174 @@ function AppContent() {
                                         </div>
                                     </section>
 
+                                    <CinematicMemories />
+
+                                    <KhitananEventCard />
+
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 15 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -15 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="relative" dir="rtl">
+                                        <div className="flex items-center justify-between mb-3 mt-5 px-5">
+                                            <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5 animate-fade-in">
+                                                <span className="w-1.5 h-3.5 bg-teal-500 rounded-full inline-block"></span>
+                                                دورهمی های ورزشی
+                                            </h2>
+                                            <span
+                                                // onClick={() => onScreenChange?.('businesses')}
+                                                className="text-[10px] text-teal-650 font-extrabold hover:underline flex items-center gap-0.5 cursor-pointer">
+                                                مشاهده همه <ChevronLeft size={10} />
+                                            </span>
+                                        </div>
+
+                                        {/* Horizontal Scrolling Carousel */}
+                                        <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 px-5 scroll-smooth select-none cursor-grab active:cursor-grabbing snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                            {TOP_PICKS_DATA.map((item) => {
+                                                const isLiked = likedPicks.includes(item.id);
+                                                return (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        whileHover={{ y: -4 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        className="w-48 bg-white rounded-[20px] shadow-sm hover:shadow-md border border-slate-100/80 overflow-hidden flex-shrink-0 snap-align-start transition-all duration-200">
+                                                        <div className="h-28 w-full relative bg-slate-100">
+                                                            <img
+                                                                src={item.image}
+                                                                alt={item.name}
+                                                                referrerPolicy="no-referrer"
+                                                                className="w-full h-full object-cover pointer-events-none"
+                                                            />
+                                                            {/* Interactive Heart Icon */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // toggleLikePick(item.id);
+                                                                }}
+                                                                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md shadow-sm flex items-center justify-center transition-all duration-150 hover:bg-white active:scale-90 cursor-pointer">
+                                                                <Heart size={14} className={isLiked ? 'fill-rose-500 text-rose-500 scale-110' : 'text-slate-650'} />
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="p-3 text-right">
+                                                            <h3 className="text-xs font-black text-slate-850 leading-tight truncate">
+                                                                {item.name}
+                                                            </h3>
+                                                            <p className="text-[9px] text-slate-400 mt-1 truncate">
+                                                                {item.category}
+                                                            </p>
+
+                                                            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-50">
+                                                                <div className="flex items-center gap-0.5 text-amber-500">
+                                                                    <Star size={10} className="fill-current text-amber-500" />
+                                                                    <span className="text-[9px] font-black">{item.rating}</span>
+                                                                </div>
+                                                                <p className="text-[8px] text-slate-400 flex items-center gap-0.5 justify-start max-w-[80px] truncate">
+                                                                    <MapPin size={9} className="text-teal-500" />
+                                                                    {item.location.split('،')[0]}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 15 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -15 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="relative" dir="rtl">
+                                        <div className="flex items-center justify-between mb-3 mt-5 px-5">
+                                            <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5 animate-fade-in">
+                                                <span className="w-1.5 h-3.5 bg-teal-500 rounded-full inline-block"></span>
+                                                دورهمی های کتابخوانی
+                                            </h2>
+                                            <span
+                                                // onClick={() => onScreenChange?.('businesses')}
+                                                className="text-[10px] text-teal-650 font-extrabold hover:underline flex items-center gap-0.5 cursor-pointer">
+                                                مشاهده همه <ChevronLeft size={10} />
+                                            </span>
+                                        </div>
+
+                                        {/* Horizontal Scrolling Carousel */}
+                                        <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 px-5 scroll-smooth select-none cursor-grab active:cursor-grabbing snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                            {TOP_PICKS_DATA.map((item) => {
+                                                const isLiked = likedPicks.includes(item.id);
+                                                return (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        whileHover={{ y: -4 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        className="w-48 bg-white rounded-[20px] shadow-sm hover:shadow-md border border-slate-100/80 overflow-hidden flex-shrink-0 snap-align-start transition-all duration-200">
+                                                        <div className="h-28 w-full relative bg-slate-100">
+                                                            <img
+                                                                src={item.image}
+                                                                alt={item.name}
+                                                                referrerPolicy="no-referrer"
+                                                                className="w-full h-full object-cover pointer-events-none"
+                                                            />
+                                                            {/* Interactive Heart Icon */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // toggleLikePick(item.id);
+                                                                }}
+                                                                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md shadow-sm flex items-center justify-center transition-all duration-150 hover:bg-white active:scale-90 cursor-pointer">
+                                                                <Heart size={14} className={isLiked ? 'fill-rose-500 text-rose-500 scale-110' : 'text-slate-650'} />
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="p-3 text-right">
+                                                            <h3 className="text-xs font-black text-slate-850 leading-tight truncate">
+                                                                {item.name}
+                                                            </h3>
+                                                            <p className="text-[9px] text-slate-400 mt-1 truncate">
+                                                                {item.category}
+                                                            </p>
+
+                                                            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-50">
+                                                                <div className="flex items-center gap-0.5 text-amber-500">
+                                                                    <Star size={10} className="fill-current text-amber-500" />
+                                                                    <span className="text-[9px] font-black">{item.rating}</span>
+                                                                </div>
+                                                                <p className="text-[8px] text-slate-400 flex items-center gap-0.5 justify-start max-w-[80px] truncate">
+                                                                    <MapPin size={9} className="text-teal-500" />
+                                                                    {item.location.split('،')[0]}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+
+                                    </motion.div>
+
                                     <NewOrganizer isLoading={isInitialLoading} />
                                 </motion.main>
+                            ) : activeTab === 'categories' ? (
+                                <CategoriesPage
+                                    key="categories"
+                                    // categories={CATEGORIES}
+                                    onSelectCategory={(categoryTitle) => {
+                                        setSelectedCategoryTab(categoryTitle);
+                                        navigateToTab('events');
+                                    }}
+                                />
                             ) : activeTab === 'my-events' ? (
                                 <CustomerEventsPage
                                     key="my-events"
                                     onSelectEvent={(id) => setSelectedEventId(Number(id))}
                                     onNavigate={navigateToTab}
                                     onCreateEvent={openCreateEvent}
+                                    onEditEvent={(event) => openEditEvent(event.id)}
                                 />
+
                             ) : activeTab === 'admin' ? (
                                 <AdminPage
                                     key="admin"
@@ -430,7 +737,7 @@ function AppContent() {
                     )}
                 </AnimatePresence>
 
-                {!selectedEventId && (
+                {/* {!selectedEventId && !isCreateEventOpen && !editingEventId && !isRegisterPageOpen && (
                     <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-lg border-t border-gray-100 py-1 flex items-center justify-between px-8 z-[100] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
                         <FooterItem
                             icon={<Home className="w-9 h-9" />}
@@ -452,11 +759,13 @@ function AppContent() {
                                 <Plus className="w-9 h-9" />
                             </motion.button>
                         </div>
+
                         <FooterItem
-                            icon={<Ticket className="w-9 h-9" />}
-                            label="رویدادهای من"
-                            isActive={activeTab === 'my-events'}
-                            onClick={() => navigateToTab('my-events')} />
+                            icon={<LucideIcons.LayoutGrid className="w-9 h-9" />}
+                            label="دسته‌بندی"
+                            isActive={activeTab === 'categories'}
+                            onClick={() => navigateToTab('categories')}
+                        />
 
                         <FooterItem
                             icon={<UserIcon className="w-9 h-9" />}
@@ -470,6 +779,16 @@ function AppContent() {
                                 }
                             }} />
                     </footer>
+                )} */}
+
+                {!isAuthDrawerOpen && !isBottomNavHidden && (
+                    <BottomNavigation
+                        activeTab={activeTab}
+                        isLoggedIn={isLoggedIn}
+                        onNavigate={navigateToTab}
+                        onOpenAuth={() => setIsAuthDrawerOpen(true)}
+                        onOpenCreateEvent={openCreateEvent}
+                    />
                 )}
             </div>
 

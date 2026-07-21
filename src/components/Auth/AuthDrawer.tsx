@@ -1,8 +1,8 @@
+// AuthDrawer.tsx
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import StepOTP from "./StepOTP";
 import Login from "./Login";
-import { User } from "../../services/Auth/Auth";
 
 function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
     isOpen: boolean;
@@ -14,7 +14,6 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isExistUser, setIsExistUser] = useState(false);
     const [token, setToken] = useState<string | undefined>('');
-    // const [user, setUser] = useState<User | null>(null);
 
     // Reset step when opening
     useEffect(() => {
@@ -22,7 +21,6 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
             setStep('phone');
             setPhoneNumber('');
             setIsExistUser(false);
-            // setUser(null);
         }
     }, [isOpen]);
 
@@ -30,51 +28,58 @@ function AuthDrawer({ isOpen, onClose, onLoginSuccess, onRegisterNeeded }: {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
+                    {/* Backdrop with premium blur */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/40 z-[60] backdrop-blur-[2px]"
+                        className="fixed inset-0 bg-black/40 z-[150] backdrop-blur-[4px]"
                     />
 
-                    {/* Slider Container */}
+                    {/* Bottom Sheet - Mobile premium keyboard-responsive container */}
                     <motion.div
                         initial={{ y: "100%", x: "-50%" }}
                         animate={{ y: 0, x: "-50%" }}
                         exit={{ y: "100%", x: "-50%" }}
-                        transition={{ type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                        className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[70] rounded-t-2xl shadow-2xl overflow-y-auto no-scrollbar pt-2"
+                        transition={{ type: "spring", damping: 30, stiffness: 240 }}
+                        className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-[#F8F9FC] z-[160] rounded-t-[30px] shadow-[0_-10px_35px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col"
                         dir="rtl"
+                        style={{ maxHeight: '92vh' }}
                     >
-                        <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto my-4" />
+                        {/* Elegant drag/visual handle bar */}
+                        <div className="w-10 h-1.5 bg-gray-300/60 rounded-full mx-auto mt-3.5 mb-2 shrink-0" />
 
-                        <div className="flex flex-col min-h-[45vh] px-6 pb-20">
-                            {step === 'phone' ? (
-                                <Login
-                                    onClose={onClose}
-                                    onContinue={(num, isNew, token) => {
-                                        setPhoneNumber(num);
-                                        setIsExistUser(isNew);
-                                        setToken(token);
-                                        setStep('otp');
-                                    }}
-                                />
-                            ) : (
-                                <StepOTP
-                                    phoneNumber={phoneNumber}
-                                    token={token}
-                                    onBack={() => setStep('phone')}
-                                    onSuccess={(loggedInUser) => {
-                                        if (!isExistUser) {
-                                            onRegisterNeeded(phoneNumber);
-                                        } else if (loggedInUser) {
-                                            onLoginSuccess();
-                                        }
-                                    }}
-                                />
-                            )}
+                        {/* Inner responsive area */}
+                        <div className="flex-1 overflow-y-auto no-scrollbar px-6 pt-3 pb-7 flex flex-col justify-start">
+                            <AnimatePresence mode="wait">
+                                {step === 'phone' ? (
+                                    <Login
+                                        key="phone-step"
+                                        onClose={onClose}
+                                        onContinue={(num, isNew, token) => {
+                                            setPhoneNumber(num);
+                                            setIsExistUser(isNew);
+                                            setToken(token);
+                                            setStep('otp');
+                                        }}
+                                    />
+                                ) : (
+                                    <StepOTP
+                                        key="otp-step"
+                                        phoneNumber={phoneNumber}
+                                        token={token}
+                                        onBack={() => setStep('phone')}
+                                        onSuccess={(loggedInUser) => {
+                                            if (!isExistUser) {
+                                                onRegisterNeeded(phoneNumber);
+                                            } else if (loggedInUser) {
+                                                onLoginSuccess();
+                                            }
+                                        }}
+                                    />
+                                )}
+                            </AnimatePresence>
                         </div>
                     </motion.div>
                 </>

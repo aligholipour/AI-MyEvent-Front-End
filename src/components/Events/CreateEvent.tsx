@@ -21,6 +21,7 @@ import {
     ChevronLeft,
     MapPin,
 } from 'lucide-react';
+import { PersianDatePickerDrawer, PersianTimePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
 
 
 function CreateEvent({ onBack }: {
@@ -73,6 +74,10 @@ function CreateEvent({ onBack }: {
     const [loadingCities, setLoadingCities] = useState(false);
     const selectedProvince = provinces.find(p => p.id === formData.provinceId);
     const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+    const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
+    const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
     useEffect(() => {
         getAllProvince()
@@ -281,7 +286,7 @@ function CreateEvent({ onBack }: {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
                 <div className="px-6 py-6 space-y-6">
 
                     {/* Image Picker */}
@@ -503,17 +508,49 @@ function CreateEvent({ onBack }: {
 
                     <div className="space-y-4">
                         <div className="flex gap-4">
+
                             <FormInput
+                                label="تاریخ رویداد"
+                                isSelect
+                                onSelectClick={() => setIsDatePickerOpen(true)}
+                                placeholder="انتخاب تاریخ رویداد"
+                                value={formData.date}
+                                onChange={() => { }}
+                                error={errors.date}
+                                className="flex-1"
+                            />
+
+                            {/* <FormInput
                                 label="تاریخ رویداد"
                                 type="date"
                                 value={formData.date}
                                 onChange={(val) => { setFormData({ ...formData, date: val }); if (errors.date) setErrors({ ...errors, date: '' }); }}
                                 error={errors.date}
                                 className="flex-1"
-                            />
+                            /> */}
                         </div>
                         <div className="flex gap-4">
                             <FormInput
+                                label="از ساعت"
+                                isSelect
+                                onSelectClick={() => setIsStartTimePickerOpen(true)}
+                                placeholder="ساعت شروع"
+                                value={formData.startTime}
+                                onChange={() => { }}
+                                error={errors.startTime}
+                                className="flex-1"
+                            />
+                            <FormInput
+                                label="تا ساعت"
+                                isSelect
+                                onSelectClick={() => setIsEndTimePickerOpen(true)}
+                                placeholder="ساعت پایان"
+                                value={formData.endTime}
+                                onChange={() => { }}
+                                error={errors.endTime}
+                                className="flex-1"
+                            />
+                            {/* <FormInput
                                 label="از ساعت"
                                 type="time"
                                 value={formData.startTime}
@@ -528,7 +565,7 @@ function CreateEvent({ onBack }: {
                                 onChange={(val) => { setFormData({ ...formData, endTime: val }); if (errors.endTime) setErrors({ ...errors, endTime: '' }); }}
                                 error={errors.endTime}
                                 className="flex-1"
-                            />
+                            /> */}
                         </div>
                     </div>
 
@@ -650,7 +687,7 @@ function CreateEvent({ onBack }: {
             </div>
 
             {/* Sticky Submit Button */}
-            <div className="absolute bottom-0 left-0 w-full px-6 py-6 bg-gradient-to-t from-white via-white to-transparent pt-10 pointer-events-none">
+            <div className="absolute bottom-0 left-0 w-full px-6 py-6 bg-gradient-to-t from-white via-white to-transparent pt-10 pb-12 pointer-events-none">
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={handleSubmit}
@@ -679,6 +716,41 @@ function CreateEvent({ onBack }: {
                     setFormData({ ...formData, location, address });
                     if (errors.address) setErrors({ ...errors, address: '' });
                 }}
+            />
+
+            <PersianDatePickerDrawer
+                isOpen={isDatePickerOpen}
+                onClose={() => setIsDatePickerOpen(false)}
+                value={formData.date}
+                onSelect={(val) => {
+                    setFormData({ ...formData, date: val });
+                    if (errors.date) setErrors({ ...errors, date: '' });
+                }}
+                title="انتخاب تاریخ رویداد"
+                minYear={1405}
+                maxYear={1406}
+            />
+
+            <PersianTimePickerDrawer
+                isOpen={isStartTimePickerOpen}
+                onClose={() => setIsStartTimePickerOpen(false)}
+                value={formData.startTime}
+                onSelect={(val) => {
+                    setFormData({ ...formData, startTime: val });
+                    if (errors.startTime) setErrors({ ...errors, startTime: '' });
+                }}
+                title="ساعت شروع"
+            />
+
+            <PersianTimePickerDrawer
+                isOpen={isEndTimePickerOpen}
+                onClose={() => setIsEndTimePickerOpen(false)}
+                value={formData.endTime}
+                onSelect={(val) => {
+                    setFormData({ ...formData, endTime: val });
+                    if (errors.endTime) setErrors({ ...errors, endTime: '' });
+                }}
+                title="ساعت پایان"
             />
 
             <CategoryDrawer

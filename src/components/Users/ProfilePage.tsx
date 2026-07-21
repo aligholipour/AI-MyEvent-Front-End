@@ -1,25 +1,26 @@
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { X, ChevronLeft, Camera, Coins, Heart, Diamond, ShoppingCart, Mail, Headphones, Settings, Gift, Info } from "lucide-react";
+import { X, ChevronLeft, Camera, Mail, Headphones, Settings, CalendarDays, LayoutList, UserCog } from "lucide-react";
 import MenuItem from "../Shared/MenuItem";
-import InterestsDrawer from "../Shared/InterestsDrawer";
 import ImageCropperDrawer from "../Shared/ImageCropperDrawer";
-// import { AppUser } from "../../types";
-// import { useAuth } from "../Auth/AuthContext";
 import { User } from "@/src/services/Auth/Auth";
 
-function ProfilePage({ onBack, onLogout, onUpdateUser, user }
+
+function ProfilePage({ onBack, onLogout, onUpdateUser, user, navigateToTab, onOpenSupportTickets, onOpenEditProfile }
     : {
         user: User | null;
         onBack: () => void;
         onLogout?: () => void;
         onUpdateUser?: (user: User) => void;
-        key?: React.Key
+        key?: React.Key;
+        navigateToTab?: (tab: string) => void;
+        onOpenSupportTickets: () => void;
+        onOpenEditProfile: () => void;
     }) {
-    const [isInterestsDrawerOpen, setIsInterestsDrawerOpen] = useState(false);
     const [isCropperOpen, setIsCropperOpen] = useState(false);
     const [tempImage, setTempImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
     // const { user, logout } = useAuth();
 
     if (!user) return null;
@@ -109,16 +110,45 @@ function ProfilePage({ onBack, onLogout, onUpdateUser, user }
 
             {/* Menu List */}
             <section className="space-y-1">
-                <MenuItem icon={<Heart className="w-5 h-5 text-rose-500" />} title="علاقه‌مندی‌ها" onClick={() => setIsInterestsDrawerOpen(true)} />
-                <MenuItem icon={<Coins className="w-5 h-5" />} title="بازگشت طلایی" subtitle="تبدیل هزینه سفر به طلا" showBadge />
-                <MenuItem icon={<Diamond className="w-5 h-5" />} title="اسنپ‌کلاب" subtitle="باشگاه مشتریان اسنپ" badgeText="۱۰۵,۲۷۰ امتیاز" />
-                <MenuItem icon={<ShoppingCart className="w-5 h-5" />} title="سفارش‌ها" />
-                <MenuItem icon={<Mail className="w-5 h-5" />} title="پیام‌ها" />
+                {/* <MenuItem icon={<Heart className="w-5 h-5 text-rose-500" />} title="علاقه‌مندی‌ها" onClick={() => setIsInterestsDrawerOpen(true)} /> */}
+
+                <MenuItem icon={<UserCog className="w-5 h-5" />} title="ویرایش حساب کاربری" onClick={onOpenEditProfile} />
+
+
+                <MenuItem onClick={() => {
+                    if (navigateToTab) {
+                        navigateToTab('my-events');
+                    }
+                    else {
+                        onBack();
+                    }
+                }} icon={<CalendarDays className="w-5 h-5" />} title="رویدادهای من" />
+
+                <MenuItem onClick={() => {
+                    if (navigateToTab) {
+                        navigateToTab('admin');
+                    }
+                    else {
+                        onBack();
+                    }
+                }} icon={<LayoutList className="w-5 h-5" />} title="مدیریت" />
+
+                {/* <MenuItem onClick={() => {
+                    if (navigateToTab) {
+                        navigateToTab('support-tickets');
+                    }
+                    else {
+                        onBack();
+                    }
+                }} icon={<Mail className="w-5 h-5" />} title="تیکت‌ها" /> */}
+
+                {/* <MenuItem icon={<Diamond className="w-5 h-5" />} title="اسنپ‌کلاب" subtitle="باشگاه مشتریان اسنپ" badgeText="۱۰۵,۲۷۰ امتیاز" /> */}
+                <MenuItem icon={<Mail className="w-5 h-5" />} title="تیکت‌ها" onClick={onOpenSupportTickets} />
                 <div className="h-4 bg-gray-50 my-2" />
                 <MenuItem icon={<Headphones className="w-5 h-5" />} title="ارتباط با پشتیبانی" subtitle="همه سرویس‌های اسنپ" secondaryBadge="جدید" />
                 <MenuItem icon={<Settings className="w-5 h-5" />} title="تنظیمات" />
-                <MenuItem icon={<Gift className="w-5 h-5" />} title="دعوت از دوستان" />
-                <MenuItem icon={<Info className="w-5 h-5" />} title="درباره اسنپ!" />
+                {/* <MenuItem icon={<Gift className="w-5 h-5" />} title="دعوت از دوستان" />
+                <MenuItem icon={<Info className="w-5 h-5" />} title="درباره اسنپ!" /> */}
                 <MenuItem
                     icon={<X className="w-5 h-5" />}
                     title="خروج از حساب کاربری"

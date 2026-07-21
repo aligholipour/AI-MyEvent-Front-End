@@ -13,6 +13,32 @@ export interface UserEventsResponse {
   totalRegistered: number;
   totalHosted: number;
 }
+export interface EventDetailsForUpdateResponse {
+  title: string;
+  description: string;
+  categoryId: number | null;
+  categoryTitle: string;
+  favouriteIds: number[];
+  address: string;
+  startTime: string;
+  endTime: string;
+  isFree: boolean;
+  price: number | null;
+  minCapacity: number | null;
+  maxCapacity: number | null;
+  hasWaitlist: boolean;
+  minAge: number | null;
+  maxAge: number | null;
+  provinceId: number | null;
+  cityName: string;
+  cityId: number | null;
+  isOnline: boolean;
+  coverAddress: string;
+  onlineLink: string;
+  lat: number | null;
+  lng: number | null;
+}
+
 export interface GetUserEventsRequest {
   pageNumber?: number;
   pageSize?: number;
@@ -106,11 +132,70 @@ export async function createEvent(eventData: any) {
       throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const result = await response.json;
+    const result = await response.json();
     return result;
 
   } catch (err) {
     console.error('Failed to create event:', err);
+    throw err;
+  }
+}
+
+export async function updateEvent(bahamId: number, eventData: any) {
+  try {
+    const formData = new FormData();
+
+    const interestsArray = Array.isArray(eventData.interests)
+      ? eventData.interests
+      : eventData.interests?.split(',') || [];
+
+    interestsArray.forEach((interest: string | number, index: number) => {
+      formData.append(`interests[${index}]`, String(interest));
+    });
+
+    formData.append('id', bahamId.toString() || '');
+    formData.append('title', eventData.title || '');
+    formData.append('description', eventData.description || '');
+    formData.append('fromAge', String(eventData.minAge || 0));
+    formData.append('toAge', String(eventData.maxAge || 0));
+    formData.append('minCapacity', String(eventData.minCapacity || 0));
+    formData.append('maxCapacity', String(eventData.maxCapacity || 0));
+    formData.append('address', !eventData.isOnline ? (eventData.address || '') : '');
+    formData.append('latitude', String(eventData.location?.lat || 0));
+    formData.append('longitude', String(eventData.location?.lng || 0));
+    formData.append('cityId', String(eventData.cityId || eventData.cityId || 0));
+    formData.append('organizerId', String(eventData.organizerId || 0));
+    formData.append('gender', eventData.gender || 0);
+    formData.append('categoryId', eventData.categoryId || 0);
+    formData.append('image', eventData.coverAddress || 0);
+
+    if (eventData.date && eventData.startTime) {
+      const fromDateTime = new Date(`${eventData.date}T${eventData.startTime}`);
+      formData.append('fromEventDateTime', fromDateTime.toISOString());
+    }
+    if (eventData.date && eventData.endTime) {
+      const toDateTime = new Date(`${eventData.date}T${eventData.endTime}`);
+      formData.append('toEventDateTime', toDateTime.toISOString());
+    }
+    if (eventData.coverAddress && eventData.coverAddress.startsWith && eventData.coverAddress.startsWith('data:')) {
+      const imageFile = dataURLtoFile(eventData.coverAddress, 'event-image.jpg');
+      formData.append('image', imageFile);
+    }
+
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/Update`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to update event:', err);
     throw err;
   }
 }
@@ -201,6 +286,31 @@ export async function getEventById(id: number): Promise<EventDetailsResponse> {
 
     const data = await response.json();
     return data as EventDetailsResponse;
+
+  } catch (err) {
+    console.error('Failed to fetch event details:', err);
+    throw err;
+  }
+}
+
+export async function getEventForUpdateById(id: number): Promise<EventDetailsForUpdateResponse> {
+  try {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/GetEventForUpdate/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `HTTP ${response.status}: خطا در دریافت جزئیات رویداد`);
+    }
+
+    const data = await response.json();
+    return data as EventDetailsForUpdateResponse;
 
   } catch (err) {
     console.error('Failed to fetch event details:', err);

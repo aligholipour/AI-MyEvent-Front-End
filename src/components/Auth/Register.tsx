@@ -11,6 +11,7 @@ import InterestsDrawer from '../Shared/InterestsDrawer';
 import FormInput from '../Shared/FormInput';
 import SelectionDrawer from '../Shared/SelectionDrawer';
 import { useAuth } from './AuthContext';
+import { PersianDatePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
 
 function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: () => void; onComplete: (data: any) => void }) {
     const [formData, setFormData] = useState({
@@ -42,6 +43,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
     const [isProvinceOpen, setIsProvinceOpen] = useState(false);
     const [isCityOpen, setIsCityOpen] = useState(false);
     const [citiesList, setCitiesList] = useState<any[]>([]); // یا type مناسب خودتون
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const { Register } = useAuth();
 
     const toggleInterest = (interest: number) => {
@@ -215,6 +217,21 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-gray-400 mr-1">تاریخ تولد</label>
                                 <div className="relative">
+                                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        onClick={() => setIsDatePickerOpen(true)}
+                                        value={formData.birthDate}
+                                        placeholder="۱۳۷۰/۰۱/۰۱"
+                                        className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer`}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* <div className="space-y-2">
+                                <label className="text-[11px] font-black text-gray-400 mr-1">تاریخ تولد</label>
+                                <div className="relative">
                                     <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
@@ -223,7 +240,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                                         placeholder="۱۳۷۰/۰۱/۰۱"
                                         className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all`} />
                                 </div>
-                            </div>
+                            </div> */}
 
 
                         </div>
@@ -272,12 +289,12 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                                 <div className="flex bg-gray-50 p-1.5 rounded-2xl gap-1.5 border border-gray-100 shadow-sm shadow-gray-100/5">
                                     <button
                                         onClick={() => setFormData({ ...formData, gender: 'male' })}
-                                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'male' ? 'bg-white text-blue-600 shadow-md shadow-blue-500/5' : 'text-gray-400'}`}>
+                                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'male' ? 'bg-white text-gray-900 shadow-md shadow-gray-100/10' : 'text-gray-400'}`}>
                                         آقا
                                     </button>
                                     <button
                                         onClick={() => setFormData({ ...formData, gender: 'female' })}
-                                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'female' ? 'bg-white text-rose-600 shadow-md shadow-rose-500/5' : 'text-gray-400'}`}>
+                                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-black transition-all ${formData.gender === 'female' ? 'bg-white text-gray-900 shadow-md shadow-gray-100/10' : 'text-gray-400'}`}>
                                         خانم
                                     </button>
                                 </div>
@@ -382,6 +399,19 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                     )}
                 </button>
             </div>
+
+            <PersianDatePickerDrawer
+                isOpen={isDatePickerOpen}
+                onClose={() => setIsDatePickerOpen(false)}
+                value={formData.birthDate}
+                onSelect={(val) => {
+                    setFormData({ ...formData, birthDate: val });
+                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                }}
+                title="انتخاب تاریخ تولد"
+                minYear={1340}
+                maxYear={1406}
+            />
 
             <SelectionDrawer
                 isOpen={isProvinceOpen}
