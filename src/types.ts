@@ -50,6 +50,31 @@ export interface AppEvent {
   reasons?: CustomerBahamRejected[];
   isCanceled: boolean;
 }
+export interface CustomerGuestBahamResponse {
+  id: number;
+  title: string;
+  image: string,
+  date: string,
+  location: string,
+  iscanceled: boolean,
+  organizerName: string,
+  startTime: Date,
+  endTime: Date,
+  categoryName: string
+}
+export interface CustomerHostedBahamResponse {
+  id: number,
+  title: string,
+  image: string,
+  date: string,
+  status: number,
+  reasons: CustomerBahamRejected[],
+  isActive: boolean
+}
+export interface CustomerHostedParticipantsResponse {
+  fullname: string,
+  profileAddress: string
+}
 export interface CustomerBahamRejected {
   reason: string;
   createDateTime: string;

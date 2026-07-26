@@ -9,6 +9,7 @@ interface BottomNavigationProps {
   onOpenAuth: () => void;
   onOpenMoreMenu?: () => void;
   onOpenCreateEvent?: () => void;
+  onOpenCustomerEvent?: () => void;
 }
 
 export function BottomNavigation({
@@ -17,15 +18,9 @@ export function BottomNavigation({
   onNavigate,
   onOpenAuth,
   onOpenCreateEvent,
+  onOpenCustomerEvent,
 }: BottomNavigationProps) {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-
-  // Bottom Navigation Items config (Left to Right visually)
-  // 1. Profile (leftmost)
-  // 2. Categories
-  // 3. Gathering / Dorhami (primary center)
-  // 4. Home
-  // 5. More (rightmost)
 
   const handleTabClick = (tab: string) => {
     if (tab === 'profile' && !isLoggedIn) {
@@ -95,8 +90,8 @@ export function BottomNavigation({
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.92 }}
               className={`w-15 h-15 rounded-2xl flex flex-col items-center justify-center relative border-2 transition-all ${activeTab === 'events'
-                  ? 'bg-gradient-to-br from-[#FF9F1C] to-[#E68A00] border-white shadow-lg shadow-[#FF9F1C]/35 text-white'
-                  : 'bg-white border-gray-100/80 hover:border-[#FF9F1C]/50 shadow-md shadow-gray-200/40 text-[#FF9F1C]'
+                ? 'bg-gradient-to-br from-[#FF9F1C] to-[#E68A00] border-white shadow-lg shadow-[#FF9F1C]/35 text-white'
+                : 'bg-white border-gray-100/80 hover:border-[#FF9F1C]/50 shadow-md shadow-gray-200/40 text-[#FF9F1C]'
                 }`}
             >
               <div className="relative">
@@ -168,8 +163,7 @@ export function BottomNavigation({
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-36px)] max-w-[440px] bg-white rounded-3xl border border-gray-100 p-5 shadow-2xl z-[115]"
-              dir="rtl"
-            >
+              dir="rtl">
               <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                 <span className="text-sm font-black text-gray-900">منوی خدمات و دسترسی‌ها</span>
                 {/* <button
@@ -190,8 +184,7 @@ export function BottomNavigation({
                     }
                     setIsMoreMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95"
-                >
+                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
                     <LucideIcons.PlusCircle className="w-5 h-5" />
                   </div>
@@ -201,13 +194,49 @@ export function BottomNavigation({
                   </div>
                 </button>
 
-                <button
+                {/* <button
                   onClick={() => {
                     setIsMoreMenuOpen(false);
                   }}
                   className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95"
                 >
                   <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-500">
+                    <LucideIcons.Users className="w-5 h-5" />
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (onOpenCustomerEvent) {
+                        onOpenCustomerEvent();
+                      } else {
+                        onNavigate('home');
+                      }
+                      setIsMoreMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95">
+                  </button>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-gray-800">میزبانی من</span>
+                    <span className="text-[10px] text-gray-400 font-bold">در خدمت بقیه بودم</span>
+                  </div>
+                </button> */}
+
+
+
+                <button
+                  onClick={() => {
+                    onNavigate('categories');
+                    setIsMoreMenuOpen(false);
+
+                    if (onOpenCustomerEvent) {
+                        onOpenCustomerEvent();
+                      } else {
+                        onNavigate('home');
+                      }
+                      setIsMoreMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95">
+                  <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-500">
                     <LucideIcons.Users className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col">
@@ -221,8 +250,7 @@ export function BottomNavigation({
                     onNavigate('categories');
                     setIsMoreMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95"
-                >
+                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95">
                   <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF9F1C]">
                     <LucideIcons.Compass className="w-5 h-5" />
                   </div>

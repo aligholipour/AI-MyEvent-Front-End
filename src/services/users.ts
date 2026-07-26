@@ -30,6 +30,41 @@ export interface GetUsersRequest {
   pageSize?: number;
 }
 
+export interface UserProfileResponse {
+  id: number;
+  username?: string;
+  fullName?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  birthDate: string;
+  gender?: 'male' | 'female';
+  maritalStatus?: 'single' | 'married';
+  occupation?: string;
+  about?: string;
+  profileAddress?: string;
+  profileImage?: string;
+  avatar?: string;
+  interests?: number[];
+  favouriteIds?: number[];
+  jobId?: number | null;
+  jobTitle?: string;
+}
+
+export interface GetUserForEditResponse extends UserProfileResponse { }
+
+export interface UpdateUserProfilePayload {
+  fullName?: string;
+  phone?: string;
+  birthDate: Date | null;
+  gender?: 'male' | 'female';
+  maritalStatus?: 'single' | 'married';
+  about?: string;
+  profileImageAddress?: string;
+  favouriteIds?: number[];
+  jobId: number;
+}
+
 export interface GetUserDetailForAdminResponse {
   id: number,
   fullName: string,
@@ -42,12 +77,6 @@ export interface GetUserDetailForAdminResponse {
   profileImage: string,
   job: string,
   favourites: string
-}
-
-let runtimeEvents: AppUsers[] = STATIC_EVENTS;
-
-export function getEvents(): AppUsers[] {
-  return runtimeEvents;
 }
 
 export async function getUsers(
@@ -78,6 +107,137 @@ export async function getUsers(
     totalCount: data.totalCount,
     hasNextPage: data.HasNextPage,
   };
+}
+
+function mapUserProfile(data: any): UserProfileResponse {
+  const payload = data?.data ?? data;
+
+  return {
+    id: payload?.id ?? payload?.userId ?? 0,
+    username: payload?.username ?? payload?.userName ?? payload?.fullName ?? payload?.name ?? '',
+    fullName: payload?.fullName ?? payload?.name ?? payload?.username ?? '',
+    name: payload?.name ?? payload?.fullName ?? payload?.username ?? '',
+    phone: payload?.phone ?? payload?.phoneNumber ?? '',
+    email: payload?.email ?? payload?.mail ?? '',
+    birthDate: payload?.birthDate ?? payload?.birth_date ?? '',
+    gender: payload?.gender ?? undefined,
+    maritalStatus: payload?.maritalStatus ?? payload?.marital_status ?? undefined,
+    occupation: payload?.occupation ?? payload?.job ?? payload?.jobTitle ?? '',
+    about: payload?.about ?? payload?.aboutMe ?? '',
+    profileAddress: payload?.profileAddress ?? payload?.profileImage ?? payload?.profileImageAddress ?? '',
+    profileImage: payload?.profileImage ?? payload?.profileImageAddress ?? payload?.profileAddress ?? '',
+    avatar: payload?.avatar ?? payload?.profileImageAddress ?? payload?.profileAddress ?? '',
+    interests: payload?.interests ?? payload?.favouriteIds ?? [],
+    favouriteIds: payload?.favouriteIds ?? payload?.interests ?? [],
+    jobId: payload?.jobId ?? payload?.job?.id ?? payload?.occupationId ?? null,
+    jobTitle: payload?.jobTitle ?? payload?.job?.title ?? payload?.occupation ?? '',
+  };
+}
+
+export async function getUserForEdit(): Promise<GetUserForEditResponse> {
+
+  let lastError: unknown;
+
+  try {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/User/GetUserForEdit`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    return mapUserProfile(data);
+  } catch (error) {
+    lastError = error;
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('خطا در دریافت اطلاعات برای ویرایش کاربر');
+}
+
+export async function getCurrentUserProfile(): Promise<UserProfileResponse> {
+  const endpoints = [
+    '/User/GetUserProfile',
+    '/User/Profile',
+    '/User/GetProfile',
+    '/User/UserDetail',
+  ];
+
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await authenticatedFetch(`${process.env.API_BaseURL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data = await response.json();
+      return mapUserProfile(data);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('خطا در دریافت اطلاعات کاربر');
+}
+
+export async function updateUserProfile(payload: UpdateUserProfilePayload): Promise<UserProfileResponse> {
+  const endpoints = [
+    '/User/UpdateProfile',
+    '/User/UpdateUser',
+    '/User/EditProfile',
+  ];
+
+  const formData = new FormData();
+
+  if (payload.fullName) formData.append('fullName', payload.fullName);
+  if (payload.phone) formData.append('phone', payload.phone);
+  if (payload.birthDate) formData.append('birthDate', payload.birthDate.toString());
+  if (payload.gender) formData.append('gender', payload.gender);
+  if (payload.maritalStatus) formData.append('maritalStatus', payload.maritalStatus);
+  if (payload.about) formData.append('about', payload.about);
+  if (payload.jobId) formData.append('jobId', String(payload.jobId));
+  if (payload.profileImageAddress) formData.append('profileImageAddress', payload.profileImageAddress);
+  if (payload.favouriteIds?.length) {
+    payload.favouriteIds.forEach((item, index) => formData.append(`favouriteIds[${index}]`, String(item)));
+  }
+
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await authenticatedFetch(`${process.env.API_BaseURL}${endpoint}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data = await response.json();
+      return mapUserProfile(data);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('خطا در به‌روزرسانی اطلاعات کاربر');
 }
 
 export async function getUserDetailForAdmin(userId: number

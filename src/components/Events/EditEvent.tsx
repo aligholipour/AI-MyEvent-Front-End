@@ -14,6 +14,7 @@ import ImageCropperDrawer from '../Shared/ImageCropperDrawer';
 import SelectionDrawer from '../Shared/SelectionDrawer';
 import CategoryDrawer from '../Shared/CategoryDrawer';
 import { getAllFavourite } from '@/src/services/favourites';
+import { PersianDatePickerDrawer, PersianTimePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
 
 interface EditEventProps {
   eventId: number;
@@ -96,6 +97,10 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
   const [cities, setCities] = useState<City[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
+
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
+  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -413,7 +418,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
                       (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800';
                     }}
                   />
-{/* 
+                  {/* 
                   <img
                     src={formData.coverAddress} // مستقیماً از base64 استفاده کنید
                     alt="Preview"
@@ -582,6 +587,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
                 value={formData.onlineLink}
                 onChange={(val) => { setFormData({ ...formData, onlineLink: val }); if (errors.onlineLink) setErrors({ ...errors, onlineLink: '' }); }}
                 error={errors.onlineLink}
+                dir="ltr"
               />
             )}
           </div>
@@ -621,9 +627,11 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
             <div className="flex gap-4">
               <FormInput
                 label="تاریخ رویداد"
-                type="date"
+                isSelect
+                onSelectClick={() => setIsDatePickerOpen(true)}
+                placeholder="انتخاب تاریخ رویداد"
                 value={formData.date}
-                onChange={(val) => { setFormData({ ...formData, date: val }); if (errors.date) setErrors({ ...errors, date: '' }); }}
+                onChange={() => { }}
                 error={errors.date}
                 className="flex-1"
               />
@@ -631,17 +639,21 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
             <div className="flex gap-4">
               <FormInput
                 label="از ساعت"
-                type="time"
+                isSelect
+                onSelectClick={() => setIsStartTimePickerOpen(true)}
+                placeholder="ساعت شروع"
                 value={formData.startTime}
-                onChange={(val) => { setFormData({ ...formData, startTime: val }); if (errors.startTime) setErrors({ ...errors, startTime: '' }); }}
+                onChange={() => { }}
                 error={errors.startTime}
                 className="flex-1"
               />
               <FormInput
                 label="تا ساعت"
-                type="time"
+                isSelect
+                onSelectClick={() => setIsEndTimePickerOpen(true)}
+                placeholder="ساعت پایان"
                 value={formData.endTime}
-                onChange={(val) => { setFormData({ ...formData, endTime: val }); if (errors.endTime) setErrors({ ...errors, endTime: '' }); }}
+                onChange={() => { }}
                 error={errors.endTime}
                 className="flex-1"
               />
@@ -785,6 +797,41 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
           )}
         </motion.button>
       </div>
+
+      <PersianDatePickerDrawer
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        value={formData.date}
+        onSelect={(val) => {
+          setFormData({ ...formData, date: val });
+          if (errors.date) setErrors({ ...errors, date: '' });
+        }}
+        title="انتخاب تاریخ رویداد"
+        minYear={1405}
+        maxYear={1406}
+      />
+
+      <PersianTimePickerDrawer
+        isOpen={isStartTimePickerOpen}
+        onClose={() => setIsStartTimePickerOpen(false)}
+        value={formData.startTime}
+        onSelect={(val) => {
+          setFormData({ ...formData, startTime: val });
+          if (errors.startTime) setErrors({ ...errors, startTime: '' });
+        }}
+        title="ساعت شروع"
+      />
+
+      <PersianTimePickerDrawer
+        isOpen={isEndTimePickerOpen}
+        onClose={() => setIsEndTimePickerOpen(false)}
+        value={formData.endTime}
+        onSelect={(val) => {
+          setFormData({ ...formData, endTime: val });
+          if (errors.endTime) setErrors({ ...errors, endTime: '' });
+        }}
+        title="ساعت پایان"
+      />
 
       <InterestsDrawer
         isOpen={isInterestsOpen}

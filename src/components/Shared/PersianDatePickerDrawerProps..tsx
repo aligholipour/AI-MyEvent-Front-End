@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as LucideIcons from 'lucide-react';
 
@@ -52,15 +52,45 @@ export function PersianDatePickerDrawer({
   const [month, setMonth] = useState(initialMonth);
   const [day, setDay] = useState(initialDay);
 
+  const dayListRef = useRef<HTMLDivElement>(null);
+  const monthListRef = useRef<HTMLDivElement>(null);
+  const yearListRef = useRef<HTMLDivElement>(null);
+
+  const scrollSelectedIntoView = (container: HTMLDivElement | null) => {
+    if (!container) return;
+    const selected = container.querySelector<HTMLButtonElement>('button[data-selected="true"]');
+    selected?.scrollIntoView({ block: 'center', inline: 'nearest' });
+  };
+
   useEffect(() => {
     if (isOpen) {
-      const clean = value ? value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+      const clean = value ? value.replace(/[۰-۹]/g, (d) => {
+        return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString();
+      }) : '';
       const p = clean.split('/');
-      setYear(p.length === 3 ? parseInt(p[0]) : minYear === 1340 ? 1375 : 1405);
-      setMonth(p.length === 3 ? parseInt(p[1]) : 1);
-      setDay(p.length === 3 ? parseInt(p[2]) : 1);
+      setYear(p.length === 3 ? parseInt(p[0], 10) : minYear === 1340 ? 1375 : 1405);
+      setMonth(p.length === 3 ? parseInt(p[1], 10) : 1);
+      setDay(p.length === 3 ? parseInt(p[2], 10) : 1);
     }
   }, [isOpen, value, minYear]);
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollSelectedIntoView(dayListRef.current);
+      scrollSelectedIntoView(monthListRef.current);
+      scrollSelectedIntoView(yearListRef.current);
+    }
+  }, [isOpen, day, month, year]);
+
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     const clean = value ? value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+  //     const p = clean.split('/');
+  //     setYear(p.length === 3 ? parseInt(p[0]) : minYear === 1340 ? 1375 : 1405);
+  //     setMonth(p.length === 3 ? parseInt(p[1]) : 1);
+  //     setDay(p.length === 3 ? parseInt(p[2]) : 1);
+  //   }
+  // }, [isOpen, value, minYear]);
 
   let maxDays = 31;
   if (month >= 7 && month <= 11) {
@@ -79,13 +109,23 @@ export function PersianDatePickerDrawer({
   const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
   const days = Array.from({ length: maxDays }, (_, i) => i + 1);
 
+  // const handleConfirm = () => {
+  //   const formattedYear = year.toString();
+  //   const formattedMonth = month.toString().padStart(2, '0');
+  //   const formattedDay = day.toString().padStart(2, '0');
+  //   const formattedVal = `${formattedYear}/${formattedMonth}/${formattedDay}`;
+  //   const farsiVal = formattedVal.replace(/\d/g, (x) => farsiDigits[parseInt(x)]);
+  //   onSelect(farsiVal);
+  //   onClose();
+  // };
+
   const handleConfirm = () => {
     const formattedYear = year.toString();
     const formattedMonth = month.toString().padStart(2, '0');
     const formattedDay = day.toString().padStart(2, '0');
     const formattedVal = `${formattedYear}/${formattedMonth}/${formattedDay}`;
-    const farsiVal = formattedVal.replace(/\d/g, (x) => farsiDigits[parseInt(x)]);
-    onSelect(farsiVal);
+    // ارسال با اعداد انگلیسی برای پردازش بهتر
+    onSelect(formattedVal);
     onClose();
   };
 
@@ -143,16 +183,16 @@ export function PersianDatePickerDrawer({
                 <div className="bg-gray-50/80 py-2.5 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
                   روز
                 </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
+                <div ref={dayListRef} className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
                   {days.map((d) => (
                     <button
                       key={d}
+                      data-selected={day === d ? 'true' : undefined}
                       onClick={() => setDay(d)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${
-                        day === d
-                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${day === d
+                        ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       {toFarsiNumber(d)}
                     </button>
@@ -165,16 +205,16 @@ export function PersianDatePickerDrawer({
                 <div className="bg-gray-50/80 py-2.5 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
                   ماه
                 </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
+                <div ref={monthListRef} className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
                   {PERSIAN_MONTHS.map((m) => (
                     <button
                       key={m.id}
+                      data-selected={month === m.id ? 'true' : undefined}
                       onClick={() => setMonth(m.id)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${
-                        month === m.id
-                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${month === m.id
+                        ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       {m.name}
                     </button>
@@ -187,16 +227,16 @@ export function PersianDatePickerDrawer({
                 <div className="bg-gray-50/80 py-2.5 text-center text-[10px] font-black text-gray-500 border-b border-gray-100 flex-shrink-0">
                   سال
                 </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
+                <div ref={yearListRef} className="flex-1 overflow-y-auto no-scrollbar py-2 px-1.5 space-y-1">
                   {years.map((y) => (
                     <button
                       key={y}
+                      data-selected={year === y ? 'true' : undefined}
                       onClick={() => setYear(y)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${
-                        year === y
-                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${year === y
+                        ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       {toFarsiNumber(y)}
                     </button>
@@ -245,14 +285,14 @@ export function PersianTimePickerDrawer({
   const [hour, setHour] = useState(initialHour);
   const [minute, setMinute] = useState(initialMinute);
 
-  useEffect(() => {
-    if (isOpen) {
-      const clean = value ? value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
-      const p = clean.split(':');
-      setHour(p.length === 2 ? parseInt(p[0]) : 12);
-      setMinute(p.length === 2 ? parseInt(p[1]) : 0);
-    }
-  }, [isOpen, value]);
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     const clean = value ? value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()) : '';
+  //     const p = clean.split(':');
+  //     setHour(p.length === 2 ? parseInt(p[0]) : 12);
+  //     setMinute(p.length === 2 ? parseInt(p[1]) : 0);
+  //   }
+  // }, [isOpen, value]);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -325,11 +365,10 @@ export function PersianTimePickerDrawer({
                     <button
                       key={h}
                       onClick={() => setHour(h)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${
-                        hour === h
-                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${hour === h
+                        ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       {toFarsiNumber(h.toString().padStart(2, '0'))}
                     </button>
@@ -347,11 +386,10 @@ export function PersianTimePickerDrawer({
                     <button
                       key={m}
                       onClick={() => setMinute(m)}
-                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${
-                        minute === m
-                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full py-2.5 text-xs font-black transition-all rounded-xl flex items-center justify-center border-none ${minute === m
+                        ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       {toFarsiNumber(m.toString().padStart(2, '0'))}
                     </button>

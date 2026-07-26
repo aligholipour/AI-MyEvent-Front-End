@@ -98,7 +98,7 @@ function EventDetailsPage({
     const [event, setEvent] = useState<EventDetailsResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [participants, setParticipants] = useState<Participant[]>([]);
+    // const [participants, setParticipants] = useState<Participant[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
@@ -172,8 +172,8 @@ function EventDetailsPage({
                 const eventData = await getEventById(eventId);
                 setEvent(eventData);
 
-                const participantsData = await getEventParticipants(eventId);
-                setParticipants(participantsData.data);
+                // const participantsData = await getEventParticipants(eventId);
+                // setParticipants(participantsData.data);
 
                 const commentsData = await getEventComments(eventId);
                 setComments(commentsData.data);
@@ -404,10 +404,9 @@ function EventDetailsPage({
                     </motion.div>
 
                     {/* Participants - Redesigned Horizontal Layout */}
-                    <div
+                    {/* <div
                         onClick={() => participants.length > 0 ? setIsParticipantsDrawerOpen(true) : null}
-                        className="bg-gray-50/40 border border-gray-100 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-gray-50/80 transition-colors"
-                    >
+                        className="bg-gray-50/40 border border-gray-100 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-gray-50/80 transition-colors">
                         <div className="flex items-center gap-3">
                             <div className="flex -space-x-2.5 space-x-reverse">
                                 {participants.slice(0, 4).map((person) => (
@@ -432,7 +431,7 @@ function EventDetailsPage({
                             </div>
                         </div>
                         <ChevronLeft className="w-4 h-4 text-gray-400" />
-                    </div>
+                    </div> */}
 
                     {/* Description Section - Redesigned */}
                     <div className="space-y-1.5 text-right">
@@ -706,13 +705,13 @@ function EventDetailsPage({
                 event={event}
                 onConfirm={handleRegister} />
 
-            {isParticipantsDrawerOpen && (
+            {/* {isParticipantsDrawerOpen && (
                 <ParticipantsDrawer
                     isOpen={isParticipantsDrawerOpen}
                     onClose={() => setIsParticipantsDrawerOpen(false)}
                     participants={participants}
                 />
-            )}
+            )} */}
 
             <NavigationDrawer
                 isOpen={isNavigationDrawerOpen}

@@ -26,6 +26,18 @@ export interface User {
     roles: string[];
     profileAddress: string;
     phone: string;
+    fullName?: string;
+    name?: string;
+    email?: string;
+    birthDate?: string;
+    gender?: 'male' | 'female';
+    maritalStatus?: 'single' | 'married';
+    occupation?: string;
+    about?: string;
+    avatar?: string;
+    interests?: number[];
+    jobId?: number;
+    jobTitle?: string;
 }
 
 class AuthService {

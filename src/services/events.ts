@@ -1,4 +1,4 @@
-import { AppEvent, GetEventsRequest, PaginatedResponse } from '../types';
+import { AppEvent, CustomerGuestBahamResponse, CustomerHostedBahamResponse, GetEventsRequest, PaginatedResponse } from '../types';
 import { dataURLtoFile } from '../lib/utils'
 import { EventDetailsResponse } from '../components/Events/EventDetails';
 import { Participant } from '../components/Events/EventDetails';
@@ -325,11 +325,12 @@ export async function getEventParticipants(
 ): Promise<{ data: Participant[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const params = new URLSearchParams();
+    params.append('bahamId', bahamId.toString());
     params.append('pageNumber', pageNumber.toString());
     params.append('pageSize', pageSize.toString());
 
     const response = await fetch(
-      `${process.env.API_BaseURL}/Baham/Participants/${bahamId}?${params.toString()}`,
+      `${process.env.API_BaseURL}/Baham/Participants?${params.toString()}`,
       {
         method: 'GET',
         headers: {
@@ -383,7 +384,7 @@ export async function registerForEvent(
 
 export async function getRegisteredEvents(
   request: GetUserEventsRequest = {}
-): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
+): Promise<{ data: CustomerGuestBahamResponse[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const params = new URLSearchParams();
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());
@@ -417,7 +418,7 @@ export async function getRegisteredEvents(
 
 export async function getHostedEvents(
   request: GetUserEventsRequest = {}
-): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
+): Promise<{ data: CustomerHostedBahamResponse[]; totalCount: number; hasNextPage: boolean }> {
   try {
     const params = new URLSearchParams();
     if (request.pageNumber) params.append('pageNumber', request.pageNumber.toString());

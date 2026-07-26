@@ -469,6 +469,7 @@ function CreateEvent({ onBack }: {
                                 value={formData.onlineLink}
                                 onChange={(val) => { setFormData({ ...formData, onlineLink: val }); if (errors.onlineLink) setErrors({ ...errors, onlineLink: '' }); }}
                                 error={errors.onlineLink}
+                                dir="ltr"
                             />
                         )}
                     </div>

@@ -1,41 +1,169 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as LucideIcons from 'lucide-react';
 import { AppUser, Favourite } from '../../types';
 import { ImageCropperDrawer } from '../Shared/ImageCropperDrawer';
 import InterestsDrawer from '../../components/Shared/InterestsDrawer'
 import { User } from '@/src/services/Auth/Auth';
+import { getUserForEdit, updateUserProfile } from '../../services/users';
+import { getAllFavourite } from '../../services/favourites';
+import { PersianDatePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
+import JobDrawer from '../Shared/JobDrawer';
 
 interface EditProfilePageProps {
-    user: User;
+    user: User | null;
     onBack: () => void;
-    onSave: (updatedUser: AppUser) => void;
+    onSave: (updatedUser: User) => void;
 }
 
 export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) {
     const [formData, setFormData] = useState({
-        name: user.name || '',
-        phone: user.phone || '',
-        email: user.email || '',
-        birthDate: user.birthDate || '',
-        gender: (user.gender || 'male') as 'male' | 'female',
-        maritalStatus: (user.maritalStatus || 'single') as 'single' | 'married',
-        occupation: user.occupation || '',
-        about: user.about || '',
-        avatar: user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
-        interests: user.interests || []
+        name: '',
+        phone: '',
+        email: '',
+        birthDate: new Date(),
+        gender: 'male' as 'male' | 'female',
+        maritalStatus: 'single' as 'single' | 'married',
+        occupation: '',
+        about: '',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+        interests: [] as number[],
+        jobId: 0 as number | 0,
+        jobTitle: '',
     });
 
-    const [isInterestsOpen, setIsInterestsOpen] = useState(false);
     const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const [isInterestsDrawerOpen, setIsInterestsDrawerOpen] = useState(false);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+    const [profileError, setProfileError] = useState<string | null>(null);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isJobOpen, setIsJobOpen] = useState(false);
 
     // Image cropping state
     const [isCropperOpen, setIsCropperOpen] = useState(false);
     const [tempImage, setTempImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const normalizeImagePath = (value?: string | null) => {
+        if (!value) return '';
+
+        const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.File_BaseURL || '').trim();
+        const normalizedValue = value.trim();
+
+        // اگر آدرس کامل HTTP/HTTPS بود، همان را برگردان
+        if (/^https?:\/\//i.test(normalizedValue)) {
+            return normalizedValue;
+        }
+
+        // اگر baseUrl وجود داشت و normalizedValue با baseUrl شروع می‌شد، حذف کن
+        if (baseUrl && normalizedValue.startsWith(baseUrl)) {
+            return normalizedValue.slice(baseUrl.length).replace(/^\/+/, '');
+        }
+
+        // در غیر این صورت خود normalizedValue را برگردان
+        return normalizedValue;
+    };
+
+    const getImageSrc = (coverAddress?: string | null) => {
+        if (!coverAddress) return null;
+
+        if (coverAddress.startsWith('data:image'))
+            return coverAddress;
+
+        return process.env.File_BaseURL + coverAddress;
+    };
+
+    const normalizeGenderValue = (value?: string | null) => {
+        if (!value) return null;
+
+        const normalizedValue = String(value).trim().toLowerCase();
+        if (['male', 'مرد', '1'].includes(normalizedValue)) return 'male';
+        if (['female', 'زن', '2'].includes(normalizedValue)) return 'female';
+        return null;
+    };
+
+    const normalizeMaritalStatusValue = (value?: string | null) => {
+        if (!value) return null;
+
+        const normalizedValue = String(value).trim().toLowerCase();
+        if (['single', 'مجرد', '1'].includes(normalizedValue)) return 'single';
+        if (['married', 'متاهل', 'متأهل', '2'].includes(normalizedValue)) return 'married';
+        return null;
+    };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadFavouriteOptions = async () => {
+            try {
+                const favourites = await getAllFavourite();
+                if (isMounted) {
+                    setAllFavourites(favourites);
+                }
+            } catch (error) {
+                console.error('Failed to load favourite options:', error);
+            }
+        };
+
+        void loadFavouriteOptions();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadProfile = async () => {
+            if (!user?.id) {
+                setIsLoadingProfile(false);
+                return;
+            }
+
+            try {
+                setIsLoadingProfile(true);
+                const profileData = await getUserForEdit();
+
+                if (!isMounted) return;
+
+                setFormData(prev => ({
+                    ...prev,
+                    name: profileData.fullName || profileData.name || user.fullName || user.name || user.username || prev.name,
+                    phone: profileData.phone || user.phone || prev.phone,
+                    email: profileData.email || prev.email,
+                    birthDate: profileData.birthDate ? new Date(profileData.birthDate) : prev.birthDate,
+                    gender: normalizeGenderValue(profileData.gender as string | undefined) || prev.gender,
+                    maritalStatus: normalizeMaritalStatusValue(profileData.maritalStatus as string | undefined) || prev.maritalStatus,
+                    occupation: profileData.occupation || prev.occupation,
+                    about: profileData.about || prev.about,
+                    avatar: normalizeImagePath(profileData.avatar || profileData.profileAddress || profileData.profileImage || prev.avatar),
+                    interests: profileData.interests || profileData.favouriteIds || prev.interests,
+                    jobId: profileData.jobId ?? prev.jobId,
+                    jobTitle: profileData.jobTitle || prev.jobTitle,
+                }));
+                setProfileError(null);
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+                if (isMounted) {
+                    setProfileError('امکان بارگذاری اطلاعات پروفایل وجود ندارد.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingProfile(false);
+                }
+            }
+        };
+
+        loadProfile();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [user?.id]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -77,33 +205,144 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
     //     });
     // };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!user) return;
+
         setIsSaving(true);
 
-        setTimeout(() => {
-            const updatedUser: AppUser = {
+        try {
+            const payload = {
+                fullName: formData.name.trim(),
+                phone: formData.phone.trim(),
+                birthDate: formData.birthDate,
+                gender: formData.gender,
+                maritalStatus: formData.maritalStatus,
+                about: formData.about.trim(),
+                profileImageAddress: normalizeImagePath(formData.avatar),
+                favouriteIds: formData.interests,
+                jobId: formData.jobId
+            };
+
+            await updateUserProfile(payload);
+
+            const updatedUser: User = {
                 ...user,
-                name: formData.name.trim() || user.name,
+                id: user.id,
+                username: formData.name.trim() || user.username || user.fullName || user.name || '',
+                fullName: formData.name.trim() || user.fullName || user.name || user.username || '',
+                name: formData.name.trim() || user.name || user.fullName || user.username || '',
                 phone: formData.phone.trim() || user.phone,
                 email: formData.email.trim(),
-                birthDate: formData.birthDate.trim(),
+                birthDate: formData.birthDate?.toString().trim(),
                 gender: formData.gender,
                 maritalStatus: formData.maritalStatus,
                 occupation: formData.occupation.trim(),
                 about: formData.about.trim(),
                 avatar: formData.avatar,
-                interests: formData.interests
+                profileAddress: formData.avatar,
+                interests: formData.interests,
             };
 
-            setIsSaving(false);
             setShowSuccessToast(true);
             onSave(updatedUser);
 
             setTimeout(() => {
                 onBack();
             }, 900);
-        }, 600);
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const parsePersianDateString = (value: string) => {
+        const cleanVal = value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+        const parts = cleanVal.split('/').map((x) => x.trim());
+        if (parts.length !== 3) return { jy: NaN, jm: NaN, jd: NaN };
+        return {
+            jy: parseInt(parts[0], 10),
+            jm: parseInt(parts[1], 10),
+            jd: parseInt(parts[2], 10),
+        };
+    };
+
+    const toGregorian = (persianDate: string): Date => {
+        const { jy, jm, jd } = parsePersianDateString(persianDate);
+        if ([jy, jm, jd].some((n) => Number.isNaN(n))) return new Date();
+
+        const { gy, gm, gd } = jalaaliToGregorian(jy, jm, jd);
+        const gregorianDate = new Date(gy, gm - 1, gd);
+        gregorianDate.setHours(12, 0, 0, 0);
+        return gregorianDate;
+    };
+
+    const toPersian = (date: Date | string | null | undefined): string => {
+        if (!date) return '';
+
+        const d = typeof date === 'string' ? new Date(date) : date;
+        if (isNaN(d.getTime())) return '';
+
+        const parts = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(d);
+
+        const year = parts.find((part) => part.type === 'year')?.value ?? '';
+        const month = parts.find((part) => part.type === 'month')?.value ?? '';
+        const day = parts.find((part) => part.type === 'day')?.value ?? '';
+
+        return `${year}/${month}/${day}`;
+    };
+
+    const toPersianDisplay = (date: Date | string | null | undefined): string => {
+        const persianDate = toPersian(date);
+        if (!persianDate) return '';
+
+        return persianDate.replace(/\d/g, (x) => {
+            const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return farsiDigits[parseInt(x, 10)];
+        });
+    };
+
+    const div = (a: number, b: number) => Math.floor(a / b);
+
+    const jalaaliToGregorian = (jy: number, jm: number, jd: number) => {
+        const jy2 = jy > 979 ? jy - 979 : jy;
+        const gy = jy > 979 ? 1600 : 621;
+        const days = 365 * jy2 + div(jy2, 33) * 8 + div((jy2 % 33) + 3, 4) + (jm <= 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186) + (jd - 1);
+        let gy2 = gy + 400 * div(days, 146097);
+        let d = days % 146097;
+
+        if (d > 36524) {
+            gy2 += 100 * div(--d, 36524);
+            d %= 36524;
+            if (d >= 365) d++;
+        }
+
+        gy2 += 4 * div(d, 1461);
+        d %= 1461;
+
+        if (d > 365) {
+            gy2 += div(d - 1, 365);
+            d = (d - 1) % 365;
+        }
+
+        const march = d + 1;
+        const sal_a = [0, 31, (gy2 % 4 === 0 && (gy2 % 100 !== 0 || gy2 % 400 === 0)) ? 60 : 59, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366];
+        let gm = 0;
+        for (let i = 1; i < sal_a.length; i++) {
+            if (march <= sal_a[i]) {
+                gm = i;
+                break;
+            }
+        }
+
+        const gd = march - sal_a[gm - 1];
+        return { gy: gy2, gm, gd };
     };
 
     return (
@@ -159,6 +398,17 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
 
             {/* Main Scrollable Form */}
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4 pb-24">
+                {profileError && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-bold text-amber-700">
+                        {profileError}
+                    </div>
+                )}
+
+                {isLoadingProfile && (
+                    <div className="rounded-xl border border-gray-100 bg-white px-3 py-3 text-center text-[10px] font-bold text-gray-500">
+                        در حال بارگذاری اطلاعات پروفایل...
+                    </div>
+                )}
 
                 {/* Avatar Section */}
                 <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2.5 shadow-xs">
@@ -171,11 +421,10 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                     />
                     <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="relative group cursor-pointer"
-                    >
+                        className="relative group cursor-pointer">
                         <div className="w-18 h-18 rounded-full border-2 border-blue-500/80 p-0.5 overflow-hidden transition-all group-hover:border-blue-600 shadow-xs">
                             <img
-                                src={formData.avatar}
+                                src={getImageSrc(formData.avatar) || ''}
                                 alt="Profile Avatar"
                                 className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform"
                             />
@@ -191,11 +440,10 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-[10px] font-black text-blue-600 hover:text-blue-700 mt-1 cursor-pointer"
-                        >
+                            className="text-[10px] font-black text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">
                             تغییر تصویر پروفایل
                         </button>
-                        <span className="text-[8px] font-bold text-gray-400">فرمت‌های مجاز: JPG, PNG</span>
+                        {/* <span className="text-[8px] font-bold text-gray-400">فرمت‌های مجاز: JPG, PNG</span> */}
                     </div>
                 </div>
 
@@ -220,7 +468,7 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
 
                     {/* Phone (Readonly / Disabled indicator) */}
                     <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 mr-0.5">شماره همراه (شناسه حساب)</label>
+                        <label className="text-[9px] font-black text-gray-400 mr-0.5">شماره همراه</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -231,19 +479,6 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                             />
                             <LucideIcons.Lock className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
                         </div>
-                    </div>
-
-                    {/* Email */}
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 mr-0.5">پست الکترونیکی (ایمیل)</label>
-                        <input
-                            type="email"
-                            placeholder="example@gmail.com"
-                            dir="ltr"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full bg-gray-50 border border-gray-100 h-9 px-3 rounded-xl text-[11px] font-bold focus:bg-white outline-none focus:ring-2 focus:ring-blue-100 transition-all text-left"
-                        />
                     </div>
                 </div>
 
@@ -257,13 +492,17 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                     {/* Birth Date */}
                     <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 mr-0.5">تاریخ تولد</label>
-                        <input
-                            type="text"
-                            placeholder="۱۳۷۵/۰۶/۱۵"
-                            value={formData.birthDate}
-                            onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                            className="w-full bg-gray-50 border border-gray-100 h-9 px-3 rounded-xl text-[11px] font-bold focus:bg-white outline-none focus:ring-2 focus:ring-blue-100 transition-all text-right"
-                        />
+                        <div className="relative">
+                            <LucideIcons.Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
+                            <input
+                                type="text"
+                                readOnly
+                                onClick={() => setIsDatePickerOpen(true)}
+                                value={toPersianDisplay(formData.birthDate)}
+                                placeholder="۱۳۷۰/۰۱/۰۱"
+                                className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer`}
+                            />
+                        </div>
                     </div>
 
                     {/* Gender & Marital status Grid */}
@@ -325,67 +564,94 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
 
                     {/* Occupation */}
                     <div className="space-y-1 pt-1">
-                        <label className="text-[9px] font-black text-gray-400 mr-0.5">شغل / حوزه فعالیت</label>
-                        <input
+                        <label className="text-[9px] font-black text-gray-400 mr-0.5">شغل</label>
+                        {errors.category && (
+                            <motion.span
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="text-[10px] font-bold text-[#ED1C24]">
+                                {errors.category}
+                            </motion.span>
+                        )}
+
+                        <button
+                            onClick={(e) => { e.preventDefault(); setIsJobOpen(true); }}
+                            className={`w-full p-4 rounded-3xl border-2 transition-all flex items-center justify-between group ${formData.jobId
+                                ? 'bg-gray-900/5 border-gray-900 shadow-sm'
+                                : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                                }`}>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center bg-white ${formData.jobId ? 'text-gray-900' : 'text-gray-400'}`}>
+                                    {formData.jobId ? (
+                                        <LucideIcons.Check className="w-6 h-6" />
+                                    ) : (
+                                        <LucideIcons.LayoutGrid className="w-6 h-6" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col text-right">
+                                    <span className={`text-[10px] font-black ${formData.jobId ? 'text-gray-900' : 'text-gray-500'}`}>
+                                        {formData.jobTitle || 'یک شغل انتخاب کنید'}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-gray-400">برای اطلاع رسانی رویدادها بر اساس شغل ها</span>
+                                </div>
+                            </div>
+                            <LucideIcons.ChevronLeft className={`w-5 h-5 transition-transform ${formData.jobId ? 'text-gray-900' : 'text-gray-300 group-hover:-translate-x-1'}`} />
+                        </button>
+                        {/* <input
                             type="text"
                             placeholder="مثال: طراح رابط کاربری"
                             value={formData.occupation}
                             onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                             className="w-full bg-gray-50 border border-gray-100 h-9 px-3 rounded-xl text-[11px] font-bold focus:bg-white outline-none focus:ring-2 focus:ring-blue-100 transition-all text-right"
-                        />
+                        /> */}
                     </div>
                 </div>
 
                 {/* Interests Group */}
                 <div className="bg-white border border-gray-100 rounded-2xl p-4 text-right space-y-2.5 shadow-xs">
                     <div className="flex items-center justify-between pb-1 border-b border-gray-50">
-                        <div className="flex items-center gap-1.5 text-gray-800 font-black text-[11px]">
-                            <LucideIcons.Heart className="w-3.5 h-3.5 text-rose-500" />
-                            <span>علاقه‌مندی‌ها</span>
-                        </div>
+                        <label className="text-xs font-black text-gray-500 mr-2">علاقه‌مندی‌ها (برچسب‌ها)</label>
                         <button
                             type="button"
                             onClick={() => setIsInterestsDrawerOpen(true)}
-                            className="text-[9px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
-                        >
-                            <LucideIcons.Plus className="w-3 h-3" />
-                            <span>مدیریت</span>
+                            className="text-xs font-black text-[#ED1C24] hover:opacity-80 transition-opacity">
+                            {formData.interests.length > 0 ? 'ویرایش لیست' : 'انتخاب از لیست'}
                         </button>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-
-                        {formData.interests.map(interest => (
-                            <div
-                                key={interest}
-                                className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ED1C24]/10 text-[#ED1C24] border border-[#ED1C24]/20 flex items-center gap-2">
-                                {getInterestTitle(interest)}
-                                <button onClick={() => toggleInterest(interest)}>
-                                    <LucideIcons.X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        ))}
-
-                        {/* {formData.interests.length > 0 ? (
-                            formData.interests.map((interest) => (
-                                <span
+                    {formData.interests.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2">
+                            {formData.interests.map(interest => (
+                                <div
                                     key={interest}
-                                    className="bg-gray-50 border border-gray-100 text-gray-700 text-[9px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
-                                >
-                                    <span>{interest}</span>
+                                    className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ED1C24]/10 text-[#ED1C24] border border-[#ED1C24]/20 flex items-center gap-2">
+                                    {getInterestTitle(interest)}
                                     <button
                                         type="button"
-                                        onClick={() => handleToggleInterest(interest)}
-                                        className="hover:text-red-500 transition-colors cursor-pointer"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleInterest(interest);
+                                        }}
                                     >
-                                        <LucideIcons.X className="w-2.5 h-2.5" />
+                                        <LucideIcons.X className="w-3 h-3" />
                                     </button>
-                                </span>
-                            ))
-                        ) : (
-                            <p className="text-[9px] font-bold text-gray-400 py-1">علاقه‌مندی ثبت نشده است</p>
-                        )} */}
-                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsInterestsDrawerOpen(true);
+                            }}
+                            className="w-full py-4 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-200 hover:bg-gray-50 transition-all">
+                            <LucideIcons.Plus className="w-5 h-5 text-gray-300" />
+                            <span className="text-[10px] font-bold text-gray-400">موردی انتخاب نشده است</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Bio / About */}
@@ -404,7 +670,7 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 </div>
 
                 {/* Sticky Action Footer */}
-                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-md border-t border-gray-100 p-3.5 px-5 flex gap-2 z-30 shadow-lg">
+                <div className="fixed bottom-0 pb-32 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-md border-t border-gray-100 p-3.5 px-5 flex gap-2 z-30 shadow-lg">
                     <button
                         type="submit"
                         disabled={isSaving}
@@ -443,11 +709,59 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
 
             {/* Interests Selector Drawer */}
             <InterestsDrawer
-                isOpen={isInterestsOpen}
-                onClose={() => setIsInterestsOpen(false)}
+                isOpen={isInterestsDrawerOpen}
+                onClose={() => setIsInterestsDrawerOpen(false)}
                 selectedInterests={formData.interests}
                 onToggle={toggleInterest}
                 onFavouritesLoaded={handleFavouritesLoaded}
+            />
+
+            <PersianDatePickerDrawer
+                isOpen={isDatePickerOpen}
+                onClose={() => setIsDatePickerOpen(false)}
+                value={toPersian(formData.birthDate)} // ارسال به صورت شمسی با اعداد انگلیسی
+                onSelect={(val) => {
+                    // val به صورت "۱۴۰۲/۰۱/۰۱" یا "1402/01/01" میاد
+                    // باید به Date میلادی تبدیل بشه
+                    const gregorianDate = toGregorian(val);
+                    setFormData({ ...formData, birthDate: gregorianDate });
+                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                }}
+                title="انتخاب تاریخ تولد"
+                minYear={1340}
+                maxYear={1406}
+            />
+
+            {/* <PersianDatePickerDrawer
+                isOpen={isDatePickerOpen}
+                onClose={() => setIsDatePickerOpen(false)}
+                value={formData.birthDate?.toString()}
+                onSelect={(val) => {
+                    // تبدیل string به Date
+                    const dateParts = val.split('/');
+                    const date = new Date(
+                        parseInt(dateParts[0]),
+                        parseInt(dateParts[1]) - 1,
+                        parseInt(dateParts[2])
+                    );
+                    setFormData({ ...formData, birthDate: date });
+                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                }}
+                title="انتخاب تاریخ تولد"
+                minYear={1340}
+                maxYear={1406}
+            /> */}
+
+            <JobDrawer
+                isOpen={isJobOpen}
+                onClose={() => setIsJobOpen(false)}
+                selectedJob={formData.jobId}
+                jobTitle={formData.jobTitle || ''}
+                onSelect={(jobId, jobTitle) => {
+                    console.log('Selected - ID:', jobId, 'Title:', jobTitle);
+                    setFormData({ ...formData, jobId: jobId, jobTitle: jobTitle });
+                    if (errors.job) setErrors({ ...errors, job: '' });
+                }}
             />
         </motion.div>
     );

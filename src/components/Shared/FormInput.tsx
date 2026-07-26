@@ -12,7 +12,8 @@ function FormInput({
   isSelect,
   onSelectClick,
   disabled = false,
-  error
+  error,
+  dir = 'rtl'
 }: {
   label: string;
   placeholder?: string;
@@ -25,6 +26,7 @@ function FormInput({
   onSelectClick?: () => void;
   disabled?: boolean;
   error?: string;
+  dir?: 'rtl' | 'ltr';
 }) {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -56,7 +58,8 @@ function FormInput({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
-            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none min-h-[120px] resize-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'}`}
+            dir={dir}
+             className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none min-h-[120px] resize-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
           />
         ) : (
           <input
@@ -65,7 +68,8 @@ function FormInput({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
-            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'}`}
+            dir={dir}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
           />
         )}
       </div>
