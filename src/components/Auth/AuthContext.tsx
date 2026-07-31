@@ -181,8 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getAccessToken = () => authService.getAccessToken();
 
     const updateUser = (updatedUser: User) => {
-        authService.setUser(updatedUser);
-        setUser(updatedUser);
+        // آپدیت کاملی از اطلاعات یوزر - این متد یوزر و تمام اطلاعات مرتبط را آپدیت می‌کند
+        const mergedUser = authService.updateUserInfo(updatedUser);
+        if (mergedUser) {
+            setUser(mergedUser);
+        }
     };
 
     return (

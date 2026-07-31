@@ -200,44 +200,62 @@ export async function getCurrentUserProfile(): Promise<UserProfileResponse> {
 }
 
 export async function updateUserProfile(payload: UpdateUserProfilePayload): Promise<UserProfileResponse> {
-  const endpoints = [
-    '/User/UpdateProfile',
-    '/User/UpdateUser',
-    '/User/EditProfile',
-  ];
 
   const formData = new FormData();
 
   if (payload.fullName) formData.append('fullName', payload.fullName);
-  if (payload.phone) formData.append('phone', payload.phone);
-  if (payload.birthDate) formData.append('birthDate', payload.birthDate.toString());
+  if (payload.phone) formData.append('phoneNumber', payload.phone);
+  // if (payload.birthDate) formData.append('birthDate', payload.birthDate.toString());
   if (payload.gender) formData.append('gender', payload.gender);
   if (payload.maritalStatus) formData.append('maritalStatus', payload.maritalStatus);
   if (payload.about) formData.append('about', payload.about);
   if (payload.jobId) formData.append('jobId', String(payload.jobId));
-  if (payload.profileImageAddress) formData.append('profileImageAddress', payload.profileImageAddress);
   if (payload.favouriteIds?.length) {
     payload.favouriteIds.forEach((item, index) => formData.append(`favouriteIds[${index}]`, String(item)));
   }
 
+  if (payload.birthDate) {
+    const fromDateTime = new Date(payload.birthDate);
+    formData.append('birthDate', fromDateTime.toISOString());
+  }
+
+  if (payload.profileImageAddress) {
+    const isBase64 = payload.profileImageAddress.startsWith('data:image');
+
+    if (isBase64) {
+      // اگر Base64 بود، به فایل تبدیل کن
+      try {
+        const imageFile = dataURLtoFile(payload.profileImageAddress, 'profile-image.jpg');
+        formData.append('profileImageAddress', imageFile);
+      } catch (error) {
+        console.error('Error converting base64 to file:', error);
+        throw new Error('فرمت تصویر نامعتبر است');
+      }
+    } else {
+      // اگر آدرس معمولی بود، به عنوان رشته ارسال کن
+      formData.append('profileImageAddress', payload.profileImageAddress);
+    }
+  }
+
+  // if (payload.profileImageAddress) {
+  //   const imageFile = dataURLtoFile(payload.profileImageAddress, 'event-image.jpg');
+  //   formData.append('profileImageAddress', imageFile);
+  // }
+
   let lastError: unknown;
 
-  for (const endpoint of endpoints) {
-    try {
-      const response = await authenticatedFetch(`${process.env.API_BaseURL}${endpoint}`, {
-        method: 'POST',
-        body: formData,
-      });
+  try {
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/User/Update`, {
+      method: 'PUT',
+      body: formData,
+    });
 
-      if (!response.ok) {
-        continue;
-      }
+    const data = await response.json();
+    return data;
+    // return mapUserProfile(data);
 
-      const data = await response.json();
-      return mapUserProfile(data);
-    } catch (error) {
-      lastError = error;
-    }
+  } catch (error) {
+    lastError = error;
   }
 
   throw lastError instanceof Error

@@ -36,7 +36,7 @@ export interface User {
     about?: string;
     avatar?: string;
     interests?: number[];
-    jobId?: number;
+    jobId?: number | null;
     jobTitle?: string;
 }
 
@@ -139,6 +139,23 @@ class AuthService {
         } catch {
             return null;
         }
+    }
+
+    /**
+     * آپدیت کاملی از اطلاعات کاربر (مثل بعد از ویرایش پروفایل)
+     * این متد یوزر و تمام اطلاعات مرتبط آن را در localStorage آپدیت می‌کند
+     */
+    updateUserInfo(updatedUser: Partial<User>): User | null {
+        const currentUser = this.getUser();
+        if (!currentUser) return null;
+
+        const mergedUser: User = {
+            ...currentUser,
+            ...updatedUser,
+        };
+
+        this.setUser(mergedUser);
+        return mergedUser;
     }
 
     isAuthenticated(): boolean {

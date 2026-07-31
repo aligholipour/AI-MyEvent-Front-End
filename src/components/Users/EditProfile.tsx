@@ -165,6 +165,12 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
         };
     }, [user?.id]);
 
+    // نظارت روی تغییرات تاریخ تولد
+    useEffect(() => {
+        console.log('formData.birthDate تغییر کرد:', formData.birthDate);
+        console.log('تاریخ فارسی:', toPersian(formData.birthDate));
+    }, [formData.birthDate]);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const reader = new FileReader();
@@ -194,17 +200,6 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
         setAllFavourites(favourites);
     };
 
-    // const handleToggleInterest = (interest: string) => {
-    //     setFormData(prev => {
-    //         const exists = prev.interests.includes(interest);
-    //         if (exists) {
-    //             return { ...prev, interests: prev.interests.filter(i => i !== interest) };
-    //         } else {
-    //             return { ...prev, interests: [...prev.interests, interest] };
-    //         }
-    //     });
-    // };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -225,24 +220,39 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 jobId: formData.jobId
             };
 
-            await updateUserProfile(payload);
+            var result = await updateUserProfile(payload);
 
             const updatedUser: User = {
                 ...user,
-                id: user.id,
-                username: formData.name.trim() || user.username || user.fullName || user.name || '',
-                fullName: formData.name.trim() || user.fullName || user.name || user.username || '',
-                name: formData.name.trim() || user.name || user.fullName || user.username || '',
-                phone: formData.phone.trim() || user.phone,
-                email: formData.email.trim(),
-                birthDate: formData.birthDate?.toString().trim(),
-                gender: formData.gender,
-                maritalStatus: formData.maritalStatus,
-                occupation: formData.occupation.trim(),
-                about: formData.about.trim(),
-                avatar: formData.avatar,
-                profileAddress: formData.avatar,
-                interests: formData.interests,
+                fullName: result.fullName,
+                username: result.fullName!,
+                birthDate: result.birthDate,
+                jobId: result.jobId,
+                jobTitle: result.jobTitle,
+                about: result.about,
+                interests: result.favouriteIds,
+                profileAddress: result.profileAddress!,
+                maritalStatus: result.maritalStatus,
+                gender: result.gender,
+                name: result.fullName
+                // ...user,
+                // id: user.id,
+                // username: result.username || user.username,
+                // roles: user.roles,
+                // fullName: result.fullName,
+                // name: result.fullName,
+                // phone: result.phone || user.phone,
+                // email: result.email,
+                // birthDate: result.birthDate,
+                // gender: result.gender,
+                // maritalStatus: result.maritalStatus,
+                // occupation: result.occupation,
+                // about: result.about,
+                // profileAddress: result.profileAddress || result.profileImage || user.profileAddress,
+                // avatar: result.avatar,
+                // interests: result.favouriteIds || result.interests,
+                // jobId: result.jobId,
+                // jobTitle: result.jobTitle
             };
 
             setShowSuccessToast(true);
@@ -723,9 +733,12 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 onSelect={(val) => {
                     // val به صورت "۱۴۰۲/۰۱/۰۱" یا "1402/01/01" میاد
                     // باید به Date میلادی تبدیل بشه
+                    console.log('تاریخ انتخاب شده:', val);
                     const gregorianDate = toGregorian(val);
-                    setFormData({ ...formData, birthDate: gregorianDate });
-                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                    console.log('تاریخ میلادی:', gregorianDate);
+                    setFormData(prev => ({ ...prev, birthDate: gregorianDate }));
+                    if (errors.birthDate) setErrors(prev => ({ ...prev, birthDate: '' }));
+                    setIsDatePickerOpen(false);
                 }}
                 title="انتخاب تاریخ تولد"
                 minYear={1340}
@@ -759,8 +772,8 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 jobTitle={formData.jobTitle || ''}
                 onSelect={(jobId, jobTitle) => {
                     console.log('Selected - ID:', jobId, 'Title:', jobTitle);
-                    setFormData({ ...formData, jobId: jobId, jobTitle: jobTitle });
-                    if (errors.job) setErrors({ ...errors, job: '' });
+                    setFormData(prev => ({ ...prev, jobId: jobId, jobTitle: jobTitle }));
+                    if (errors.job) setErrors(prev => ({ ...prev, job: '' }));
                 }}
             />
         </motion.div>
