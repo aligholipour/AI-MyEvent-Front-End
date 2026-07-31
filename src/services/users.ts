@@ -11,7 +11,9 @@ export const STATIC_EVENTS: AppUsers[] = [
     badge: 'زود رزرو کن',
     image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
     color: 'bg-blue-600',
-    registeredDate: "5 اردیبهت"
+    registeredDate: "5 اردیبهت",
+    email: '',
+    phone: ''
   },
   {
     id: 2,
@@ -21,7 +23,9 @@ export const STATIC_EVENTS: AppUsers[] = [
     badge: 'تخفیف ویژه',
     image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
     color: 'bg-emerald-600',
-    registeredDate: "5 اردیبهت"
+    registeredDate: "5 اردیبهت",
+    email: '',
+    phone: ''
   },
 ];
 
@@ -77,6 +81,7 @@ export interface GetUserDetailForAdminResponse {
   profileImage: string,
   job: string,
   favourites: string
+  email: string,
 }
 
 export async function getUsers(

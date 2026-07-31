@@ -49,6 +49,7 @@ export interface AppEvent {
   eventTime: string;
   reasons?: CustomerBahamRejected[];
   isCanceled: boolean;
+  category: string;
 }
 export interface CustomerGuestBahamResponse {
   id: number;
@@ -95,7 +96,9 @@ export interface AppUsers {
   badge: string;
   image: string;
   color: string;
-  registeredDate: string
+  registeredDate: string;
+  email: string;
+  phone: string;
 }
 export interface HomeSlider {
   id: string;
