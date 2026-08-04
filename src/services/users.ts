@@ -214,9 +214,17 @@ export async function updateUserProfile(payload: UpdateUserProfilePayload): Prom
     payload.favouriteIds.forEach((item, index) => formData.append(`favouriteIds[${index}]`, String(item)));
   }
 
+  // if (payload.birthDate) {
+  //   const fromDateTime = new Date(payload.birthDate);
+  //   formData.append('birthDate', fromDateTime.toISOString());
+  // }
+
   if (payload.birthDate) {
-    const fromDateTime = new Date(payload.birthDate);
-    formData.append('birthDate', fromDateTime.toISOString());
+    const date = new Date(payload.birthDate);
+    if (!isNaN(date.getTime())) {
+      // ارسال به صورت ISO string
+      formData.append('birthDate', date.toISOString());
+    }
   }
 
   if (payload.profileImageAddress) {

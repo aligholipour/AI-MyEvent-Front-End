@@ -20,6 +20,7 @@ export interface EventDetailsForUpdateResponse {
   categoryTitle: string;
   favouriteIds: number[];
   address: string;
+  eventTime: Date;
   startTime: string;
   endTime: string;
   isFree: boolean;

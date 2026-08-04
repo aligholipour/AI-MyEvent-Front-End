@@ -12,6 +12,7 @@ import FormInput from '../Shared/FormInput';
 import SelectionDrawer from '../Shared/SelectionDrawer';
 import { useAuth } from './AuthContext';
 import { PersianDatePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
+import { toJalaali, toJalaaliDisplay, jalaaliToISOString } from '../../lib/dateUtils';
 
 function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: () => void; onComplete: (data: any) => void }) {
     const [formData, setFormData] = useState({
@@ -222,7 +223,7 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
                                         type="text"
                                         readOnly
                                         onClick={() => setIsDatePickerOpen(true)}
-                                        value={formData.birthDate}
+                                        value={toJalaaliDisplay(formData.birthDate)}
                                         placeholder="۱۳۷۰/۰۱/۰۱"
                                         className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer`}
                                     />
@@ -403,10 +404,24 @@ function RegisterPage({ phone, onBack, onComplete }: { phone: string; onBack: ()
             <PersianDatePickerDrawer
                 isOpen={isDatePickerOpen}
                 onClose={() => setIsDatePickerOpen(false)}
-                value={formData.birthDate}
+                value={toJalaali(formData.birthDate)}
                 onSelect={(val) => {
-                    setFormData({ ...formData, birthDate: val });
+                    const isoDate: string = jalaaliToISOString(val);
+                    setFormData({
+                        fullName: formData.fullName,
+                        birthDate: isoDate,
+                        gender: formData.gender,
+                        maritalStatus: formData.maritalStatus,
+                        occupation: formData.occupation,
+                        provinceId: formData.provinceId,
+                        city: formData.city,
+                        interests: formData.interests,
+                        profileImageAddress: formData.profileImageAddress,
+                        jobId: formData.jobId,
+                        jobTitle: formData.jobTitle,
+                    });
                     if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                    setIsDatePickerOpen(false);
                 }}
                 title="انتخاب تاریخ تولد"
                 minYear={1340}

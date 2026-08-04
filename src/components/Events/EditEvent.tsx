@@ -15,6 +15,10 @@ import SelectionDrawer from '../Shared/SelectionDrawer';
 import CategoryDrawer from '../Shared/CategoryDrawer';
 import { getAllFavourite } from '@/src/services/favourites';
 import { PersianDatePickerDrawer, PersianTimePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
+import { toJalaali, toJalaaliDisplay, jalaaliToISOString } from '../../lib/dateUtils';
+import JalaliDatePicker from '../Shared/JalaliDatePicker';
+import JalaliTimePicker from '../Shared/JalaliTimePicker';
+import jMoment from 'moment-jalaali';
 
 interface EditEventProps {
   eventId: number;
@@ -28,7 +32,7 @@ interface EditEventFormData {
   categoryTitle: string;
   favouriteIds: number[];
   address: string;
-  date: string;
+  date: Date;
   startTime: string;
   endTime: string;
   isPaid: boolean;
@@ -58,7 +62,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     categoryTitle: '',
     favouriteIds: [] as number[],
     address: '',
-    date: '',
+    date: new Date(),
     startTime: '',
     endTime: '',
     isPaid: false,
@@ -101,6 +105,56 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+
+  const toPersian = (date: Date | string | null | undefined): string => {
+    if (!date) return '';
+
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '';
+
+    const m = jMoment(d);
+    return m.format('jYYYY/jMM/jD');
+  };
+
+  const toGregorian = (persianDate: string): Date => {
+    if (!persianDate) return new Date();
+
+    const cleanVal = persianDate.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+
+    const m = jMoment(cleanVal, 'jYYYY/jMM/jD');
+    if (!m.isValid()) return new Date();
+
+    const date = m.toDate();
+    date.setHours(12, 0, 0, 0);
+
+    return date;
+  };
+
+  // اضافه کردن این تابع در EditEvent.tsx
+  const convertTo24Hour = (timeStr: string): string => {
+    if (!timeStr) return '';
+
+    // اگر زمان به صورت ۲۴ ساعته باشد، همان را برگردان
+    if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
+      return timeStr;
+    }
+
+    // تبدیل از AM/PM به ۲۴ ساعته
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!match) return timeStr;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const period = match[3].toUpperCase();
+
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -178,9 +232,9 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
       favouriteIds: eventData.favouriteIds || [],
       address: eventData.address || '',
       // date: parseDateFromDateTime(eventData.startTime || ''),
-      date: eventData.startTime || '',
-      startTime: eventData.startTime || '',
-      endTime: eventData.endTime || '',
+      date: eventData.eventTime ? new Date(eventData.eventTime) : new Date(),
+      startTime: convertTo24Hour(eventData.startTime || ''), // تبدیل به ۲۴ ساعته
+      endTime: convertTo24Hour(eventData.endTime || ''),     // تبدیل به ۲۴ ساعته
       isPaid: eventData.isFree === false,
       gender: null,
       price: eventData.price != null ? String(eventData.price) : '',
@@ -207,7 +261,18 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     if (!formData.description) newErrors.description = 'توضیحات الزامی است';
     if (!formData.categoryId) newErrors.category = 'دسته‌بندی الزامی است';
 
-    if (!formData.date) newErrors.date = 'تاریخ الزامی است';
+    if (!formData.date) {
+      newErrors.date = 'تاریخ الزامی است';
+    } else {
+      const selectedDate = new Date(formData.date);
+      selectedDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        newErrors.date = 'تاریخ رویداد باید امروز یا بعد از امروز باشد';
+      }
+    }
+
     if (!formData.startTime) newErrors.startTime = 'زمان شروع الزامی است';
     if (!formData.endTime) newErrors.endTime = 'زمان پایان الزامی است';
     if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
@@ -625,19 +690,50 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
 
           <div className="space-y-4">
             <div className="flex gap-4">
-              <FormInput
+
+              <JalaliDatePicker
                 label="تاریخ رویداد"
-                isSelect
-                onSelectClick={() => setIsDatePickerOpen(true)}
-                placeholder="انتخاب تاریخ رویداد"
-                value={formData.date}
-                onChange={() => { }}
+                value={toPersian(formData.date)}
+                onChange={(val) => {
+                  const gregorianDate = toGregorian(val);
+                  setFormData({ ...formData, date: gregorianDate });
+                  if (errors.date) setErrors({ ...errors, date: '' });
+                }}
                 error={errors.date}
                 className="flex-1"
+                minYear={1300}
+                maxYear={1450}
+                minDate={toJalaali(new Date())}
               />
+
             </div>
             <div className="flex gap-4">
-              <FormInput
+
+              <JalaliTimePicker
+                label="از ساعت"
+                value={formData.startTime}
+                onChange={(val) => {
+                  setFormData({ ...formData, startTime: val });
+                  if (errors.startTime) setErrors({ ...errors, startTime: '' });
+                }}
+                error={errors.startTime}
+                className="flex-1"
+                minuteStep={5}
+              />
+
+              <JalaliTimePicker
+                label="تا ساعت"
+                value={formData.endTime}
+                onChange={(val) => {
+                  setFormData({ ...formData, endTime: val });
+                  if (errors.endTime) setErrors({ ...errors, endTime: '' });
+                }}
+                error={errors.endTime}
+                className="flex-1"
+                minuteStep={5}
+              />
+
+              {/* <FormInput
                 label="از ساعت"
                 isSelect
                 onSelectClick={() => setIsStartTimePickerOpen(true)}
@@ -656,7 +752,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
                 onChange={() => { }}
                 error={errors.endTime}
                 className="flex-1"
-              />
+              /> */}
             </div>
           </div>
 
@@ -798,20 +894,23 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
         </motion.button>
       </div>
 
-      <PersianDatePickerDrawer
+      {/* <PersianDatePickerDrawer
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
-        value={formData.date}
+        value={toJalaali(formData.date)}
         onSelect={(val) => {
-          setFormData({ ...formData, date: val });
+          const isoDate: string = jalaaliToISOString(val);
+          const updated = Object.assign({}, formData, { date: isoDate });
+          setFormData(updated as any);
           if (errors.date) setErrors({ ...errors, date: '' });
+          setIsDatePickerOpen(false);
         }}
         title="انتخاب تاریخ رویداد"
         minYear={1405}
         maxYear={1406}
-      />
+      /> */}
 
-      <PersianTimePickerDrawer
+      {/* <PersianTimePickerDrawer
         isOpen={isStartTimePickerOpen}
         onClose={() => setIsStartTimePickerOpen(false)}
         value={formData.startTime}
@@ -831,7 +930,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
           if (errors.endTime) setErrors({ ...errors, endTime: '' });
         }}
         title="ساعت پایان"
-      />
+      /> */}
 
       <InterestsDrawer
         isOpen={isInterestsOpen}

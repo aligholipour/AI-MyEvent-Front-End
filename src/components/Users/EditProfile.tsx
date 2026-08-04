@@ -9,6 +9,8 @@ import { getUserForEdit, updateUserProfile } from '../../services/users';
 import { getAllFavourite } from '../../services/favourites';
 import { PersianDatePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
 import JobDrawer from '../Shared/JobDrawer';
+import JalaliDatePicker from '../Shared/JalaliDatePicker';
+import jMoment from 'moment-jalaali';
 
 interface EditProfilePageProps {
     user: User | null;
@@ -31,6 +33,31 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
         jobId: 0 as number | 0,
         jobTitle: '',
     });
+
+    // اضافه کردن توابع تبدیل تاریخ
+    const toPersian = (date: Date | string | null | undefined): string => {
+        if (!date) return '';
+
+        const d = typeof date === 'string' ? new Date(date) : date;
+        if (isNaN(d.getTime())) return '';
+
+        const m = jMoment(d);
+        return m.format('jYYYY/jMM/jD');
+    };
+
+    const toGregorian = (persianDate: string): Date => {
+        if (!persianDate) return new Date();
+
+        const cleanVal = persianDate.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+
+        const m = jMoment(cleanVal, 'jYYYY/jMM/jD');
+        if (!m.isValid()) return new Date();
+
+        const date = m.toDate();
+        date.setHours(12, 0, 0, 0);
+
+        return date;
+    };
 
     const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -165,12 +192,6 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
         };
     }, [user?.id]);
 
-    // نظارت روی تغییرات تاریخ تولد
-    useEffect(() => {
-        console.log('formData.birthDate تغییر کرد:', formData.birthDate);
-        console.log('تاریخ فارسی:', toPersian(formData.birthDate));
-    }, [formData.birthDate]);
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const reader = new FileReader();
@@ -268,92 +289,92 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
         }
     };
 
-    const parsePersianDateString = (value: string) => {
-        const cleanVal = value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
-        const parts = cleanVal.split('/').map((x) => x.trim());
-        if (parts.length !== 3) return { jy: NaN, jm: NaN, jd: NaN };
-        return {
-            jy: parseInt(parts[0], 10),
-            jm: parseInt(parts[1], 10),
-            jd: parseInt(parts[2], 10),
-        };
-    };
+    // const parsePersianDateString = (value: string) => {
+    //     const cleanVal = value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+    //     const parts = cleanVal.split('/').map((x) => x.trim());
+    //     if (parts.length !== 3) return { jy: NaN, jm: NaN, jd: NaN };
+    //     return {
+    //         jy: parseInt(parts[0], 10),
+    //         jm: parseInt(parts[1], 10),
+    //         jd: parseInt(parts[2], 10),
+    //     };
+    // };
 
-    const toGregorian = (persianDate: string): Date => {
-        const { jy, jm, jd } = parsePersianDateString(persianDate);
-        if ([jy, jm, jd].some((n) => Number.isNaN(n))) return new Date();
+    // const toGregorian = (persianDate: string): Date => {
+    //     const { jy, jm, jd } = parsePersianDateString(persianDate);
+    //     if ([jy, jm, jd].some((n) => Number.isNaN(n))) return new Date();
 
-        const { gy, gm, gd } = jalaaliToGregorian(jy, jm, jd);
-        const gregorianDate = new Date(gy, gm - 1, gd);
-        gregorianDate.setHours(12, 0, 0, 0);
-        return gregorianDate;
-    };
+    //     const { gy, gm, gd } = jalaaliToGregorian(jy, jm, jd);
+    //     const gregorianDate = new Date(gy, gm - 1, gd);
+    //     gregorianDate.setHours(12, 0, 0, 0);
+    //     return gregorianDate;
+    // };
 
-    const toPersian = (date: Date | string | null | undefined): string => {
-        if (!date) return '';
+    // const toPersian = (date: Date | string | null | undefined): string => {
+    //     if (!date) return '';
 
-        const d = typeof date === 'string' ? new Date(date) : date;
-        if (isNaN(d.getTime())) return '';
+    //     const d = typeof date === 'string' ? new Date(date) : date;
+    //     if (isNaN(d.getTime())) return '';
 
-        const parts = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).formatToParts(d);
+    //     const parts = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    //         year: 'numeric',
+    //         month: '2-digit',
+    //         day: '2-digit',
+    //     }).formatToParts(d);
 
-        const year = parts.find((part) => part.type === 'year')?.value ?? '';
-        const month = parts.find((part) => part.type === 'month')?.value ?? '';
-        const day = parts.find((part) => part.type === 'day')?.value ?? '';
+    //     const year = parts.find((part) => part.type === 'year')?.value ?? '';
+    //     const month = parts.find((part) => part.type === 'month')?.value ?? '';
+    //     const day = parts.find((part) => part.type === 'day')?.value ?? '';
 
-        return `${year}/${month}/${day}`;
-    };
+    //     return `${year}/${month}/${day}`;
+    // };
 
-    const toPersianDisplay = (date: Date | string | null | undefined): string => {
-        const persianDate = toPersian(date);
-        if (!persianDate) return '';
+    // const toPersianDisplay = (date: Date | string | null | undefined): string => {
+    //     const persianDate = toPersian(date);
+    //     if (!persianDate) return '';
 
-        return persianDate.replace(/\d/g, (x) => {
-            const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            return farsiDigits[parseInt(x, 10)];
-        });
-    };
+    //     return persianDate.replace(/\d/g, (x) => {
+    //         const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    //         return farsiDigits[parseInt(x, 10)];
+    //     });
+    // };
 
-    const div = (a: number, b: number) => Math.floor(a / b);
+    // const div = (a: number, b: number) => Math.floor(a / b);
 
-    const jalaaliToGregorian = (jy: number, jm: number, jd: number) => {
-        const jy2 = jy > 979 ? jy - 979 : jy;
-        const gy = jy > 979 ? 1600 : 621;
-        const days = 365 * jy2 + div(jy2, 33) * 8 + div((jy2 % 33) + 3, 4) + (jm <= 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186) + (jd - 1);
-        let gy2 = gy + 400 * div(days, 146097);
-        let d = days % 146097;
+    // const jalaaliToGregorian = (jy: number, jm: number, jd: number) => {
+    //     const jy2 = jy > 979 ? jy - 979 : jy;
+    //     const gy = jy > 979 ? 1600 : 621;
+    //     const days = 365 * jy2 + div(jy2, 33) * 8 + div((jy2 % 33) + 3, 4) + (jm <= 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186) + (jd - 1);
+    //     let gy2 = gy + 400 * div(days, 146097);
+    //     let d = days % 146097;
 
-        if (d > 36524) {
-            gy2 += 100 * div(--d, 36524);
-            d %= 36524;
-            if (d >= 365) d++;
-        }
+    //     if (d > 36524) {
+    //         gy2 += 100 * div(--d, 36524);
+    //         d %= 36524;
+    //         if (d >= 365) d++;
+    //     }
 
-        gy2 += 4 * div(d, 1461);
-        d %= 1461;
+    //     gy2 += 4 * div(d, 1461);
+    //     d %= 1461;
 
-        if (d > 365) {
-            gy2 += div(d - 1, 365);
-            d = (d - 1) % 365;
-        }
+    //     if (d > 365) {
+    //         gy2 += div(d - 1, 365);
+    //         d = (d - 1) % 365;
+    //     }
 
-        const march = d + 1;
-        const sal_a = [0, 31, (gy2 % 4 === 0 && (gy2 % 100 !== 0 || gy2 % 400 === 0)) ? 60 : 59, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366];
-        let gm = 0;
-        for (let i = 1; i < sal_a.length; i++) {
-            if (march <= sal_a[i]) {
-                gm = i;
-                break;
-            }
-        }
+    //     const march = d + 1;
+    //     const sal_a = [0, 31, (gy2 % 4 === 0 && (gy2 % 100 !== 0 || gy2 % 400 === 0)) ? 60 : 59, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366];
+    //     let gm = 0;
+    //     for (let i = 1; i < sal_a.length; i++) {
+    //         if (march <= sal_a[i]) {
+    //             gm = i;
+    //             break;
+    //         }
+    //     }
 
-        const gd = march - sal_a[gm - 1];
-        return { gy: gy2, gm, gd };
-    };
+    //     const gd = march - sal_a[gm - 1];
+    //     return { gy: gy2, gm, gd };
+    // };
 
     return (
         <motion.div
@@ -503,15 +524,42 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                     <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 mr-0.5">تاریخ تولد</label>
                         <div className="relative">
-                            <LucideIcons.Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" />
-                            <input
+                            {/* <LucideIcons.Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 pointer-events-none" /> */}
+
+                            <JalaliDatePicker
+                                label="تاریخ تولد"
+                                value={toPersian(formData.birthDate)}
+                                onChange={(val) => {
+                                    const gregorianDate = toGregorian(val);
+                                    setFormData({ ...formData, birthDate: gregorianDate });
+                                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                                }}
+                                error={errors.birthDate}
+                                className="flex-1"
+                                minYear={1300}
+                                maxYear={1450}
+                            />
+
+                            {/* <JalaliDatePicker
+                                label=""
+                                value={toPersian(formData.birthDate)} // ارسال به صورت شمسی
+                                onChange={(val) => {
+                                    // val به صورت "1402/01/01" یا "۱۴۰۲/۰۱/۰۱" می‌آید
+                                    const gregorianDate = toGregorian(val);
+                                    setFormData({ ...formData, birthDate: gregorianDate });
+                                    if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                                }}
+                                error={errors.birthDate}
+                            /> */}
+
+                            {/* <input
                                 type="text"
                                 readOnly
                                 onClick={() => setIsDatePickerOpen(true)}
                                 value={toPersianDisplay(formData.birthDate)}
                                 placeholder="۱۳۷۰/۰۱/۰۱"
                                 className={`w-full bg-gray-50 border ${errors.birthDate ? 'border-red-500' : 'border-gray-100'} h-12 px-11 rounded-2xl text-[12px] font-black focus:bg-white focus:ring-4 focus:ring-blue-100/50 outline-none transition-all cursor-pointer`}
-                            />
+                            /> */}
                         </div>
                     </div>
 
@@ -726,7 +774,7 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 onFavouritesLoaded={handleFavouritesLoaded}
             />
 
-            <PersianDatePickerDrawer
+            {/* <PersianDatePickerDrawer
                 isOpen={isDatePickerOpen}
                 onClose={() => setIsDatePickerOpen(false)}
                 value={toPersian(formData.birthDate)} // ارسال به صورت شمسی با اعداد انگلیسی
@@ -743,7 +791,7 @@ export function EditProfilePage({ user, onBack, onSave }: EditProfilePageProps) 
                 title="انتخاب تاریخ تولد"
                 minYear={1340}
                 maxYear={1406}
-            />
+            /> */}
 
             {/* <PersianDatePickerDrawer
                 isOpen={isDatePickerOpen}

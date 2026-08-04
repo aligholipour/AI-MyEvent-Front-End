@@ -4,37 +4,55 @@ import * as LucideIcons from 'lucide-react';
 
 interface SliderItem {
   id: string;
+  brand: string;
+  headline: string;
+  subtitle: string;
+  buttonText: string;
   image: string;
-  title: string;
-  tagline: string;
-  badge: string;
-  badgeColor: string;
+  sideColor?: string;
+  productBadge?: string;
 }
 
 const SLIDER_ITEMS: SliderItem[] = [
   {
     id: '1',
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=600',
-    badge: 'برگزیده',
-    badgeColor: 'bg-amber-500',
-    title: 'کافه هنر و گفتگو "برنا"',
-    tagline: 'برگزارکننده: علی قلی پور',
+    brand: 'Vitalayer',
+    headline: 'تابستان با ویتالیر شروع میشه',
+    subtitle: 'محصولات تخصصی پوست',
+    buttonText: 'خرید',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1000',
+    sideColor: '#045B47',
+    productBadge: 'SPF 50+',
   },
   {
     id: '2',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=600',
-    badge: 'جدید',
-    badgeColor: 'bg-emerald-500',
-    title: 'کارگاه پخت نان ترش فرانسوی',
-    tagline: 'برگزارکننده: علی قلی پور',
+    brand: 'Vitalayer',
+    headline: 'سرم جوانساز و ضدچروک',
+    subtitle: 'حس طراوت و شادابی بی‌نظیر پوست',
+    buttonText: 'مشاهده',
+    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1000',
+    sideColor: '#0055A5',
+    productBadge: 'ویتامین C',
   },
   {
     id: '3',
-    image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=600',
-    badge: 'پیشنهاد امروز',
-    badgeColor: 'bg-[#ED1C24]',
-    title: 'کارگاه نقاشی و خلاقیت بوم سفید',
-    tagline: 'برگزارکننده: علی قلی پور',
+    brand: 'Vitalayer',
+    headline: 'کرم آبرسان عمیق ۲۴ ساعته',
+    subtitle: 'تغذیه کامل و شاداب‌کننده لایه‌های پوست',
+    buttonText: 'خرید آنلاین',
+    image: 'https://images.unsplash.com/photo-1512290900676-26c2a86465ae?auto=format&fit=crop&q=80&w=1000',
+    sideColor: '#8E24AA',
+    productBadge: 'آبرسان',
+  },
+  {
+    id: '4',
+    brand: 'Vitalayer',
+    headline: 'محافظت کامل در برابر آفتاب',
+    subtitle: 'ژل کرم ضدآفتاب بی‌رنگ فاقد چربی',
+    buttonText: 'اطلاعات بیشتر',
+    image: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&q=80&w=1000',
+    sideColor: '#045B47',
+    productBadge: 'ضدآفتاب',
   }
 ];
 
@@ -43,174 +61,132 @@ export function HomeHeroSlider() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const timerRef = useRef<any>(null);
 
-  // Auto advance every 5 seconds
+  // Auto advance slider in reverse direction
   useEffect(() => {
     if (!isAutoPlaying) return;
 
     timerRef.current = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % SLIDER_ITEMS.length);
-    }, 5000);
+      setActiveIndex((prev) => (prev - 1 + SLIDER_ITEMS.length) % SLIDER_ITEMS.length);
+    }, 4500);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isAutoPlaying]);
 
-  // Pause autoplay briefly on user interaction
   const handleInteraction = (index: number) => {
     setActiveIndex(index);
     setIsAutoPlaying(false);
     if (timerRef.current) clearInterval(timerRef.current);
-    
-    // Resume autoplay after 7 seconds of inactivity
+
     setTimeout(() => {
       setIsAutoPlaying(true);
-    }, 7000);
+    }, 6000);
   };
 
   const handleNext = () => {
-    const nextIndex = (activeIndex + 1) % SLIDER_ITEMS.length;
-    handleInteraction(nextIndex);
+    handleInteraction((activeIndex + 1) % SLIDER_ITEMS.length);
   };
 
   const handlePrev = () => {
-    const prevIndex = (activeIndex - 1 + SLIDER_ITEMS.length) % SLIDER_ITEMS.length;
-    handleInteraction(prevIndex);
+    handleInteraction((activeIndex - 1 + SLIDER_ITEMS.length) % SLIDER_ITEMS.length);
   };
 
-  // We want a beautifully styled Peek effect:
-  // Show active item centered fully, and part of left/right items visible on edges with smaller scale and lower opacity.
   return (
-    <div 
-      className="relative w-full py-4 bg-white overflow-hidden select-none" 
-      dir="rtl"
-    >
-      {/* Main Container for Peek Effect Slider */}
-      <div className="relative flex items-center justify-center h-[230px] overflow-hidden px-4">
-        {/* Carousel Tracks */}
-        <div className="relative flex items-center justify-center w-full h-full">
+    <section className="w-full py-3.5 select-none" dir="rtl">
+
+      {/* Main Slider Track with peek effect */}
+      <div className="relative w-full h-[185px] sm:h-[210px] overflow-hidden flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center">
           {SLIDER_ITEMS.map((item, idx) => {
-            // Calculate relative offset for positioning/scaling
             let offset = idx - activeIndex;
-            // Handle circular wrapping
-            if (offset < -1) offset += SLIDER_ITEMS.length;
-            if (offset > 1) offset -= SLIDER_ITEMS.length;
+
+            // Normalize offset to closest wrapped distance
+            while (offset > SLIDER_ITEMS.length / 2) offset -= SLIDER_ITEMS.length;
+            while (offset <= -SLIDER_ITEMS.length / 2) offset += SLIDER_ITEMS.length;
 
             const isActive = idx === activeIndex;
-            const isLeft = offset === -1 || (activeIndex === 0 && idx === SLIDER_ITEMS.length - 1 && SLIDER_ITEMS.length > 2);
-            const isRight = offset === 1 || (activeIndex === SLIDER_ITEMS.length - 1 && idx === 0 && SLIDER_ITEMS.length > 2);
-
-            // Determine rendering state
-            let positionX = '0%';
-            let scale = 0.85;
-            let opacity = 0;
-            let zIndex = 10;
-
-            if (isActive) {
-              positionX = '0%';
-              scale = 1.0;
-              opacity = 1;
-              zIndex = 30;
-            } else if (isLeft) {
-              positionX = '-82%'; // Peek offset to the left
-              scale = 0.88;
-              opacity = 0.65;
-              zIndex = 20;
-            } else if (isRight) {
-              positionX = '82%'; // Peek offset to the right
-              scale = 0.88;
-              opacity = 0.65;
-              zIndex = 20;
-            }
+            const isVisible = Math.abs(offset) <= 1;
+            const xPosition = `${offset * 102}%`;
 
             return (
               <motion.div
                 key={item.id}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={(e, info) => {
-                  const swipeThreshold = 50;
-                  if (info.offset.x > swipeThreshold) {
+                dragElastic={0.15}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x > 40) {
                     handlePrev();
-                  } else if (info.offset.x < -swipeThreshold) {
+                  } else if (info.offset.x < -40) {
                     handleNext();
                   }
                 }}
                 animate={{
-                  x: positionX,
-                  scale: scale,
-                  opacity: opacity,
-                  zIndex: zIndex,
+                  x: xPosition,
+                  opacity: isVisible ? 1 : 0,
                 }}
                 transition={{
-                  type: 'spring',
-                  stiffness: 260,
-                  damping: 24,
+                  duration: 0.45,
+                  ease: [0.25, 0.1, 0.25, 1],
                 }}
-                className="absolute w-[82%] sm:w-[86%] h-full rounded-[24px] overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.02)] border border-gray-100 bg-white cursor-grab active:cursor-grabbing"
-                style={{ originY: '50%' }}
                 onClick={() => {
-                  if (!isActive) {
-                    handleInteraction(idx);
-                  }
+                  if (!isActive) handleInteraction(idx);
                 }}
+                className={`absolute w-[82%] sm:w-[84%] h-full rounded-2xl overflow-hidden shadow-sm cursor-pointer bg-slate-900 ${
+                  isActive ? 'shadow-md' : ''
+                }`}
+                style={{ zIndex: isActive ? 20 : 10 }}
               >
-                {/* Background image */}
+                {/* Background Image - Sea/Beach or Skincare Photography */}
                 <img
                   src={item.image}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000s] ease-linear"
-                  style={{ transform: isActive ? 'scale(1.08)' : 'scale(1.0)' }}
+                  alt={item.headline}
+                  className="absolute inset-0 w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
 
-                {/* Ambient vignette gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+                {/* Soft gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/30 to-transparent" />
 
-                {/* Floating Content over Slider */}
-                <div className="absolute inset-0 p-5 flex flex-col justify-between text-right z-10 select-none">
+                {/* Content Overlay */}
+                <div className="absolute inset-0 p-5 flex flex-col justify-between z-10 text-right">
+                  {/* Top Header Bar: Vitalayer Logo on Top Left */}
                   <div className="flex items-center justify-between">
-                    {/* Badge */}
-                    <span className={`px-2.5 py-1 text-[9px] font-black text-white rounded-full ${item.badgeColor} shadow-sm backdrop-blur-md bg-opacity-95`}>
-                      {item.badge}
-                    </span>
-                    
-                    {/* Floating micro clock */}
-                    <span className="text-[9px] font-black text-white/85 bg-black/25 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1">
-                      <LucideIcons.Clock className="w-2.5 h-2.5" />
-                      ۵ دقیقه پیش
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-md bg-amber-400 text-gray-900 font-black text-[10px] flex items-center justify-center shadow-xs">
+                        V
+                      </div>
+                      <span className="text-white font-sans tracking-wider text-xs sm:text-sm font-extrabold drop-shadow-sm">
+                        {item.brand}
+                      </span>
+                    </div>
+
+                    {item.productBadge && (
+                      <span className="px-2.5 py-0.5 text-[9px] font-black text-emerald-950 bg-emerald-200/90 rounded-md shadow-xs backdrop-blur-xs">
+                        {item.productBadge}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-1.5">
-                    {/* Event Title */}
-                    <h3 className="text-white text-[16px] sm:text-lg font-black leading-tight drop-shadow-md">
-                      {item.title}
-                    </h3>
-                    
-                    {/* Event Tagline */}
-                    <p className="text-white/80 text-[11px] sm:text-xs font-bold leading-normal line-clamp-1">
-                      {item.tagline}
-                    </p>
+                  {/* Persian Headline, Subtitle and Buy Button on Right side */}
+                  <div className="flex flex-col items-start space-y-2 max-w-[75%] my-auto">
+                    <div className="space-y-1">
+                      <h3 className="text-white text-base sm:text-lg font-black leading-snug drop-shadow-md">
+                        {item.headline}
+                      </h3>
+                      <p className="text-white/90 text-[11px] sm:text-xs font-bold drop-shadow-xs line-clamp-1">
+                        {item.subtitle}
+                      </p>
+                    </div>
 
-                    {/* Footer Actions Inside Slider Card */}
-                    {/* <div className="pt-2 flex items-center justify-between border-t border-white/10 mt-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex -space-x-1.5 overflow-hidden">
-                          <img className="inline-block h-4 w-4 rounded-full ring-1 ring-white" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=50" alt="" />
-                          <img className="inline-block h-4 w-4 rounded-full ring-1 ring-white" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50" alt="" />
-                          <img className="inline-block h-4 w-4 rounded-full ring-1 ring-white" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50" alt="" />
-                        </div>
-                        <span className="text-[9px] font-black text-white/90">۱۲ نفر عضو شده‌اند</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 text-[10px] font-black text-amber-300">
-                        <span>رزرو سریع</span>
-                        <LucideIcons.ChevronLeft className="w-3 h-3" />
-                      </div>
-                    </div> */}
-                    
+                    {/* Small rounded Buy button ("خرید") */}
+                    <button
+                      type="button"
+                      className="mt-1 bg-white text-gray-900 hover:bg-gray-100 text-[11px] font-black px-4 py-1.2 rounded-full shadow-md transition-all active:scale-95 cursor-pointer border-none"
+                    >
+                      {item.buttonText}
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -219,18 +195,19 @@ export function HomeHeroSlider() {
         </div>
       </div>
 
-      {/* Modern minimal Navigation Dots */}
-      {/* <div className="flex justify-center items-center gap-1.5 mt-3.5">
+      {/* Pagination Indicators */}
+      <div className="flex justify-center items-center gap-1.5 mt-2.5">
         {SLIDER_ITEMS.map((_, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={() => handleInteraction(idx)}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              idx === activeIndex ? 'w-5 bg-[#ED1C24]' : 'w-2 bg-gray-200'
+            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+              idx === activeIndex ? 'w-5 bg-[#ED1C24]' : 'w-1.5 bg-gray-300 hover:bg-gray-400'
             }`}
           />
         ))}
-      </div> */}
-    </div>
+      </div>
+    </section>
   );
 }

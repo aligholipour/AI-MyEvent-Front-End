@@ -12,6 +12,7 @@ import InterestsDrawer from '../../components/Shared/InterestsDrawer'
 import ImageCropperDrawer from '../../components/Shared/ImageCropperDrawer'
 import SelectionDrawer from '../../components/Shared/SelectionDrawer'
 import CategoryDrawer from '../../components/Shared/CategoryDrawer'
+import { toJalaali, toJalaaliDisplay, jalaaliToISOString, toGregorian } from '../../lib/dateUtils';
 
 import {
     Check,
@@ -22,6 +23,8 @@ import {
     MapPin,
 } from 'lucide-react';
 import { PersianDatePickerDrawer, PersianTimePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
+import JalaliDatePicker from '../Shared/JalaliDatePicker';
+import JalaliTimePicker from '../Shared/JalaliTimePicker';
 
 
 function CreateEvent({ onBack }: {
@@ -121,6 +124,13 @@ function CreateEvent({ onBack }: {
         }
 
         if (!formData.date) newErrors.date = 'تاریخ الزامی است';
+        else {
+            const selectedDate = toGregorian(formData.date);
+            selectedDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) newErrors.date = 'تاریخ رویداد باید امروز یا بعد از امروز باشد';
+        }
         if (!formData.startTime) newErrors.startTime = 'زمان شروع الزامی است';
         if (!formData.endTime) newErrors.endTime = 'زمان پایان الزامی است';
 
@@ -239,7 +249,8 @@ function CreateEvent({ onBack }: {
             isActive: true, // Pending events are disabled by default
             eventTime: '',
             cityId: formData.cityId,
-            isCanceled: false
+            isCanceled: false,
+            category: ''
         };
 
         console.log(newEvent);
@@ -510,16 +521,25 @@ function CreateEvent({ onBack }: {
                     <div className="space-y-4">
                         <div className="flex gap-4">
 
-                            <FormInput
+                            <JalaliDatePicker
+                                label="تاریخ رویداد"
+                                value={formData.date}
+                                onChange={(val) => { setFormData({ ...formData, date: val }); if (errors.date) setErrors({ ...errors, date: '' }); }}
+                                error={errors.date}
+                                className="flex-1"
+                                minDate={toJalaali(new Date())}
+                            />
+
+                            {/* <FormInput
                                 label="تاریخ رویداد"
                                 isSelect
                                 onSelectClick={() => setIsDatePickerOpen(true)}
                                 placeholder="انتخاب تاریخ رویداد"
-                                value={formData.date}
+                                value={toJalaaliDisplay(formData.date)}
                                 onChange={() => { }}
                                 error={errors.date}
                                 className="flex-1"
-                            />
+                            /> */}
 
                             {/* <FormInput
                                 label="تاریخ رویداد"
@@ -531,7 +551,23 @@ function CreateEvent({ onBack }: {
                             /> */}
                         </div>
                         <div className="flex gap-4">
-                            <FormInput
+
+                            <JalaliTimePicker
+                                label="از ساعت"
+                                value={formData.startTime}
+                                onChange={(val) => { setFormData({ ...formData, startTime: val }); if (errors.startTime) setErrors({ ...errors, startTime: '' }); }}
+                                error={errors.startTime}
+                                className="flex-1"
+                            />
+                            <JalaliTimePicker
+                                label="تا ساعت"
+                                value={formData.endTime}
+                                onChange={(val) => { setFormData({ ...formData, endTime: val }); if (errors.endTime) setErrors({ ...errors, endTime: '' }); }}
+                                error={errors.endTime}
+                                className="flex-1"
+                            />
+
+                            {/* <FormInput
                                 label="از ساعت"
                                 isSelect
                                 onSelectClick={() => setIsStartTimePickerOpen(true)}
@@ -550,7 +586,7 @@ function CreateEvent({ onBack }: {
                                 onChange={() => { }}
                                 error={errors.endTime}
                                 className="flex-1"
-                            />
+                            /> */}
                             {/* <FormInput
                                 label="از ساعت"
                                 type="time"
@@ -719,20 +755,22 @@ function CreateEvent({ onBack }: {
                 }}
             />
 
-            <PersianDatePickerDrawer
+            {/* <PersianDatePickerDrawer
                 isOpen={isDatePickerOpen}
                 onClose={() => setIsDatePickerOpen(false)}
-                value={formData.date}
+                value={toJalaali(formData.date)}
                 onSelect={(val) => {
-                    setFormData({ ...formData, date: val });
+                    const isoDate = jalaaliToISOString(val);
+                    setFormData(prev => ({ ...prev, date: isoDate }));
                     if (errors.date) setErrors({ ...errors, date: '' });
+                    setIsDatePickerOpen(false);
                 }}
                 title="انتخاب تاریخ رویداد"
                 minYear={1405}
                 maxYear={1406}
-            />
+            /> */}
 
-            <PersianTimePickerDrawer
+            {/* <PersianTimePickerDrawer
                 isOpen={isStartTimePickerOpen}
                 onClose={() => setIsStartTimePickerOpen(false)}
                 value={formData.startTime}
@@ -752,7 +790,7 @@ function CreateEvent({ onBack }: {
                     if (errors.endTime) setErrors({ ...errors, endTime: '' });
                 }}
                 title="ساعت پایان"
-            />
+            /> */}
 
             <CategoryDrawer
                 isOpen={isCategoryOpen}
