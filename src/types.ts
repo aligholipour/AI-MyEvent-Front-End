@@ -47,6 +47,7 @@ export interface AppEvent {
   onlineLink?: string;
   address?: string;
   eventTime: string;
+  attendeesCount?: number;
   reasons?: CustomerBahamRejected[];
   isCanceled: boolean;
   category: string;
@@ -79,6 +80,7 @@ export interface CustomerHostedParticipantsResponse {
 export interface CustomerBahamRejected {
   reason: string;
   createDateTime: string;
+  createdAt?: string;
 }
 
 export interface AppCategory {
@@ -185,6 +187,8 @@ export interface EventDetailForAdminResponse {
   city: string,
   isApproved: boolean,
   status: number,
+  rejectionReason?: string,
+  reasons?: CustomerBahamRejected[];
   isFree: boolean,
   isActive: boolean,
   price: string,

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { initCategories } from '@/src/services/categories';
 
 interface CategoriesPageProps {
-    onSelectCategory: (categoryTitle: string) => void;
+    onSelectCategory: (categoryId: number) => void;
 }
 
 export function CategoriesPage({
@@ -44,7 +44,7 @@ export function CategoriesPage({
                                 key={cat.id}
                                 whileHover={{ y: -3, scale: 1.02 }}
                                 whileTap={{ scale: 0.96 }}
-                                onClick={() => onSelectCategory(cat.title)}
+                                onClick={() => onSelectCategory(cat.id)}
                                 className='flex flex-col items-center justify-center aspect-[1.35] rounded-[20px] transition-all relative bg-[#F3F4F6]/80 hover:bg-[#E5E7EB] border border-transparent'>
                                 <div className='mb-3 flex items-center justify-center text-[#1F2937]'>
                                     <Icon className="w-7 h-7 stroke-[1.8]" />

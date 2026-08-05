@@ -301,7 +301,7 @@ export async function getEventForUpdateById(id: number): Promise<EventDetailsFor
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        
+
       },
     });
 
@@ -353,6 +353,58 @@ export async function getEventParticipants(
     };
   } catch (err) {
     console.error('Failed to fetch participants:', err);
+    throw err;
+  }
+}
+
+// New: fetch participants for admin modal with phone and joinedAt
+export async function getEventParticipantsForAdmin(
+  bahamId: number,
+  pageNumber = 1,
+  pageSize = 100,
+): Promise<Array<{ fullname: string; profileAddress?: string; joinedAt: string; phone?: string }>> {
+  try {
+    const params = new URLSearchParams();
+    params.append('bahamId', bahamId.toString());
+    // params.append('pageNumber', pageNumber.toString());
+    // params.append('pageSize', pageSize.toString());
+
+    // Assuming server provides an endpoint for admin participants with phone
+    const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/GetEventParticipantsForAdmin/${bahamId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `HTTP ${response.status}: خطا در دریافت شرکت‌کنندگان (Admin)`);
+    }
+
+    const data = await response.json();
+
+    const participants = Array.isArray(data)
+      ? data.map((p: any) => ({
+        fullname: p.fullname ?? ''.trim(),
+        profileAddress: p.profileAddress ?? undefined,
+        joinedAt: p.joinedAt ?? '',
+        phone: p.phone ?? p.mobile ?? undefined,
+      }))
+      : [];
+
+    return Array.isArray(data)
+      ? data.map((p: any) => ({
+        fullname: p.fullname ?? ''.trim(),
+        profileAddress: p.profileAddress ?? undefined,
+        joinedAt: p.joinedAt ?? '',
+        phone: p.phone ?? p.mobile ?? undefined,
+      }))
+      : [];
+
+  } catch (err) {
+    console.error('Failed to fetch admin participants:', err);
     throw err;
   }
 }
@@ -476,6 +528,39 @@ export async function cancelRegistration(
   }
 }
 
+function normalizeAdminEvent(rawEvent: any): AppEvent {
+  const rawReasons = rawEvent.reasons ?? rawEvent.rejectionReasons ?? rawEvent.rejectReasons ?? rawEvent.reasonsHistory ?? rawEvent.reasonHistory;
+  const reasons = Array.isArray(rawReasons)
+    ? [...rawReasons].sort((a, b) => {
+      const aDate = Date.parse(a.createDateTime ?? a.createdAt ?? a.date ?? '');
+      const bDate = Date.parse(b.createDateTime ?? b.createdAt ?? b.date ?? '');
+      return bDate - aDate;
+    })
+    : undefined;
+
+  const normalizedAttendeesCount = (() => {
+    const rawCount = rawEvent.attendeesCount ?? rawEvent.participantsCount ?? rawEvent.participantCount ?? rawEvent.registeredCount ?? rawEvent.registrationCount ?? rawEvent.totalParticipants ?? rawEvent.totalAttendees;
+    if (typeof rawCount === 'number') return rawCount;
+    if (typeof rawCount === 'string') {
+      const parsed = parseInt(rawCount, 10);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  })();
+
+  const rejectionReason = rawEvent.rejectionReason
+    ?? reasons?.[0]?.reason
+    ?? rawEvent.reason
+    ?? undefined;
+
+  return {
+    ...rawEvent,
+    reasons,
+    rejectionReason,
+    attendeesCount: normalizedAttendeesCount,
+  } as AppEvent;
+}
+
 export async function getEventsFormAdminPage(
   request: GetEventsForAdminPageRequest
 ): Promise<{ data: AppEvent[]; totalCount: number; hasNextPage: boolean }> {
@@ -498,8 +583,9 @@ export async function getEventsFormAdminPage(
     }
 
     const data = await response.json();
+    const events = Array.isArray(data.data) ? data.data.map(normalizeAdminEvent) : [];
     return {
-      data: data.data,
+      data: events,
       totalCount: data.totalCount,
       hasNextPage: data.hasNextPage
     };
@@ -507,6 +593,28 @@ export async function getEventsFormAdminPage(
     console.error('Failed to fetch registered events:', err);
     throw err;
   }
+}
+
+function normalizeAdminEventDetail(rawData: any): EventDetailForAdminResponse {
+  const rawReasons = rawData.reasons ?? rawData.rejectionReasons ?? rawData.rejectReasons ?? rawData.reasonsHistory ?? rawData.reasonHistory;
+  const reasons = Array.isArray(rawReasons)
+    ? [...rawReasons].sort((a, b) => {
+      const aDate = Date.parse(a.createDateTime ?? a.createdAt ?? a.date ?? '');
+      const bDate = Date.parse(b.createDateTime ?? b.createdAt ?? b.date ?? '');
+      return bDate - aDate;
+    })
+    : undefined;
+
+  const rejectionReason = rawData.rejectionReason
+    ?? reasons?.[0]?.reason
+    ?? rawData.reason
+    ?? undefined;
+
+  return {
+    ...rawData,
+    reasons,
+    rejectionReason,
+  } as EventDetailForAdminResponse;
 }
 
 export async function getEventDetailForAdmin(bahamId: number)
@@ -527,7 +635,7 @@ export async function getEventDetailForAdmin(bahamId: number)
 
     const data = await response.json();
     return {
-      data: data
+      data: normalizeAdminEventDetail(data)
     };
   } catch (err) {
     console.error('Failed to fetch registered events:', err);

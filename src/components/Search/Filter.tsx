@@ -114,6 +114,18 @@ function FilterDrawer({
       });
   }, []);
 
+  // Sync internal filter state from initialFilters when they change or when the drawer is opened
+  useEffect(() => {
+    if (!initialFilters) return;
+
+    setSelectedCategory(initialFilters.categoryId ?? null);
+    setSelectedInterests(initialFilters.interestIds ? [...initialFilters.interestIds] : []);
+    setActiveGender(initialFilters.gender || 'مختلط');
+    setSelectedAgeRange(initialFilters.ageRange ?? null);
+    setIsFreeOnly(Boolean(initialFilters.isFreeOnly));
+    setActiveEventType(initialFilters.eventType || 'همه');
+  }, [initialFilters, isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (

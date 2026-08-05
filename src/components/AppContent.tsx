@@ -259,6 +259,18 @@ function AppContent() {
         setSelectedEventId(null);
         setIsCreateEventOpen(false);
         setIsCustomerEventOpen(false);
+        // Clear filters and selected category when leaving the Events page
+        if (tab !== 'events') {
+            setActiveFilters({
+                categoryId: undefined,
+                interestIds: [],
+                gender: undefined,
+                ageRange: undefined,
+                isFreeOnly: false,
+                eventType: undefined
+            });
+            setSelectedCategoryTab(null);
+        }
     };
 
     useEffect(() => {
@@ -325,6 +337,14 @@ function AppContent() {
             eventType: undefined
         });
     }, []);
+
+    // When an event is opened (we navigate into EventDetails), consider this as leaving the Events list
+    useEffect(() => {
+        if (selectedEventId !== null) {
+            handleClearFilters();
+            setSelectedCategoryTab(null);
+        }
+    }, [selectedEventId, handleClearFilters]);
 
     if (cityLoading) {
         return (
@@ -738,11 +758,13 @@ function AppContent() {
                                     <CategoriesPage
                                         key="categories"
                                         // categories={CATEGORIES}
-                                        onSelectCategory={(categoryTitle) => {
-                                            setSelectedCategoryTab(categoryTitle);
-                                            navigateToTab('events');
-                                        }}
-                                    />
+                                                                            onSelectCategory={(categoryId) => {
+                                                                                setActiveFilters(prev => ({ ...prev, categoryId }));
+                                                                                const cat = CATEGORIES.find(c => c.id === categoryId);
+                                                                                setSelectedCategoryTab(cat?.title || null);
+                                                                                navigateToTab('events');
+                                                                            }}
+                                                                        />
                                 ) : activeTab === 'my-events' ? (
                                     <CustomerEventsPage
                                         key="my-events"
