@@ -12,7 +12,7 @@ import InterestsDrawer from '../../components/Shared/InterestsDrawer'
 import ImageCropperDrawer from '../../components/Shared/ImageCropperDrawer'
 import SelectionDrawer from '../../components/Shared/SelectionDrawer'
 import CategoryDrawer from '../../components/Shared/CategoryDrawer'
-import { toJalaali, toJalaaliDisplay, jalaaliToISOString, toGregorian } from '../../lib/dateUtils';
+import { toJalaali, toGregorian } from '../../lib/dateUtils';
 
 import {
     Check,
@@ -22,7 +22,6 @@ import {
     ChevronLeft,
     MapPin,
 } from 'lucide-react';
-import { PersianDatePickerDrawer, PersianTimePickerDrawer } from '../Shared/PersianDatePickerDrawerProps.';
 import JalaliDatePicker from '../Shared/JalaliDatePicker';
 import JalaliTimePicker from '../Shared/JalaliTimePicker';
 
@@ -77,10 +76,10 @@ function CreateEvent({ onBack }: {
     const [loadingCities, setLoadingCities] = useState(false);
     const selectedProvince = provinces.find(p => p.id === formData.provinceId);
     const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
-    const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+    const [isCapacityUnlimited, setIsCapacityUnlimited] = useState(false);
+    const [isAgeUnlimited, setIsAgeUnlimited] = useState(false);
+
 
     useEffect(() => {
         getAllProvince()
@@ -529,26 +528,6 @@ function CreateEvent({ onBack }: {
                                 className="flex-1"
                                 minDate={toJalaali(new Date())}
                             />
-
-                            {/* <FormInput
-                                label="تاریخ رویداد"
-                                isSelect
-                                onSelectClick={() => setIsDatePickerOpen(true)}
-                                placeholder="انتخاب تاریخ رویداد"
-                                value={toJalaaliDisplay(formData.date)}
-                                onChange={() => { }}
-                                error={errors.date}
-                                className="flex-1"
-                            /> */}
-
-                            {/* <FormInput
-                                label="تاریخ رویداد"
-                                type="date"
-                                value={formData.date}
-                                onChange={(val) => { setFormData({ ...formData, date: val }); if (errors.date) setErrors({ ...errors, date: '' }); }}
-                                error={errors.date}
-                                className="flex-1"
-                            /> */}
                         </div>
                         <div className="flex gap-4">
 
@@ -566,43 +545,6 @@ function CreateEvent({ onBack }: {
                                 error={errors.endTime}
                                 className="flex-1"
                             />
-
-                            {/* <FormInput
-                                label="از ساعت"
-                                isSelect
-                                onSelectClick={() => setIsStartTimePickerOpen(true)}
-                                placeholder="ساعت شروع"
-                                value={formData.startTime}
-                                onChange={() => { }}
-                                error={errors.startTime}
-                                className="flex-1"
-                            />
-                            <FormInput
-                                label="تا ساعت"
-                                isSelect
-                                onSelectClick={() => setIsEndTimePickerOpen(true)}
-                                placeholder="ساعت پایان"
-                                value={formData.endTime}
-                                onChange={() => { }}
-                                error={errors.endTime}
-                                className="flex-1"
-                            /> */}
-                            {/* <FormInput
-                                label="از ساعت"
-                                type="time"
-                                value={formData.startTime}
-                                onChange={(val) => { setFormData({ ...formData, startTime: val }); if (errors.startTime) setErrors({ ...errors, startTime: '' }); }}
-                                error={errors.startTime}
-                                className="flex-1"
-                            />
-                            <FormInput
-                                label="تا ساعت"
-                                type="time"
-                                value={formData.endTime}
-                                onChange={(val) => { setFormData({ ...formData, endTime: val }); if (errors.endTime) setErrors({ ...errors, endTime: '' }); }}
-                                error={errors.endTime}
-                                className="flex-1"
-                            /> */}
                         </div>
                     </div>
 
@@ -658,66 +600,120 @@ function CreateEvent({ onBack }: {
                     </div>
 
                     <div className="space-y-4">
-                        <label className="text-xs font-black text-gray-500 mr-2">ظرفیت رویداد (نفر)</label>
-                        <div className="flex gap-4">
-                            <StepperInput
-                                label="حداقل"
-                                value={formData.minCapacity}
-                                onChange={(val) => { setFormData({ ...formData, minCapacity: val }); if (errors.minCapacity) setErrors({ ...errors, minCapacity: '' }); }}
-                                error={errors.minCapacity}
-                                className="flex-1"
-                                min={1}
-                            />
-                            <StepperInput
-                                label="حداکثر"
-                                value={formData.maxCapacity}
-                                onChange={(val) => { setFormData({ ...formData, maxCapacity: val }); if (errors.maxCapacity) setErrors({ ...errors, maxCapacity: '' }); }}
-                                error={errors.maxCapacity}
-                                className="flex-1"
-                                min={Number(formData.minCapacity) || 1}
-                            />
-                        </div>
-                        <div className="space-y-3 px-2 pt-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-black text-gray-700">فعال کردن لیست انتظار</span>
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-black text-gray-500">ظرفیت رویداد (نفر)</label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-black px-2.5 py-1 rounded-lg">
+                                    بدون ظرفیت
+                                </span>
                                 <button
-                                    onClick={() => setFormData({ ...formData, hasWaitlist: !formData.hasWaitlist })}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${formData.hasWaitlist ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                                    onClick={() => setIsCapacityUnlimited(!isCapacityUnlimited)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${isCapacityUnlimited ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
                                 >
                                     <motion.div
-                                        animate={{ x: formData.hasWaitlist ? -24 : 0 }}
+                                        animate={{ x: isCapacityUnlimited ? -24 : 0 }}
                                         className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
                                     />
                                 </button>
                             </div>
-                            <p className="text-[10px] font-bold text-gray-400 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                با فعال‌سازی این گزینه، در صورت تکمیل ظرفیت رویداد، ثبت‌نام‌های جدید وارد لیست انتظار شده و در صورت انصراف دیگران، به‌صورت خودکار جایگزین خواهند شد.
-                            </p>
                         </div>
+
+                        {!isCapacityUnlimited && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-4"
+                            >
+                                <div className="flex gap-4">
+                                    <StepperInput
+                                        label="حداقل"
+                                        value={formData.minCapacity}
+                                        onChange={(val) => { setFormData({ ...formData, minCapacity: val }); if (errors.minCapacity) setErrors({ ...errors, minCapacity: '' }); }}
+                                        error={errors.minCapacity}
+                                        className="flex-1"
+                                        min={0}
+                                    />
+                                    <StepperInput
+                                        label="حداکثر"
+                                        value={formData.maxCapacity}
+                                        onChange={(val) => { setFormData({ ...formData, maxCapacity: val }); if (errors.maxCapacity) setErrors({ ...errors, maxCapacity: '' }); }}
+                                        error={errors.maxCapacity}
+                                        className="flex-1"
+                                        min={Number(formData.minCapacity) || 1}
+                                    />
+                                </div>
+
+                                {/* بخش لیست انتظار - فقط در صورت وجود ظرفیت نمایش داده شود */}
+                                {/* <div className="space-y-3 px-2 pt-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-black text-gray-700">فعال کردن لیست انتظار</span>
+                                        <button
+                                            onClick={() => setFormData({ ...formData, hasWaitlist: !formData.hasWaitlist })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${formData.hasWaitlist ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                                        >
+                                            <motion.div
+                                                animate={{ x: formData.hasWaitlist ? -24 : 0 }}
+                                                className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                                            />
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-gray-400 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                        با فعال‌سازی این گزینه، در صورت تکمیل ظرفیت رویداد، ثبت‌نام‌های جدید وارد لیست انتظار شده و در صورت انصراف دیگران، به‌صورت خودکار جایگزین خواهند شد.
+                                    </p>
+                                </div> */}
+                            </motion.div>
+                        )}
                     </div>
 
                     <div className="space-y-4">
-                        <label className="text-xs font-black text-gray-500 mr-2">بازه سنی</label>
-                        <div className="flex gap-4">
-                            <StepperInput
-                                label="از سن"
-                                value={formData.minAge}
-                                onChange={(val) => { setFormData({ ...formData, minAge: val }); if (errors.minAge) setErrors({ ...errors, minAge: '' }); }}
-                                error={errors.minAge}
-                                className="flex-1"
-                                min={1}
-                                max={120}
-                            />
-                            <StepperInput
-                                label="تا سن"
-                                value={formData.maxAge}
-                                onChange={(val) => { setFormData({ ...formData, maxAge: val }); if (errors.maxAge) setErrors({ ...errors, maxAge: '' }); }}
-                                error={errors.maxAge}
-                                className="flex-1"
-                                min={Number(formData.minAge) || 1}
-                                max={120}
-                            />
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-black text-gray-500">بازه سنی</label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-black px-2.5 py-1 rounded-lg">
+                                    بدون محدودیت سنی
+                                </span>
+                                <button
+                                    onClick={() => setIsAgeUnlimited(!isAgeUnlimited)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${isAgeUnlimited ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                                >
+                                    <motion.div
+                                        animate={{ x: isAgeUnlimited ? -24 : 0 }}
+                                        className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                                    />
+                                </button>
+                            </div>
                         </div>
+
+                        {!isAgeUnlimited && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex gap-4"
+                            >
+                                <StepperInput
+                                    label="از سن"
+                                    value={formData.minAge}
+                                    onChange={(val) => { setFormData({ ...formData, minAge: val }); if (errors.minAge) setErrors({ ...errors, minAge: '' }); }}
+                                    error={errors.minAge}
+                                    className="flex-1"
+                                    min={0}
+                                    max={120}
+                                />
+                                <StepperInput
+                                    label="تا سن"
+                                    value={formData.maxAge}
+                                    onChange={(val) => { setFormData({ ...formData, maxAge: val }); if (errors.maxAge) setErrors({ ...errors, maxAge: '' }); }}
+                                    error={errors.maxAge}
+                                    className="flex-1"
+                                    min={Number(formData.minAge) || 1}
+                                    max={120}
+                                />
+                            </motion.div>
+                        )}
                     </div>
 
                 </div>

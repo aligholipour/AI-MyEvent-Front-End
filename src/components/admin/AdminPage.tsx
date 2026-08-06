@@ -351,13 +351,13 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-base font-black text-gray-900 leading-none">مدیریت پلتفرم هم‌مسیر</h1>
-                                <span className="bg-red-50 text-[#ED1C24] text-[9.5px] font-black px-2 py-0.5 rounded-md border border-red-100">
+                                <h1 className="text-base font-black text-gray-900 leading-none">مدیریت</h1>
+                                {/* <span className="bg-red-50 text-[#ED1C24] text-[9.5px] font-black px-2 py-0.5 rounded-md border border-red-100">
                                     ADMIN PANEL
-                                </span>
+                                </span> */}
                             </div>
                             <p className="text-[10.5px] font-bold text-gray-400 mt-1">
-                                بررسی رویدادها، تایید محتوا و نظارت بر کاربران
+                                بررسی رویدادها و نظارت بر کاربران
                             </p>
                         </div>
                     </div>
@@ -368,13 +368,13 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                         className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-2xl text-gray-700 transition-colors cursor-pointer border border-gray-100 active:scale-95 flex items-center gap-1.5"
                         title="بازگشت"
                     >
-                        <span className="text-xs font-bold hidden sm:inline">بازگشت</span>
+                        {/* <span className="text-xs font-bold hidden sm:inline">بازگشت</span> */}
                         <ArrowRight className="w-4 h-4" />
                     </button>
                 </div>
 
                 {/* Top Summary Stats Bar - AI Design */}
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                {/* <div className="grid grid-cols-3 gap-2 mb-3">
                     <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-2.5 rounded-2xl border border-amber-500/20 flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                             <Clock className="w-4 h-4" />
@@ -404,7 +404,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                             <span className="text-sm font-black text-blue-900 leading-tight block">{totalUsersCount} کاربر</span>
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Tab Switcher - AI Design */}
                 <div className="flex bg-gray-100/80 p-1 rounded-2xl border border-gray-200/60">
@@ -573,7 +573,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                                                     </span>
                                                                     <span className="flex items-center gap-1 text-gray-500">
                                                                         <MapPin className="w-3 h-3 text-gray-400" />
-                                                                        {event.city || 'نامشخص'}
+                                                                        {event.location || 'نامشخص'}
                                                                     </span>
                                                                     <span className="flex items-center gap-1 text-gray-500">
                                                                         <Calendar className="w-3 h-3 text-gray-400" />
@@ -806,8 +806,8 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                                 </div>
 
                                                 <div className="min-w-0 space-y-0.5">
+                                                    <h4 className="text-xs font-black text-gray-900 truncate">{user.name}</h4>
                                                     {/* <div className="flex items-center gap-2">
-                                                        <h4 className="text-xs font-black text-gray-900 truncate">{user.name}</h4>
                                                         {user.isActive ? (
                                                             <span className="bg-emerald-50 text-emerald-700 text-[8.5px] font-black px-1.5 py-0.2 rounded border border-emerald-100">
                                                                 تایید شده
@@ -819,13 +819,13 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                                         )}
                                                     </div> */}
                                                     <p className="text-[10px] font-bold text-gray-400 truncate" dir="ltr">
-                                                        {user.name || 'بدون شماره'}
+                                                        {user.phone || 'بدون شماره'}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="text-left hidden sm:block">
+                                                <div className="text-left sm:block">
                                                     <span className="text-[9px] font-bold text-gray-400 block">تاریخ عضویت</span>
                                                     <span className="text-[10px] font-black text-gray-700 block">{user.registeredDate || '۱۴۰۲'}</span>
                                                 </div>
@@ -1390,11 +1390,11 @@ function AdminPage({ onBack }: { onBack: () => void }) {
 
                                 {/* Information Grid - AI Design */}
                                 <div className="grid grid-cols-2 gap-2.5 text-xs">
-                                    <DetailBox
+                                    {/* <DetailBox
                                         icon={<Mail className="w-3.5 h-3.5 text-blue-500" />}
                                         label="پست الکترونیک"
                                         value={userDetail.email || 'ثبت نشده'}
-                                    />
+                                    /> */}
                                     <DetailBox
                                         icon={<BriefcaseIcon className="w-3.5 h-3.5 text-amber-500" />}
                                         label="شغل و فعالیت"
@@ -1403,7 +1403,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                     <DetailBox
                                         icon={<CalendarIcon className="w-3.5 h-3.5 text-emerald-500" />}
                                         label="تاریخ تولد"
-                                        value={userDetail.birthDate || 'ثبت نشده'}
+                                        value={toPersianDigits(userDetail.birthDate) || 'ثبت نشده'}
                                     />
                                     <DetailBox
                                         icon={<Heart className="w-3.5 h-3.5 text-rose-500" />}
@@ -1415,6 +1415,14 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                         label="جنسیت"
                                         value={userDetail.gender || 'ثبت نشده'}
                                     />
+                                    {/* <DetailBox
+                                        icon={<Tag className="w-3.5 h-3.5 text-purple-500" />}
+                                        label="علاقه‌مندی‌ها"
+                                        value={userDetail.favourites || 'ثبت نشده'}
+                                    /> */}
+                                </div>
+
+                                <div className="space-y-1">
                                     <DetailBox
                                         icon={<Tag className="w-3.5 h-3.5 text-purple-500" />}
                                         label="علاقه‌مندی‌ها"

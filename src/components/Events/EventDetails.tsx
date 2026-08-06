@@ -65,7 +65,8 @@ export interface Participant {
     fullname: string;
     role?: string;
     profileAddress?: string;
-    joinedAt: string;
+    registeredAt: string;
+    phone: string
 }
 
 export interface Comment {

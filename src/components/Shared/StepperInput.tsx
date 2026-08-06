@@ -8,7 +8,8 @@ function StepperInput({
   min = 0,
   max = 1000,
   error,
-  className = ''
+  className = '',
+  defaultValue = 0  // اضافه کردن این خط
 }: {
   label: string,
   value: string | number,
@@ -16,8 +17,10 @@ function StepperInput({
   min?: number,
   max?: number,
   error?: string,
-  className?: string
+  className?: string,
+  defaultValue?: number  // اضافه کردن این خط
 }) {
+  const displayValue = value !== undefined && value !== '' ? value : defaultValue;
   const numValue = Number(value) || 0;
 
   const handleIncrement = () => {
@@ -48,7 +51,7 @@ function StepperInput({
         <div className="flex-1 text-center">
           <input
             type="number"
-            value={value}
+            value={displayValue}
             onChange={(e) => onChange(e.target.value)}
             className="w-full bg-transparent text-center text-sm font-black text-gray-900 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />

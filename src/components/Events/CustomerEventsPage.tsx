@@ -760,19 +760,19 @@ function CustomerEventsPage({
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                          <h4 className="text-xs font-black text-gray-900">{participant.fullname}</h4>
+                          <h4 className="text-[13px] font-black text-gray-900">{participant.fullname}</h4>
                         </div>
                         <div className="flex flex-col gap-0.5 mt-0.5">
-                          {participant.joinedAt && (
-                            <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500">
+                          {participant.registeredAt && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
                               <Clock className="w-2.5 h-2.5 text-gray-400" />
-                              <span>{participant.joinedAt}</span>
+                              <span>تاریخ ثبت نام: {participant.registeredAt}</span>
                             </div>
                           )}
-                          {participant.role && (
-                            <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500">
-                              <ShieldCheck className="w-2.5 h-2.5 text-gray-400" />
-                              <span>{participant.role}</span>
+                          {participant.phone && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                              <Phone className="w-2.5 h-2.5 text-gray-400" />
+                              <span>{participant.phone}</span>
                             </div>
                           )}
                         </div>
