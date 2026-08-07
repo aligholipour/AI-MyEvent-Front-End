@@ -8,6 +8,8 @@ import {
   Award, Star, Trophy, Users, ShieldCheck, Info, LogOut,
   UserCog as UserCogIcon, Heart, Image,
   User2,
+  Building2,
+  BarChart3,
 
 } from "lucide-react";
 import ImageCropperDrawer from "../Shared/ImageCropperDrawer";
@@ -92,7 +94,10 @@ function ProfilePage({
   user,
   navigateToTab,
   onOpenSupportTickets,
-  onOpenEditProfile
+  onOpenEditProfile,
+  onOpenOrganizerProfile,
+  onOpenOrganizerAnalytics,
+  onOpenPersonalCalendar
 }: {
   user: User | null;
   onBack: () => void;
@@ -102,6 +107,9 @@ function ProfilePage({
   navigateToTab?: (tab: string) => void;
   onOpenSupportTickets: () => void;
   onOpenEditProfile: () => void;
+  onOpenOrganizerProfile?: () => void;
+  onOpenOrganizerAnalytics?: () => void;
+  onOpenPersonalCalendar?: () => void
 }) {
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -435,6 +443,34 @@ function ProfilePage({
         <div className="space-y-2">
           <h4 className="text-[11px] font-black text-gray-400 px-1">رویدادها و فعالیت‌های من</h4>
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xs overflow-hidden divide-y divide-gray-50">
+
+            <MenuItemRow
+              icon={<Building2 className="w-4 h-4 text-amber-500" />}
+              title="پروفایل برگزارکننده من"
+              subtitle="صفحه عمومی برند، لوگو، معرفی، خاطرات (Shorts) و لیست میزبانی‌ها"
+              badge="صفحه میزبانی"
+              badgeColor="amber"
+              onClick={onOpenOrganizerProfile}
+            />
+
+            <MenuItemRow
+              icon={<BarChart3 className="w-4 h-4 text-purple-600" />}
+              title="تحلیل و گزارش عملکرد رویدادها"
+              subtitle="گزارش شرکت‌کنندگان، رده سنی، درصد علاقه‌مندی‌ها، مشاغل و نرخ حضور مجدد"
+              badge="گزارش تحلیلی"
+              badgeColor="emerald"
+              onClick={onOpenOrganizerAnalytics}
+            />
+
+            <MenuItemRow
+              icon={<CalendarDays className="w-4 h-4 text-[#ED1C24]" />}
+              title="تقویم شخصی و یادآوری رویدادها"
+              subtitle="نمایش گرافیکی برنامه‌ها، هشدارها و زمان‌بندی رویدادهای ثبت‌نام شده"
+              badge="تقویم تصویری"
+              badgeColor="amber"
+              onClick={onOpenPersonalCalendar}
+            />
+
             <MenuItemRow
               icon={<Ticket className="w-4 h-4 text-[#ED1C24]" />}
               title="رویدادهای من"

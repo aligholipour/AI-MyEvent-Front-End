@@ -26,9 +26,11 @@ import { BottomNavigation } from "./Shared/BottomNavigation";
 import { HomeHeroSlider } from "./Shared/HomeHeroSlider";
 import { ScrollToTop } from "./Shared/ScrollToTopProps";
 import { SpecialEventCard } from "./Events/SpecialHomeEvent";
-import { CinematicMemories } from "./Events/CinematicMemories";
 import { SupportTickets } from "./Support/SupportTickets";
 import { EditProfilePage } from "./Users/EditProfile";
+import { OrganizerProfilePage } from "./Organizer/OrganizerProfilePage";
+import { OrganizerAnalyticsPage } from "./Organizer/OrganizerAnalyticsPage";
+import { PersonalEventCalendar } from "./Users/PersonalEventCalendar";
 
 
 const TOP_PICKS_DATA = [
@@ -155,6 +157,10 @@ function AppContent() {
     const [isEventsLoading, setIsEventsLoading] = useState(false);
     const [selectedCategoryTab, setSelectedCategoryTab] = useState<string | null>(null);
     const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+    const [isOrganizerProfileOpen, setIsOrganizerProfileOpen] = useState(false);
+    const [isAnyDetailDrawerOpen, setIsAnyDetailDrawerOpen] = useState(false);
+    const [isOrganizerAnalyticsOpen, setIsOrganizerAnalyticsOpen] = useState(false);
+    const [isPersonalCalendarOpen, setIsPersonalCalendarOpen] = useState(false);
 
     const isRequesting = useRef(false);
     const previousTab = useRef<string>('home');
@@ -359,7 +365,7 @@ function AppContent() {
             {/* Mobile Container Wraps */}
             <div className="w-full max-w-[480px] bg-white min-h-screen relative shadow-2xl flex flex-col pb-20 overflow-x-hidden">
 
-                <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen, isSupportTicketsOpen, isEditProfileOpen, isCustomerEventOpen]} />
+                <ScrollToTop watch={[activeTab, selectedEventId, isCreateEventOpen, selectedCategoryTab, isRegisterPageOpen, isSupportTicketsOpen, isEditProfileOpen, isCustomerEventOpen, isOrganizerProfileOpen, isPersonalCalendarOpen]} />
 
                 <AnimatePresence mode="wait">
                     {selectedEventId ? (
@@ -418,6 +424,45 @@ function AppContent() {
                             eventId={editingEventId}
                             onBack={() => setEditingEventId(null)}
                         />
+                    ) : isOrganizerAnalyticsOpen ? (
+                        <OrganizerAnalyticsPage
+                            key="organizer-analytics"
+                            onBack={() => setIsOrganizerAnalyticsOpen(false)}
+                            onOpenEvent={(id) => {
+                                setIsOrganizerAnalyticsOpen(false);
+                                // setSelectedEventId(id);
+                            }}
+                        />
+                    ) : isOrganizerProfileOpen ? (
+                        <OrganizerProfilePage
+                            key="organizer-profile"
+                            onBack={() => {
+                                setIsOrganizerProfileOpen(false);
+                                setIsAnyDetailDrawerOpen(false);
+                            }}
+                            onSelectEvent={(id) => {
+                                setIsOrganizerProfileOpen(false);
+                                setIsAnyDetailDrawerOpen(false);
+                                setSelectedEventId(Number(id));
+                            }}
+                            onOpenSupportTickets={() => {
+                                setIsOrganizerProfileOpen(false);
+                                setIsAnyDetailDrawerOpen(false);
+                                setIsSupportTicketsOpen(true);
+                            }}
+                            onDrawerStateChange={setIsAnyDetailDrawerOpen}
+                        />
+                    ) : isPersonalCalendarOpen ? (
+                        <PersonalEventCalendar
+                            key="personal-calendar"
+                            onBack={() => setIsPersonalCalendarOpen(false)}
+                            registeredEventIds={registeredEventIds}
+                            onSelectEvent={(id) => {
+                                setIsPersonalCalendarOpen(false);
+                                // setSelectedEventId(id);
+                            }}
+                        // user={currentUser}
+                        />
                     ) : selectedEventId ? (
                         <EventDetailsPage
                             key="event-details"
@@ -445,6 +490,9 @@ function AppContent() {
                             navigateToTab={navigateToTab}
                             onOpenSupportTickets={() => setIsSupportTicketsOpen(true)}
                             onOpenEditProfile={() => setIsEditProfileOpen(true)}
+                            onOpenOrganizerProfile={() => setIsOrganizerProfileOpen(true)}
+                            onOpenOrganizerAnalytics={() => setIsOrganizerAnalyticsOpen(true)}
+                            onOpenPersonalCalendar={() => setIsPersonalCalendarOpen(true)}
                         />
                     ) : (
                         <>
