@@ -58,3 +58,66 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
 export function getRadianAngle(degreeValue: number) {
   return (degreeValue * Math.PI) / 180;
 }
+
+
+export function dataURLtoFile(dataurl: string, filename: string): File {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
+const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+export function toPersianDigits(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  
+  return value
+    .toString()
+    .replace(/\d/g, (digit) => farsiDigits[Number(digit)]);
+}
+
+function parseDateValue(value?: string | Date): Date | null {
+  if (!value) return null;
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatEventTime(value?: string | Date): string {
+  const date = parseDateValue(value);
+  if (!date) return '';
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return toPersianDigits(`${hours}:${minutes}`);
+}
+
+export function getEventDurationLabel(start?: string | Date, end?: string | Date): string {
+  const startDate = parseDateValue(start);
+  const endDate = parseDateValue(end);
+  if (!startDate || !endDate) return '';
+
+  const minutesDiff = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+  const hours = Math.floor(minutesDiff / 60);
+  const minutes = minutesDiff % 60;
+
+  if (hours > 0 && minutes > 0) {
+    return `${toPersianDigits(hours)} ساعت و ${toPersianDigits(minutes)} دقیقه`;
+  }
+
+  if (hours > 0) {
+    return `${toPersianDigits(hours)} ساعت`;
+  }
+
+  if (minutes > 0) {
+    return `${toPersianDigits(minutes)} دقیقه`;
+  }
+
+  return `${toPersianDigits(0)} ساعت`;
+}

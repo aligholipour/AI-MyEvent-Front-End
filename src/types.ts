@@ -10,14 +10,14 @@ export interface AppUser {
   maritalStatus?: 'single' | 'married';
   about?: string;
   gender?: 'male' | 'female';
-  interests?: string[];
+  interests?: number[];
   occupation?: string;
   invitationLink?: string;
   role?: 'user' | 'admin';
 }
 
 export interface AppEvent {
-  id: string;
+  id: number;
   title: string;
   date: string;
   location: string;
@@ -27,29 +27,175 @@ export interface AppEvent {
   price?: string;
   lat?: number;
   lng?: number;
-  category?: string;
-  status?: 'pending' | 'approved' | 'rejected';
+  categoryId: number | null;
+  status: number;
   rejectionReason?: string;
-  isConfirmed?: boolean;
-  isDisabled?: boolean;
+  isApprove?: boolean;
+  isActive?: boolean;
   description?: string;
-  interests?: string[];
+  interests?: number[];
   startTime?: string;
   endTime?: string;
   minCapacity?: string;
   maxCapacity?: string;
   minAge?: string;
   maxAge?: string;
-  provinceId?: string;
+  provinceId?: number | null;
   city?: string;
+  cityId?: number | null;
   isOnline?: boolean;
   onlineLink?: string;
   address?: string;
+  eventTime: string;
+  attendeesCount?: number;
+  reasons?: CustomerBahamRejected[];
+  isCanceled: boolean;
+  category: string;
+}
+export interface CustomerGuestBahamResponse {
+  id: number;
+  title: string;
+  image: string,
+  date: string,
+  location: string,
+  iscanceled: boolean,
+  organizerName: string,
+  startTime: Date,
+  endTime: Date,
+  categoryName: string
+}
+export interface CustomerHostedBahamResponse {
+  id: number,
+  title: string,
+  image: string,
+  date: string,
+  status: number,
+  reasons: CustomerBahamRejected[],
+  isActive: boolean
+}
+export interface CustomerHostedParticipantsResponse {
+  fullname: string,
+  profileAddress: string
+}
+export interface CustomerBahamRejected {
+  reason: string;
+  createDateTime: string;
+  createdAt?: string;
 }
 
 export interface AppCategory {
-  id: string;
+  id: number;
   title: string;
   icon: string;
   color: string;
+}
+
+export interface AppUsers {
+  id: number;
+  name: string;
+  jobTitle: string;
+  rating: number;
+  badge: string;
+  image: string;
+  color: string;
+  registeredDate: string;
+  email: string;
+  phone: string;
+}
+export interface HomeSlider {
+  id: string;
+  title: string;
+  subtitle: string;
+  extra: string;
+  buttonText: string;
+  image: string
+}
+export interface Favourite {
+  id: number;
+  title: string
+}
+export interface Province {
+  id: number;
+  name: string
+}
+export interface City {
+  id: number;
+  name: string
+}
+
+export interface GetEventsRequest {
+  pageNumber: number;
+  pageSize: number;
+  searchTerm?: string;
+  categoryId?: number;
+  provinceId?: number;
+  fromDate?: string;
+  toDate?: string;
+  isOnline?: boolean;
+  isFreeOnly?: boolean;
+  interestIds?: number[],
+  gender?: number,
+  eventType?: number,
+  cityId?: number
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+export interface Job {
+  id: number;
+  title: string
+}
+export interface RegisterRequest {
+  phone: string,
+  fullName: string,
+  birthDate?: string,
+  gender: 'male' | 'female';
+  maritalStatus: 'single' | 'married',
+  cityId: number,
+  jobId?: number,
+  favouriteIds: number[],
+  profileImageAddress: string
+}
+export interface RegisterResponse {
+  id: number,
+  accessToken: string,
+  refreshToken: string,
+  profileAddress: string,
+  fullName: string,
+  username: string,
+  roles: string[],
+  phone: string
+}
+export interface EventDetailForAdminResponse {
+  id: number
+  title: string,
+  description: string,
+  organizer: string,
+  image: string,
+  address: string,
+  eventTime: string,
+  ageRange: string,
+  capacity: string,
+  isOnline: boolean,
+  city: string,
+  isApproved: boolean,
+  status: number,
+  rejectionReason?: string,
+  reasons?: CustomerBahamRejected[];
+  isFree: boolean,
+  isActive: boolean,
+  price: string,
+  category: string,
+  favourites: string[]
+}
+export interface UserCityResponse {
+  cityId: number,
+  cityName: string
 }

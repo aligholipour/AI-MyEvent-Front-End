@@ -1,0 +1,168 @@
+﻿/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
+import * as LucideIcons from 'lucide-react';
+import {
+  Check,
+  Ticket,
+  Search,
+  Menu,
+  Bell,
+  Home,
+  Calendar,
+  PlusCircle,
+  Plus,
+  Minus,
+  X,
+  ArrowRight,
+  ChevronDown,
+  User as UserIcon,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Briefcase,
+  Gamepad2,
+  Palette,
+  Atom,
+  Heart,
+  Laptop,
+  Dumbbell,
+  Users,
+  Compass,
+  Trophy,
+  Music,
+  GraduationCap,
+  Image,
+  Camera,
+  Smile,
+  Bold,
+  Italic,
+  AlertCircle,
+  ShieldCheck,
+  Phone,
+  Play,
+  Pause,
+  List,
+  Cpu,
+  Moon,
+  Flame,
+  Umbrella,
+  ShoppingBag,
+  Store,
+  Coins,
+  Diamond,
+  ShoppingCart,
+  Mail,
+  Headphones,
+  Settings,
+  Gift,
+  Info,
+  Share2,
+  Flag,
+  MoreVertical,
+  Send,
+  Star,
+  MessageCircle,
+  Inbox,
+  Filter
+} from 'lucide-react';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import Cropper, { Area, Point } from 'react-easy-crop';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { getCroppedImg } from './lib/utils';
+import { initCategories } from './services/categories';
+import { initEvents } from './services/events';
+
+const NEARBY_EVENTS_DATA = [
+  {
+    id: 'ne1',
+    title: 'تکنولوژی',
+    subTitle: 'سمینار هوش مصنوعی',
+    capacity: '۱۲ نفر باقی‌مانده',
+    price: '۴۵۶,۰۰۰ تومان',
+    discount: '🔥 ۵۷%',
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 'ne2',
+    title: 'هنر',
+    subTitle: 'نمایشگاه نقاشی مدرن',
+    capacity: '۵ نفر باقی‌مانده',
+    price: '۱۲۰,۰۰۰ تومان',
+    discount: '۷۵%',
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 'ne3',
+    title: 'آموزش',
+    subTitle: 'کارگاه طراحی وب',
+    capacity: '۲۰ نفر باقی‌مانده',
+    price: '۸۵۰,۰۰۰ تومان',
+    discount: '۲۰٪',
+    image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=400'
+  }
+];
+
+import { type AppEvent, type AppCategory, type AppUser } from './types';
+
+const EVENTS: AppEvent[] = [
+  {
+    id: '1',
+    title: 'کارگاه طراحی تجربه کاربری',
+    category: 'فنی',
+    date: 'دوشنبه، ۲۱ اردیبهشت - ۱۷:۰۰',
+    location: 'تهران، خیابان ولیعصر',
+    organizer: 'آکادمی دیزاین',
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800',
+    isFree: true,
+    price: 'رایگان',
+    lat: 35.7152,
+    lng: 51.4043,
+    isConfirmed: true,
+    status: 'approved',
+    isDisabled: false,
+    description: 'در این کارگاه با اصول اولیه طراحی تجربه کاربری و ابزارهای پرکاربرد این حوزه آشنا خواهید شد.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۷:۰۰',
+    minAge: '۱۸',
+    maxAge: '۴۵',
+    maxCapacity: '۳۰',
+    isOnline: false
+  },
+  {
+    id: '11',
+    title: 'سمینار هوش مصنوعی در پزشکی',
+    category: 'علمی',
+    date: 'شنبه، ۵ خرداد - ۱۰:۰۰',
+    location: 'تهران، دانشگاه علوم پزشکی',
+    organizer: 'انجمن علمی هوش مصنوعی',
+    image: 'https://images.unsplash.com/photo-1576091160550-217359f42f8c?auto=format&fit=crop&q=80&w=800',
+    isFree: false,
+    price: '۲۵۰,۰۰۰ تومان',
+    isConfirmed: false,
+    status: 'pending',
+    isDisabled: true,
+    description: 'بررسی آخرین دستاوردهای هوش مصنوعی در تشخیص و درمان بیماری‌ها با حضور اساتید برجسته.',
+    city: 'تهران',
+    provinceId: '1',
+    startTime: '۱۰:۰۰',
+    minAge: '۲۰',
+    maxAge: '۶۰',
+    maxCapacity: '۱۵۰',
+    isOnline: false
+  },
+  {
+    id: '12',
+    title: 'کارگاه عکاسی غیرحرفه‌ای',
+    category: 'آموزش',
+    date: 'یکشنبه، ۶ خرداد - ۱۶:۰۰',
+    location: 'اصفهان، بوستان ملت',
+    organizer: 'کانو
