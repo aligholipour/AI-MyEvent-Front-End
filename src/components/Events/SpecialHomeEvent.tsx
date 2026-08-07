@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import * as LucideIcons from 'lucide-react';
 
-export function KhitananEventCard() {
+export function SpecialEventCard() {
   const avatars = [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',

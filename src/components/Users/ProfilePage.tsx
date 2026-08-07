@@ -1,17 +1,18 @@
 // ProfilePage.tsx
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  X, ChevronLeft, Camera, Mail, Headphones, Settings, CalendarDays, 
-  LayoutList,  Scale, ArrowRight, 
-  Edit3, Briefcase, Calendar, Crown, Zap, Ticket, Percent, Gift, 
-  Award, Star, Trophy, Users, ShieldCheck, Info, LogOut, 
-   UserCog as UserCogIcon, Heart, Image,
-   User2, 
-  
+import {
+  X, ChevronLeft, Camera, Mail, Headphones, Settings, CalendarDays,
+  LayoutList, Scale, ArrowRight,
+  Edit3, Briefcase, Calendar, Crown, Zap, Ticket, Percent, Gift,
+  Award, Star, Trophy, Users, ShieldCheck, Info, LogOut,
+  UserCog as UserCogIcon, Heart, Image,
+  User2,
+
 } from "lucide-react";
 import ImageCropperDrawer from "../Shared/ImageCropperDrawer";
 import { User } from "@/src/services/Auth/Auth";
+import { toPersianDigits } from "@/src/lib/utils";
 
 // Sub-component for Menu Items (matching AI design)
 function MenuItemRow({
@@ -44,26 +45,23 @@ function MenuItemRow({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full p-4 flex items-center justify-between text-right transition-colors cursor-pointer ${
-        isDestructive ? 'hover:bg-rose-50/50' : 'hover:bg-gray-50/80'
-      }`}
+      className={`w-full p-4 flex items-center justify-between text-right transition-colors cursor-pointer ${isDestructive ? 'hover:bg-rose-50/50' : 'hover:bg-gray-50/80'
+        }`}
     >
       <div className="flex items-center gap-3.5 min-w-0">
         <div
-          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-            isDestructive
-              ? 'bg-rose-50 text-rose-600 border-rose-100'
-              : 'bg-gray-50 text-gray-700 border-gray-100'
-          }`}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${isDestructive
+            ? 'bg-rose-50 text-rose-600 border-rose-100'
+            : 'bg-gray-50 text-gray-700 border-gray-100'
+            }`}
         >
           {icon}
         </div>
 
         <div className="min-w-0 space-y-0.5">
           <h4
-            className={`text-xs font-black truncate ${
-              isDestructive ? 'text-rose-600' : 'text-gray-900'
-            }`}
+            className={`text-xs font-black truncate ${isDestructive ? 'text-rose-600' : 'text-gray-900'
+              }`}
           >
             {title}
           </h4>
@@ -87,14 +85,14 @@ function MenuItemRow({
   );
 }
 
-function ProfilePage({ 
-  onBack, 
-  onLogout, 
-  onUpdateUser, 
-  user, 
-  navigateToTab, 
-  onOpenSupportTickets, 
-  onOpenEditProfile 
+function ProfilePage({
+  onBack,
+  onLogout,
+  onUpdateUser,
+  user,
+  navigateToTab,
+  onOpenSupportTickets,
+  onOpenEditProfile
 }: {
   user: User | null;
   onBack: () => void;
@@ -176,9 +174,8 @@ function ProfilePage({
       <div className="p-5 space-y-5">
         {/* User Main Card - AI Design */}
         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-xs relative overflow-hidden">
-          <div className="absolute -top-12 -left-12 w-32 h-32 bg-red-50 rounded-full blur-2xl pointer-events-none" />
-          
           <div className="flex items-start justify-between relative z-10">
+            {/* بخش چپ: آواتار + اطلاعات */}
             <div className="flex items-center gap-4">
               {/* Avatar with Camera Overlay */}
               <div
@@ -195,44 +192,34 @@ function ProfilePage({
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
                   <Camera className="w-5 h-5 text-white" />
                 </div>
-                {/* {user.isVerified && (
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white shadow-xs" title="حساب تایید شده">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                  </div>
-                )} */}
               </div>
 
-              {/* Info */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base font-black text-gray-900 leading-tight">{user.username}</h2>
-                  {/* {user.isVerified ? (
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-0.5">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      تایید شده
-                    </span>
-                  ) : (
-                    <span className="bg-gray-100 text-gray-600 text-[9px] font-bold px-2 py-0.5 rounded-md">
-                      کاربر عادی
-                    </span>
-                  )} */}
+              {/* اطلاعات کاربر */}
+              <div className="space-y-1.5">
+                {/* نام کاربر */}
+                <h2 className="text-base font-black text-gray-900 leading-tight">
+                  {user.username}
+                </h2>
+
+                {/* شغل - در یک خط جداگانه */}
+                <div className="flex items-center gap-1 text-[10.5px] font-bold text-gray-500">
+                  <Briefcase className="w-3 h-3 text-gray-400" />
+                  <span>{user.jobTitle || 'فعال حوزه تکنولوژی'}</span>
                 </div>
 
-                <p className="text-xs font-bold text-gray-400" dir="ltr">
-                  {user.phone}
-                </p>
-
-                <div className="flex items-center gap-2 pt-1 flex-wrap text-[10.5px] font-bold text-gray-500">
-                  <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-                    <Briefcase className="w-3 h-3 text-gray-400" />
-                    <span>{user.jobTitle || 'فعال حوزه تکنولوژی'}</span>
-                  </span>
-                  <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-                    <Calendar className="w-3 h-3 text-gray-400" />
-                    <span>تاریخ تولد: {user.birthDate || '۱۴۰۲/۰۳/۱۰'}</span>
-                  </span>
+                {/* تاریخ تولد - در یک خط جداگانه زیر شغل */}
+                <div className="flex items-center gap-1 text-[10.5px] font-bold text-gray-500">
+                  <Calendar className="w-3 h-3 text-gray-400" />
+                  <span>تاریخ تولد: {toPersianDigits(user.birthDate) || '۱۴۰۲/۰۳/۱۰'}</span>
                 </div>
               </div>
+            </div>
+
+            {/* بخش راست: شماره موبایل */}
+            <div className="flex items-center pt-1">
+              <p className="text-sm font-bold text-gray-400" dir="ltr">
+                {toPersianDigits(user.phone)}
+              </p>
             </div>
           </div>
 
@@ -337,7 +324,7 @@ function ProfilePage({
         </div> */}
 
         {/* Quick Activity Stats Grid - AI Design */}
-        <div className="grid grid-cols-4 gap-2.5">
+        {/* <div className="grid grid-cols-4 gap-2.5">
           <button
             type="button"
             onClick={() => {
@@ -397,10 +384,10 @@ function ProfilePage({
               <span className="text-[9.5px] font-bold text-gray-400 block">امتیاز میزبانی</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Badges & Achievements Section - AI Design */}
-        <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-2xs space-y-3">
+        {/* <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-500" />
@@ -442,7 +429,7 @@ function ProfilePage({
               <span className="text-[8.5px] font-bold text-emerald-700 block">ثبت‌نام سریع</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Categorized Menu Section 1: Events & Activity */}
         <div className="space-y-2">
@@ -498,12 +485,12 @@ function ProfilePage({
               onClick={onOpenSupportTickets}
             />
 
-            <MenuItemRow
+            {/* <MenuItemRow
               icon={<Headphones className="w-4 h-4 text-emerald-600" />}
               title="ارتباط با پشتیبانی تلفنی"
               subtitle="پاسخگویی ۲۴ ساعته در تمام روزهای هفته"
               onClick={() => alert('شماره پشتیبانی: ۰۲۱-۹۱۰۰۲۴۲۴')}
-            />
+            /> */}
 
             <MenuItemRow
               icon={<Gift className="w-4 h-4 text-amber-500" />}
@@ -520,12 +507,12 @@ function ProfilePage({
         <div className="space-y-2">
           <h4 className="text-[11px] font-black text-gray-400 px-1">تنظیمات و امنیت</h4>
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xs overflow-hidden divide-y divide-gray-50">
-            <MenuItemRow
+            {/* <MenuItemRow
               icon={<Settings className="w-4 h-4 text-gray-600" />}
               title="تنظیمات اعلانات"
               subtitle="مدیریت پیامک‌ها و اعلانات رویدادها"
               onClick={() => alert('تنظیمات اعلانات با موفقیت ذخیره شد.')}
-            />
+            /> */}
 
             <MenuItemRow
               icon={<ShieldCheck className="w-4 h-4 text-indigo-600" />}
