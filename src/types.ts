@@ -81,6 +81,7 @@ export interface CustomerBahamRejected {
   reason: string;
   createDateTime: string;
   createdAt?: string;
+  reviewStatus: number;
 }
 
 export interface AppCategory {

@@ -53,6 +53,10 @@ export interface RejectEventRequest {
   bahamId: number;
   reason: string;
 }
+export interface ResubmissionEventRequest {
+  bahamId: number;
+  reason: string;
+}
 let runtimeEvents: AppEvent[]
 
 export async function initEventsLates() {
@@ -678,6 +682,28 @@ export async function rejectEvent(request: RejectEventRequest)
     message: 'رویداد با موفقیت رد شد'
   };
 
+}
+
+export async function resubmissionEvent(request: ResubmissionEventRequest)
+  : Promise<{ success: boolean; message: string }> {
+
+  const response = await authenticatedFetch(`${process.env.API_BaseURL}/Baham/ResubmissionEvent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: خطا در رد کردن رویداد`);
+  }
+
+  return {
+    success: true,
+    message: 'رویداد با موفقیت رد شد'
+  };
 }
 
 export async function changeStatusEvent(bahamId: number)

@@ -10,8 +10,8 @@ import {
   MessageSquare, HelpCircle
 } from "lucide-react";
 import CancellationConfirmDrawer from "../Shared/CancellationConfirmDrawer";
-import { getRegisteredEvents, getHostedEvents, cancelRegistration, getEventParticipants } from "../../services/events";
-import { formatEventTime, getEventDurationLabel } from "../../lib/utils";
+import { getRegisteredEvents, getHostedEvents, cancelRegistration, getEventParticipants, resubmissionEvent } from "../../services/events";
+import { formatEventTime, getEventDurationLabel, toPersianDigits } from "../../lib/utils";
 
 type EventParticipant = Awaited<ReturnType<typeof getEventParticipants>>["data"][number];
 
@@ -591,7 +591,7 @@ function CustomerEventsPage({
                       </div>
 
                       {/* Rejection Alert Button */}
-                      {event.status === 3 && (
+                      {(event.status === 3 || event.status === 4) && (
                         <div className="p-2.5 bg-rose-50/80 border-t border-rose-100 text-right">
                           <button
                             type="button"
@@ -815,10 +815,10 @@ function CustomerEventsPage({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-[420px] bg-white rounded-[28px] p-5 shadow-2xl z-[230] text-gray-900 overflow-hidden border border-gray-100 flex flex-col max-h-[85vh] my-auto"
+              className="relative w-full max-w-[420px] bg-white rounded-[28px] p-5 shadow-2xl z-[230] text-gray-900 border border-gray-100 flex flex-col max-h-[85vh] my-auto"
               dir="rtl"
             >
-              {/* Modal Header */}
+              {/* Modal Header - ثابت */}
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
@@ -840,9 +840,9 @@ function CustomerEventsPage({
                 </button>
               </div>
 
-              {/* Scrollable Modal Content */}
-              <div className="flex-1 overflow-y-auto no-scrollbar py-3.5 space-y-3.5 text-right">
-                {/* Status Badge */}
+              {/* بخش‌های ثابت بالایی */}
+              <div className="shrink-0 space-y-3.5 pt-3.5">
+                {/* Status Badge - ثابت */}
                 <div className="bg-rose-50/80 border border-rose-200/80 p-3 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" />
@@ -853,13 +853,39 @@ function CustomerEventsPage({
                   </span>
                 </div>
 
-                {/* Moderator Message Box */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-black text-gray-800">
-                    <MessageSquare className="w-4 h-4 text-rose-500" />
-                    <span>پیام ناظر رویداد:</span>
-                  </div>
-                  <div className="bg-slate-50 border-r-4 border-rose-500 p-3.5 rounded-2xl space-y-2 border border-slate-100">
+                {/* عنوان پیام ناظر - ثابت */}
+                <div className="flex items-center gap-1.5 text-xs font-black text-gray-800">
+                  <MessageSquare className="w-4 h-4 text-rose-500" />
+                  <span>پیام ناظر رویداد:</span>
+                </div>
+              </div>
+
+              {/* بخش اسکرول‌دار - فقط لیست پیام‌ها */}
+              <div className="flex-1 overflow-y-auto no-scrollbar py-3 space-y-2 min-h-0">
+                {selectedEventForRejection.reasons && selectedEventForRejection.reasons.length > 0 ? (
+                  selectedEventForRejection.reasons.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-slate-50 border-r-4 border-rose-500 p-3.5 rounded-2xl border border-slate-100"
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 pb-1 border-b border-gray-200/60">
+                        <span className="text-gray-700 font-black flex items-center gap-1">
+                          {item.reviewStatus === 2 ? (
+                            <User className="w-3 h-3 text-green-600" />
+                          ) : (
+                            <ShieldCheck className="w-3 h-3 text-blue-600" />
+                          )}
+                          {item.reviewStatus === 2 ? 'کاربر' : 'تیم نظارت و محتوا'}
+                        </span>
+                        <span>{toPersianDigits(item.createDateTime) || ''}</span>
+                      </div>
+                      <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-line pt-2">
+                        {item.reason || 'توضیحات بیشتری ثبت نشده است.'}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-slate-50 border-r-4 border-rose-500 p-3.5 rounded-2xl border border-slate-100">
                     <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 pb-1 border-b border-gray-200/60">
                       <span className="text-gray-700 font-black flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3 text-blue-600" />
@@ -867,15 +893,16 @@ function CustomerEventsPage({
                       </span>
                       <span>امروز - ۱۴:۲۰</span>
                     </div>
-                    <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-line">
-                      {selectedEventForRejection.reasons && selectedEventForRejection.reasons.length > 0
-                        ? selectedEventForRejection.reasons[0].reason || 'توضیحات بیشتری ثبت نشده است.'
-                        : 'با سلام؛ جهت تایید رویداد، لطفاً آدرس دقیق محل برگزاری را اصلاح کرده و تصویر شاخص باکیفیت‌تر و بدون واترمارک بارگذاری نمایید.'}
+                    <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-line pt-2">
+                      با سلام؛ جهت تایید رویداد، لطفاً آدرس دقیق محل برگزاری را اصلاح کرده و تصویر شاخص باکیفیت‌تر و بدون واترمارک بارگذاری نمایید.
                     </p>
                   </div>
-                </div>
+                )}
+              </div>
 
-                {/* Helpful Guidance */}
+              {/* بخش‌های ثابت پایینی */}
+              <div className="shrink-0 space-y-3.5 pt-3">
+                {/* Helpful Guidance - ثابت */}
                 <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-2xl space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-800 text-[11px] font-black">
                     <HelpCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -886,7 +913,7 @@ function CustomerEventsPage({
                   </p>
                 </div>
 
-                {/* Optional Note for Moderator */}
+                {/* Optional Note for Moderator - ثابت */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-black text-gray-800 block">
                     توضیحات شما برای ناظر (اختیاری):
@@ -908,8 +935,8 @@ function CustomerEventsPage({
                 )}
               </div>
 
-              {/* Modal Footer */}
-              <div className="pt-3 border-t border-gray-100 flex gap-2 shrink-0">
+              {/* Modal Footer - ثابت */}
+              <div className="pt-3 border-t border-gray-100 flex gap-2 shrink-0 mt-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -925,14 +952,27 @@ function CustomerEventsPage({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const id = selectedEventForRejection.id;
-                    onReRequestApproval?.(id.toString());
-                    setReRequestSubmitted(true);
-                    setTimeout(() => {
-                      setSelectedEventForRejection(null);
-                      setReRequestSubmitted(false);
-                    }, 1200);
+                  onClick={async () => {
+                    if (!selectedEventForRejection) return;
+
+                    try {
+                      const request = {
+                        bahamId: selectedEventForRejection.id,
+                        reason: reRequestNote || ''
+                      };
+
+                      await resubmissionEvent(request);
+                      setReRequestSubmitted(true);
+                    } catch (error) {
+                      console.error('Failed to request re-submission:', error);
+                    } finally {
+                      setTimeout(() => {
+                        setSelectedEventForRejection(null);
+                        setReRequestSubmitted(false);
+                      }, 1200);
+                    }
+
+                    onReRequestApproval?.(selectedEventForRejection.id.toString());
                   }}
                   className="flex-[1.4] bg-rose-600 hover:bg-rose-700 text-white h-10 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98"
                 >
@@ -1044,7 +1084,7 @@ function CustomerEventsPage({
                 <h2 className="text-xs font-black text-gray-900 leading-snug">
                   {selectedEventForTicket.title}
                 </h2>
-                
+
                 <span className="text-[9px] mt-3 font-bold text-gray-400 block">تاریخ دورهمی</span>
                 <h2 className="text-xs font-black text-gray-900 leading-snug">
                   {selectedEventForTicket.date}
