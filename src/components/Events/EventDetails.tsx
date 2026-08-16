@@ -442,7 +442,8 @@ function EventDetailsPage({
                                 className={`text-gray-500 text-xs font-bold leading-relaxed text-justify transition-all duration-300 ${!isDescriptionExpanded ? 'line-clamp-3' : ''
                                     }`}
                             >
-                                {event.description}
+                                <div dangerouslySetInnerHTML={{ __html: event.description || '' }} />
+
                             </p>
                             <button
                                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
@@ -609,8 +610,7 @@ function EventDetailsPage({
                                 <div
                                     key={comment.id}
                                     className={`bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100/40 space-y-2 
-                                    ${!comment.isActive ? "border-amber-100 bg-amber-50/30 opacity-70" : ""}`}
-                                >
+                                    ${!comment.isActive ? "border-amber-100 bg-amber-50/30 opacity-70" : ""}`}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2.5">
                                             <img
