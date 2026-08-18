@@ -65,8 +65,7 @@ function ReportDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                                     key="success"
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="px-6 py-12 flex flex-col items-center text-center space-y-4"
-                                >
+                                    className="px-6 py-12 flex flex-col items-center text-center space-y-4">
                                     <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-500 shadow-inner">
                                         <Check className="w-8 h-8" />
                                     </div>
@@ -74,16 +73,15 @@ function ReportDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                                     <p className="text-xs font-bold text-gray-400">تیم پشتیبانی ما موضوع را سریعاً بررسی خواهد کرد.</p>
                                 </motion.div>
                             ) : (
-                                <motion.div key="form" className="px-6 pb-8 space-y-4">
+                                <motion.div key="form" className="px-6 pb-4 space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex flex-col">
                                             <h2 className="text-lg font-black text-gray-900">گزارش تخلف رویداد</h2>
-                                            <p className="text-[10px] font-bold text-gray-400 mt-0.5">علت گزارش خود را مشخص نمایید</p>
+                                            {/* <p className="text-[10px] font-bold text-gray-400 mt-0.5">علت گزارش خود را مشخص نمایید</p> */}
                                         </div>
                                         <button
                                             onClick={onClose}
-                                            className="w-8 h-8 bg-gray-50 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400 border border-gray-100/50"
-                                        >
+                                            className="w-8 h-8 bg-gray-50 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400 border border-gray-100/50">
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -140,12 +138,12 @@ function ReportDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                                         <span>ارسال گزارش</span>
                                     </motion.button>
                                     
-                                    <button
+                                    {/* <button
                                         onClick={onClose}
                                         className="w-full bg-gray-50/80 text-gray-500 hover:bg-gray-100/80 py-3.5 rounded-2xl font-black text-sm transition-all"
                                     >
                                         انصراف
-                                    </button>
+                                    </button> */}
                                 </motion.div>
                             )}
                         </AnimatePresence>

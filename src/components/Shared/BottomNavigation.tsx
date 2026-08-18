@@ -36,7 +36,7 @@ export function BottomNavigation({
   return (
     <>
       {/* Floating Bottom Navigation Container */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-36px)] max-w-[440px] z-[120]" dir="ltr">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-36px)] max-w-[440px] z-[120]" dir="ltr">
 
         {/* Soft 3D Raised Pill Container */}
         <div
@@ -164,15 +164,15 @@ export function BottomNavigation({
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-36px)] max-w-[440px] bg-white rounded-3xl border border-gray-100 p-5 shadow-2xl z-[115]"
               dir="rtl">
-              <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+              {/* <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                 <span className="text-sm font-black text-gray-900">منوی خدمات و دسترسی‌ها</span>
-                {/* <button
+                <button
                   onClick={() => setIsMoreMenuOpen(false)}
                   className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600"
                 >
                   <LucideIcons.X className="w-4 h-4" />
-                </button> */}
-              </div>
+                </button>
+              </div> */}
 
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -189,7 +189,7 @@ export function BottomNavigation({
                     <LucideIcons.PlusCircle className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-black text-gray-800">ایجاد دورهمی جدید</span>
+                    <span className="text-xs font-black text-gray-800">ایجاد دورهمی</span>
                     <span className="text-[10px] text-gray-400 font-bold">میزبانی کنید</span>
                   </div>
                 </button>
@@ -237,15 +237,15 @@ export function BottomNavigation({
                   }}
                   className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100/50 transition-all text-right active:scale-95">
                   <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-500">
-                    <LucideIcons.Users className="w-5 h-5" />
+                    <LucideIcons.Compass className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-black text-gray-800">میزبانی من</span>
-                    <span className="text-[10px] text-gray-400 font-bold">در خدمت بقیه بودم</span>
+                    <span className="text-xs font-black text-gray-800">دورهمی های من</span>
+                    <span className="text-[10px] text-gray-400 font-bold">مهمان بودم</span>
                   </div>
                 </button>
 
-                <button
+                {/* <button
                   onClick={() => {
                     onNavigate('categories');
                     setIsMoreMenuOpen(false);
@@ -258,9 +258,9 @@ export function BottomNavigation({
                     <span className="text-xs font-black text-gray-800">دورهمی های من</span>
                     <span className="text-[10px] text-gray-400 font-bold">مهمان بودم</span>
                   </div>
-                </button>
+                </button> */}
 
-                <button
+                {/* <button
                   onClick={() => {
                     onNavigate('admin');
                     setIsMoreMenuOpen(false);
@@ -274,7 +274,7 @@ export function BottomNavigation({
                     <span className="text-xs font-black text-gray-800">اطلاعیه ها</span>
                     <span className="text-[10px] text-gray-400 font-bold">خبرهای جدید</span>
                   </div>
-                </button>
+                </button> */}
               </div>
             </motion.div>
           </>

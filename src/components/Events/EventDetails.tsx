@@ -356,10 +356,10 @@ function EventDetailsPage({
                                     <span className="text-[9px] font-bold text-gray-400">میزبان تایید شده رویداد</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-2xs">
+                            {/* <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-gray-100 shadow-2xs">
                                 <Star className="w-3 h-3 text-amber-400 fill-current" />
                                 <span className="text-[10px] font-black text-gray-700">۴.۹</span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 

@@ -149,7 +149,7 @@ function FilterDrawer({
             dir="rtl"
           >
             {/* Elegant top accent indicator */}
-            <div className="w-10 h-1 bg-gray-300/50 rounded-full mx-auto mt-3 shrink-0" />
+            {/* <div className="w-10 h-1 bg-gray-300/50 rounded-full mx-auto mt-3 shrink-0" /> */}
 
             {/* Header Area - Redesigned */}
             <div className="px-6 pt-3 pb-4 border-b border-gray-100 bg-white shrink-0">
