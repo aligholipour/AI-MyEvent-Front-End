@@ -1,33 +1,22 @@
-// EventDetailsPage.tsx
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
     Check, Calendar, ArrowRight, ChevronDown, MapPin, Share2,
-    Flag, Star, Sparkles, Lock, ChevronLeft, Diamond, Maximize2,
-    QrCode, Eye, UserCheck, Users, Plus, Send, Compass,
+    Flag, Sparkles, ChevronLeft, Maximize2,
+    QrCode, UserCheck, Users, Compass,
     Ticket, ScanLine, Copy, Link, CheckCircle2, UserMinus,
-    Clock, Building2, Video, Tag, Map
+    Building2, Video
 } from 'lucide-react';
-import EmptyState from "./EmptyState";
 import CommentSection from "./CommentSection";
-import ParticipantsDrawer from "./ParticipantsDrawer";
 import NavigationDrawer from "../Shared/NavigationDrawer";
 import ReportDrawer from "./ReportDrawer";
 import ConfirmationDrawer from "./ConfirmationDrawer";
-import { getEventById, getEventParticipants, registerForEvent } from "../../services/events";
+import { getEventById, registerForEvent } from "../../services/events";
 import { getEventComments, submitComment } from "../../services/comments";
 import * as LucideIcons from 'lucide-react';
 import LeafletEventMap from "../Shared/LeafletEventMap";
 import FullScreenMapModal from "../Shared/FullScreenMapModal";
-
-// Persian digits converter utility
-const toPersianDigits = (num: string | number): string => {
-    if (num === null || num === undefined) return '';
-    const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    return num
-        .toString()
-        .replace(/\d/g, (x) => farsiDigits[parseInt(x, 10)]);
-};
+import { toPersianDigits } from "@/src/lib/utils";
 
 const getCategoryIconComponent = (categoryName?: string) => {
     switch (categoryName) {
@@ -455,9 +444,9 @@ function EventDetailsPage({
                                     className="w-9 h-9 rounded-full border-2 border-white shadow-xs object-cover group-hover:scale-105 transition-transform"
                                     referrerPolicy="no-referrer"
                                 />
-                                <div className="absolute -bottom-0.5 -right-0.5 bg-slate-800 text-white p-0.5 rounded-full border border-white">
+                                {/* <div className="absolute -bottom-0.5 -right-0.5 bg-slate-800 text-white p-0.5 rounded-full border border-white">
                                     <Check className="w-2 h-2 stroke-[3]" />
-                                </div>
+                                </div> */}
                             </div>
                             <div className="flex flex-col text-right">
                                 <div className="flex items-center gap-1.5">

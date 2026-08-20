@@ -487,7 +487,14 @@ function AppContent() {
                             onUpdateUser={(updatedUser) => {
                                 updateUser(updatedUser);
                             }}
-                            navigateToTab={navigateToTab}
+                            navigateToTab={(tab) => {
+                                if (tab === 'my-events') {
+                                    openCustomerEvent();
+                                    return;
+                                }
+
+                                navigateToTab(tab);
+                            }}
                             onOpenSupportTickets={() => setIsSupportTicketsOpen(true)}
                             onOpenEditProfile={() => setIsEditProfileOpen(true)}
                             onOpenOrganizerProfile={() => setIsOrganizerProfileOpen(true)}
@@ -789,7 +796,7 @@ function AppContent() {
 
                                     </motion.div>
 
-                                    <NewOrganizer isLoading={isInitialLoading} />
+                                    {/* <NewOrganizer isLoading={isInitialLoading} /> */}
                                 </motion.main>
                             ) : activeTab === 'categories' ? (
                                 <CategoriesPage

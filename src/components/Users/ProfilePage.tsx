@@ -444,7 +444,7 @@ function ProfilePage({
           <h4 className="text-[11px] font-black text-gray-400 px-1">رویدادها و فعالیت‌های من</h4>
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xs overflow-hidden divide-y divide-gray-50">
 
-            <MenuItemRow
+            {/* <MenuItemRow
               icon={<Building2 className="w-4 h-4 text-amber-500" />}
               title="پروفایل برگزارکننده من"
               subtitle="صفحه عمومی برند، لوگو، معرفی، خاطرات (Shorts) و لیست میزبانی‌ها"
@@ -469,7 +469,7 @@ function ProfilePage({
               badge="تقویم تصویری"
               badgeColor="amber"
               onClick={onOpenPersonalCalendar}
-            />
+            /> */}
 
             <MenuItemRow
               icon={<Ticket className="w-4 h-4 text-[#ED1C24]" />}
@@ -492,7 +492,7 @@ function ProfilePage({
               onClick={onOpenEditProfile}
             />
 
-            <MenuItemRow
+            {/* <MenuItemRow
               icon={<Heart className="w-4 h-4 text-rose-500" />}
               title="علاقه‌مندی‌ها و موضوعات"
               subtitle="مدیریت دسته‌بندی‌های موردعلاقه برای پیشنهاد رویداد"
@@ -504,7 +504,7 @@ function ProfilePage({
               title="آلبوم خاطرات من"
               subtitle="مشاهده تصاویر و لحظات ثبت شده در رویدادها"
               onClick={() => alert('آلبوم خاطرات به‌زودی فعال می‌شود.')}
-            />
+            /> */}
           </div>
         </div>
 
@@ -528,14 +528,14 @@ function ProfilePage({
               onClick={() => alert('شماره پشتیبانی: ۰۲۱-۹۱۰۰۲۴۲۴')}
             /> */}
 
-            <MenuItemRow
+            {/* <MenuItemRow
               icon={<Gift className="w-4 h-4 text-amber-500" />}
               title="دعوت از دوستان"
               subtitle="دریافت ۵۰ سکه هدیه به ازای هر دعوت موفق"
               badge="+۵۰ سکه"
               badgeColor="amber"
               onClick={() => alert('لینک دعوت کپی شد!')}
-            />
+            /> */}
           </div>
         </div>
 
