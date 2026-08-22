@@ -148,26 +148,26 @@ function ProfilePage({
       />
 
       {/* Header Bar - AI Design */}
-      <header className="sticky top-0 z-30 px-5 pt-8 pb-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between shadow-2xs">
+      <header className="sticky top-0 z-30 px-5 pt-4 pb-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-red-50 text-[#ED1C24] rounded-xl flex items-center justify-center font-black">
             <User2 className="w-4 h-4" />
           </div>
           <div>
             <h1 className="text-xs font-black text-gray-900 leading-none">پروفایل کاربری</h1>
-            <p className="text-[9.5px] font-bold text-gray-400 mt-0.5">مدیریت حساب، امتیازات و تنظیمات</p>
+            {/* <p className="text-[9.5px] font-bold text-gray-400 mt-0.5">مدیریت حساب، امتیازات و تنظیمات</p> */}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             type="button"
             onClick={onOpenEditProfile}
             className="p-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-700 transition-colors cursor-pointer border border-gray-100"
             title="ویرایش حساب"
           >
             <UserCogIcon className="w-4 h-4" />
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={onBack}
@@ -188,18 +188,19 @@ function ProfilePage({
               {/* Avatar with Camera Overlay */}
               <div
                 className="relative group cursor-pointer shrink-0"
-                onClick={() => fileInputRef.current?.click()}
+              // onClick={() => fileInputRef.current?.click()}
               >
-                <div className="w-20 h-20 rounded-2xl p-0.5 bg-gradient-to-tr from-[#ED1C24] via-amber-400 to-rose-500 shadow-md">
+                {/* <div className="w-20 h-20 rounded-2xl p-0.5 bg-gradient-to-tr from-[#ED1C24] via-amber-400 to-rose-500 shadow-md"> */}
+                <div className="w-20 h-20 rounded-2xl p-0.5 bg-gradient-to-tr shadow-md">
                   <img
                     src={process.env.File_BaseURL + user.profileAddress}
                     alt={user.username}
                     className="w-full h-full object-cover rounded-[14px] bg-gray-100"
                   />
                 </div>
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
+                {/* <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
                   <Camera className="w-5 h-5 text-white" />
-                </div>
+                </div> */}
               </div>
 
               {/* اطلاعات کاربر */}
@@ -575,10 +576,10 @@ function ProfilePage({
         </div>
 
         {/* App Version Info */}
-        <div className="text-center pt-2 pb-6 space-y-1">
+        {/* <div className="text-center pt-2 pb-6 space-y-1">
           <p className="text-[10px] font-bold text-gray-400">هم‌مسیر · پلتفرم تجربه و دورهمی‌های صمیمی</p>
           <p className="text-[9px] font-mono text-gray-300">Version 2.4.0 (Build 2026)</p>
-        </div>
+        </div> */}
       </div>
 
       {/* Image Cropper */}

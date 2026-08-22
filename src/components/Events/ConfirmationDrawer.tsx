@@ -183,12 +183,12 @@ function ConfirmationDrawer({
                             {/* Swipe Button + Cancel */}
                             <div className="flex flex-col gap-3 pt-1">
                                 <SwipeButton onConfirm={onConfirm || (() => {})} />
-                                <button
+                                {/* <button
                                     onClick={onClose}
                                     className="w-full bg-gray-100 text-gray-500 hover:bg-gray-200/80 py-3 rounded-2xl font-black text-xs transition-all"
                                 >
                                     انصراف
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                     </motion.div>
