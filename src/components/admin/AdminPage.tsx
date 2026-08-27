@@ -4,52 +4,16 @@ import { useState, useEffect, useRef } from "react";
 import { AppEvent, AppUsers, EventDetailForAdminResponse } from "../../types";
 import { getEventsFormAdminPage, getEventDetailForAdmin, approveEvent, rejectEvent, changeStatusEvent, getEventParticipantsForAdmin } from "../../services/events";
 import {
-    ArrowRight, Play, Pause, Check, ChevronLeft, MapPin,
+    Play, Pause, Check, ChevronLeft, MapPin,
     Calendar, X, Users, AlertCircle, Heart,
-    ShieldCheck, CalendarX, Clock, UserCog,
-    Eye, RotateCcw, Globe, Tag, User, Mail, Briefcase as BriefcaseIcon,
+    CalendarX, UserCog,
+    Eye, RotateCcw, Globe, Tag, Briefcase as BriefcaseIcon,
     Calendar as CalendarIcon, Search,
     UserX,
-    XCircle, User as UserIcon, CheckCircle2
+    XCircle, User as UserIcon
 } from "lucide-react";
 import { getUserDetailForAdmin, GetUserDetailForAdminResponse, getUsereForAdmin } from "../../services/users";
 import { toPersianDigits } from "@/src/lib/utils";
-
-// Helper Components
-function FilterChip({
-    label,
-    count,
-    active,
-    color = 'red',
-    onClick,
-}: {
-    label: string;
-    count?: number;
-    active: boolean;
-    color?: 'red' | 'amber' | 'emerald' | 'slate';
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${active
-                ? 'bg-slate-900 text-white shadow-2xs'
-                : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600'
-                }`}
-        >
-            <span>{label}</span>
-            {count !== undefined && (
-                <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono ${active ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
-                        }`}
-                >
-                    {count}
-                </span>
-            )}
-        </button>
-    );
-}
 
 function EventStatusBadge({ status, isDisabled }: { status: number; isDisabled?: boolean }) {
     if (isDisabled) {
@@ -344,7 +308,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
         >
             {/* Sticky Header - AI Design */}
             <header className="sticky top-0 z-30 px-5 pt-7 pb-3 bg-white/85 backdrop-blur-md border-b border-gray-100 shadow-2xs">
-                <div className="flex items-center justify-between mb-4">
+                {/* <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-tr from-[#ED1C24] to-rose-500 text-white rounded-2xl flex items-center justify-center font-black shadow-md shadow-red-500/20">
                             <ShieldCheck className="w-5 h-5" />
@@ -352,9 +316,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-base font-black text-gray-900 leading-none">مدیریت</h1>
-                                {/* <span className="bg-red-50 text-[#ED1C24] text-[9.5px] font-black px-2 py-0.5 rounded-md border border-red-100">
+                                <span className="bg-red-50 text-[#ED1C24] text-[9.5px] font-black px-2 py-0.5 rounded-md border border-red-100">
                                     ADMIN PANEL
-                                </span> */}
+                                </span>
                             </div>
                             <p className="text-[10.5px] font-bold text-gray-400 mt-1">
                                 بررسی رویدادها و نظارت بر کاربران
@@ -368,10 +332,10 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                         className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-2xl text-gray-700 transition-colors cursor-pointer border border-gray-100 active:scale-95 flex items-center gap-1.5"
                         title="بازگشت"
                     >
-                        {/* <span className="text-xs font-bold hidden sm:inline">بازگشت</span> */}
+                        <span className="text-xs font-bold hidden sm:inline">بازگشت</span>
                         <ArrowRight className="w-4 h-4" />
                     </button>
-                </div>
+                </div> */}
 
                 {/* Top Summary Stats Bar - AI Design */}
                 {/* <div className="grid grid-cols-3 gap-2 mb-3">
@@ -476,7 +440,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                 </div>
 
                                 {/* Status Filter Pills - AI Design */}
-                                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pt-0.5">
+                                {/* <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pt-0.5">
                                     <FilterChip
                                         label="همه رویدادها"
                                         count={events.length}
@@ -511,7 +475,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                                         color="slate"
                                         onClick={() => setEventStatusFilter('disabled')}
                                     />
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* Events Cards List - AI Design */}

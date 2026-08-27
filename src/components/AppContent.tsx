@@ -729,7 +729,7 @@ function AppContent() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -15 }}
                                         transition={{ duration: 0.3 }}
-                                        className="relative" dir="rtl">
+                                        className="relative mb-6" dir="rtl">
                                         <div className="flex items-center justify-between mb-3 mt-5 px-5">
                                             <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5 animate-fade-in">
                                                 <span className="w-1.5 h-3.5 bg-teal-500 rounded-full inline-block"></span>

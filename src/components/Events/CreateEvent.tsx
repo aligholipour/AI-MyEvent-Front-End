@@ -604,7 +604,7 @@ function CreateEvent({ onBack }: {
                             <label className="text-xs font-black text-gray-500">ظرفیت رویداد (نفر)</label>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-black px-2.5 py-1 rounded-lg">
-                                    بدون ظرفیت
+                                    ظرفیت آزاد
                                 </span>
                                 <button
                                     onClick={() => setIsCapacityUnlimited(!isCapacityUnlimited)}

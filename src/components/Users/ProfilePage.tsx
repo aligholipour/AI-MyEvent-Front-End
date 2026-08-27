@@ -148,26 +148,26 @@ function ProfilePage({
       />
 
       {/* Header Bar - AI Design */}
-      <header className="sticky top-0 z-30 px-5 pt-4 pb-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between shadow-2xs">
+      {/* <header className="sticky top-0 z-30 px-5 pt-3 pb-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-red-50 text-[#ED1C24] rounded-xl flex items-center justify-center font-black">
             <User2 className="w-4 h-4" />
           </div>
           <div>
             <h1 className="text-xs font-black text-gray-900 leading-none">پروفایل کاربری</h1>
-            {/* <p className="text-[9.5px] font-bold text-gray-400 mt-0.5">مدیریت حساب، امتیازات و تنظیمات</p> */}
+            <p className="text-[9.5px] font-bold text-gray-400 mt-0.5">مدیریت حساب، امتیازات و تنظیمات</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* <button
+        <div className="flex items-cenpt-3 p-5 space-y-2ter gap-2">
+          <button
             type="button"
             onClick={onOpenEditProfile}
             className="p-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-700 transition-colors cursor-pointer border border-gray-100"
             title="ویرایش حساب"
           >
             <UserCogIcon className="w-4 h-4" />
-          </button> */}
+          </button>
           <button
             type="button"
             onClick={onBack}
@@ -177,11 +177,11 @@ function ProfilePage({
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      </header>
+      </header> */}
 
-      <div className="p-5 space-y-5">
+      <div className="pt-3 p-5 space-y-4">
         {/* User Main Card - AI Design */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-xs relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-3 border border-gray-100 shadow-xs relative overflow-hidden">
           <div className="flex items-start justify-between relative z-10">
             {/* بخش چپ: آواتار + اطلاعات */}
             <div className="flex items-center gap-4">
@@ -440,6 +440,25 @@ function ProfilePage({
           </div>
         </div> */}
 
+        <div className="space-y-2">
+          <h4 className="text-[11px] font-black text-gray-400 px-1">مدیریت برنامه</h4>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xs overflow-hidden divide-y divide-gray-50">
+
+            <MenuItemRow
+              icon={<Building2 className="w-4 h-4 text-amber-500" />}
+              title="مدیریت رویدادها و کاربران"
+              subtitle="رویدادها و کاربران"
+              onClick={() => {
+                if (navigateToTab) {
+                  navigateToTab('admin');
+                } else {
+                  onBack();
+                }
+              }}
+            />
+          </div>
+        </div>
+
         {/* Categorized Menu Section 1: Events & Activity */}
         <div className="space-y-2">
           <h4 className="text-[11px] font-black text-gray-400 px-1">رویدادها و فعالیت‌های من</h4>
@@ -541,7 +560,7 @@ function ProfilePage({
         </div>
 
         {/* Categorized Menu Section 3: App Settings & System */}
-        <div className="space-y-2">
+        <div className="space-y-2 mb-8">
           <h4 className="text-[11px] font-black text-gray-400 px-1">تنظیمات و امنیت</h4>
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xs overflow-hidden divide-y divide-gray-50">
             {/* <MenuItemRow
