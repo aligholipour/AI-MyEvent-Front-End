@@ -97,6 +97,7 @@ export interface EventDetailsResponse {
     userProfile: string;
     isRegistered: boolean;
     isCapacity: boolean
+    registrationType: number
 }
 
 export interface Participant {
@@ -159,8 +160,31 @@ function EventDetailsPage({
     const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
     const [isFullScreenMap, setIsFullScreenMap] = useState(false);
 
-    // Deterministic unique participation code
-    // const rawParticipationCode = `EVT-${event?.id?.replace(/\D/g, '').padEnd(4, '7').slice(0, 4) || '0000'}-IR`;
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopyLink = async (link: string) => {
+        try {
+            await navigator.clipboard.writeText(link);
+            setIsCopied(true);
+            setTimeout(() => {
+                setIsCopied(false);
+            }, 3000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
+    };
+
+    const shouldShowOnlineLink = (isOnline: boolean, registrationType: number, isRegistered: boolean) => {
+        return isOnline && (registrationType === 1 || isRegistered === true);
+
+        // if (registrationType === 1)
+        //     return true;
+
+        // if (isRegistered === true)
+        //     return true;
+
+        // return false;
+    };
 
     useEffect(() => {
         onOverlayStateChange?.(isAddReviewOpen || isConfirmDrawerOpen || isCancelConfirmOpen);
@@ -219,8 +243,8 @@ function EventDetailsPage({
                 const eventData = await getEventById(eventId);
                 setEvent(eventData);
 
-                const commentsData = await getEventComments(eventId);
-                setComments(commentsData.data);
+                // const commentsData = await getEventComments(eventId);
+                // setComments(commentsData.data);
 
                 if (eventData.description.length > 100)
                     setIsDescriptionExpanded(true);
@@ -597,53 +621,128 @@ function EventDetailsPage({
                         </div>
                     </div>
 
+
                     <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+                        {shouldShowOnlineLink(event.isOnline, event.registrationType, event.isRegistered) ? (
+                            // حالت نمایش لینک دورهمی
+                            <>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 bg-white border border-slate-200/80 text-slate-700 rounded-xl flex items-center justify-center shrink-0 shadow-3xs">
+                                        <Link className="w-4.5 h-4.5" />
+                                    </div>
+                                    <div className="flex flex-col text-right min-w-0">
+                                        <span className="text-[9.5px] font-bold text-slate-400">لینک دورهمی</span>
+                                        <span className="text-xs font-black text-slate-900 mt-0.5 direction-ltr text-left">
+                                            {event.address}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleCopyLink(event.address)}
+                                    className={`shrink-0 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xs transition-all duration-300 flex items-center gap-1.5 ${isCopied
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 scale-105'
+                                        : 'bg-slate-900 hover:bg-black'
+                                        }`}
+                                >
+                                    {isCopied ? (
+                                        <>
+                                            <Check className="w-3.5 h-3.5 text-white" />
+                                            <span>لینک کپی شد!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                                            <span>کپی لینک</span>
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        ) : event.isOnline ? (
+                            // حالت آنلاین اما لینک قفل است (نیاز به ثبت‌نام)
+                            <>
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-9 h-9 bg-white border border-slate-200/80 text-slate-700 rounded-xl flex items-center justify-center shrink-0 shadow-3xs">
+                                        <LucideIcons.Lock className="w-4.5 h-4.5" />
+                                    </div>
+                                    <div className="flex flex-col text-right min-w-0">
+                                        <span className="text-[9.5px] font-bold text-slate-400">لینک دورهمی</span>
+                                        <span className="text-xs font-medium text-slate-600 mt-0.5">
+                                            بعد از ثبت‌نام لینک برای شما نمایش داده می‌شود
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* یک جای خالی یا المان غیرفعال برای حفظ تعادل بصری */}
+                                <div className="w-[72px] shrink-0"></div>
+                            </>
+                        ) : (
+                            // حالت حضوری (آفلاین)
+                            <>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 bg-white border border-slate-200/80 text-slate-700 rounded-xl flex items-center justify-center shrink-0 shadow-3xs">
+                                        <MapPin className="w-4.5 h-4.5" />
+                                    </div>
+                                    <div className="flex flex-col text-right min-w-0">
+                                        <span className="text-[9.5px] font-bold text-slate-400">مکان و آدرس رویداد</span>
+                                        <span className="text-xs font-black text-slate-900 mt-0.5">{event.address}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setIsNavigationDrawerOpen(true)}
+                                    className="shrink-0 bg-slate-900 hover:bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1.5">
+                                    <Compass className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>مسیریابی</span>
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="w-9 h-9 bg-white border border-slate-200/80 text-slate-700 rounded-xl flex items-center justify-center shrink-0 shadow-3xs">
                                 <MapPin className="w-4.5 h-4.5" />
                             </div>
                             <div className="flex flex-col text-right min-w-0">
                                 <span className="text-[9.5px] font-bold text-slate-400">مکان و آدرس رویداد</span>
-                                <span className="text-xs font-black text-slate-900 mt-0.5 truncate">{event.locationName}</span>
-                                {event.address && (
-                                    <span className="text-[10px] font-bold text-slate-500 mt-0.5 truncate">{event.address}</span>
-                                )}
+                                <span className="text-xs font-black text-slate-900 mt-0.5">{event.address}</span>
                             </div>
                         </div>
 
                         <button
                             onClick={() => setIsNavigationDrawerOpen(true)}
-                            className="shrink-0 bg-slate-900 hover:bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-                        >
+                            className="shrink-0 bg-slate-900 hover:bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1.5">
                             <Compass className="w-3.5 h-3.5 text-emerald-400" />
                             <span>مسیریابی</span>
                         </button>
-                    </div>
+                    </div> */}
 
-                    {/* Interactive Leaflet Map Widget */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            {/* <h3 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
+                    {!event.isOnline && (
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                {/* <h3 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
                                 <LucideIcons.Map className="w-4 h-4 text-[#ED1C24]" />
                                 <span>موقعیت روی نقشه تعاملی</span>
                             </h3> */}
-                            <button
-                                onClick={() => setIsFullScreenMap(true)}
-                                className="text-[10px] font-black text-[#007AFF] hover:underline flex items-center gap-1"
-                            >
-                                {/* <LucideIcons.Maximize2 className="w-3 h-3" />
+                                <button
+                                    onClick={() => setIsFullScreenMap(true)}
+                                    className="text-[10px] font-black text-[#007AFF] hover:underline flex items-center gap-1"
+                                >
+                                    {/* <LucideIcons.Maximize2 className="w-3 h-3" />
                                 <span>تمام صفحه</span> */}
-                            </button>
-                        </div>
+                                </button>
+                            </div>
 
-                        <LeafletEventMap
-                            lat={event.lat}
-                            lng={event.lng}
-                            title={event.title}
-                            locationName={event.location}
-                            onExpand={() => setIsFullScreenMap(true)}
-                        />
-                    </div>
+                            <LeafletEventMap
+                                lat={event.lat}
+                                lng={event.lng}
+                                title={event.title}
+                                locationName={event.location}
+                                onExpand={() => setIsFullScreenMap(true)}
+                            />
+                        </div>
+                    )}
 
                     {/* Participants - AI Horizontal Layout */}
                     {/* <div
@@ -879,35 +978,59 @@ function EventDetailsPage({
 
             {/* Modern Fixed Bottom Action Panel - AI Design */}
             <div className={`fixed bottom-[102px] left-1/2 -translate-x-1/2 w-[calc(100%-36px)] max-w-[440px] z-[100] bg-white/95 backdrop-blur-md border border-gray-100 px-5 py-3 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] flex items-center justify-between transition-opacity duration-300 ${isAddReviewOpen || isConfirmDrawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <div className="flex flex-col text-right">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">هزینه نهایی شرکت</span>
-                    <span className={`text-sm font-black mt-0.5 ${event.isFree ? 'text-emerald-500' : 'text-gray-900'}`}>
-                        {event.isFree ? 'رایگان' : event.price}
-                    </span>
-                </div>
 
-                <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                        if (!isLoggedIn) {
-                            onOpenAuth();
-                            return;
-                        }
-                        setIsConfirmDrawerOpen(true);
-                    }}
-                    disabled={event.isRegistered || !event.isCapacity}
-                    className={`px-8 py-3.5 rounded-2xl font-black text-xs flex items-center gap-2 shadow-md transition-all ${event.isRegistered || !event.isCapacity
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                        : 'bg-[#ED1C24] hover:bg-[#D0171E] text-white shadow-[0_4px_16px_rgba(237,28,36,0.25)]'
-                        }`}
-                >
-                    <span>{event.isRegistered ? 'ثبت‌نام شده‌اید' : !event.isCapacity ? 'ظرفیت تکمیل' : 'شرکت در دورهمی'}</span>
-                    {!event.isRegistered && event.isCapacity ? (
-                        <ArrowRight className="w-4 h-4" />
-                    ) : (
-                        <Check className="w-4 h-4" />
-                    )}
-                </motion.button>
+                {event.registrationType === 1 ? (
+                    // حالت حضور آزاد بدون ثبت‌نام
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <span className="text-sm font-black text-emerald-600">حضور آزاد</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-400 mr-2">بدون نیاز به ثبت‌نام</span>
+                    </div>
+                ) : (
+                    // حالت‌های دیگر (نیاز به ثبت‌نام)
+                    <>
+                        <div className="flex flex-col text-right">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">هزینه نهایی شرکت</span>
+                            <span className={`text-sm font-black mt-0.5 ${event.registrationType === 3 ? 'text-emerald-500' : 'text-gray-900'}`}>
+                                {event.registrationType !== 3 ? 'رایگان' : event.price}
+                            </span>
+                        </div>
+
+                        <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    onOpenAuth();
+                                    return;
+                                }
+                                setIsConfirmDrawerOpen(true);
+                            }}
+                            disabled={event.isRegistered || !event.isCapacity}
+                            className={`px-8 py-3.5 rounded-2xl font-black text-xs flex items-center gap-2 shadow-md transition-all ${event.isRegistered || !event.isCapacity
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-[0_4px_16px_rgba(237,28,36,0.25)]'
+                                }`}
+                        >
+                            <span>
+                                {event.isRegistered
+                                    ? 'ثبت‌نام شده‌اید'
+                                    : !event.isCapacity
+                                        ? 'ظرفیت تکمیل'
+                                        : 'شرکت در دورهمی'
+                                }
+                            </span>
+                            {!event.isRegistered && event.isCapacity ? (
+                                <ArrowRight className="w-4 h-4" />
+                            ) : (
+                                <Check className="w-4 h-4" />
+                            )}
+                        </motion.button>
+                    </>
+                )}
             </div>
 
             {/* Drawers */}

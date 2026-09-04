@@ -19,10 +19,13 @@ import { toJalaali, toJalaaliDisplay, jalaaliToISOString } from '../../lib/dateU
 import JalaliDatePicker from '../Shared/JalaliDatePicker';
 import JalaliTimePicker from '../Shared/JalaliTimePicker';
 import jMoment from 'moment-jalaali';
+import ImagePreviewModal from '../Shared/ImagePreviewModal';
+
 
 interface EditEventProps {
   eventId: number;
   onBack: () => void;
+  onSaved: () => void;
 }
 
 interface EditEventFormData {
@@ -36,6 +39,7 @@ interface EditEventFormData {
   startTime: string;
   endTime: string;
   isPaid: boolean;
+  registrationType: number;
   gender: number | null;
   price: string;
   minCapacity: string;
@@ -53,7 +57,7 @@ interface EditEventFormData {
   location: { lat: number; lng: number } | null;
 }
 
-function EditEvent({ eventId, onBack }: EditEventProps) {
+function EditEvent({ eventId, onBack, onSaved }: EditEventProps) {
   const [event, setEvent] = useState<EventDetailsForUpdateResponse | null>(null);
   const [formData, setFormData] = useState<EditEventFormData>({
     title: '',
@@ -66,6 +70,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     startTime: '',
     endTime: '',
     isPaid: false,
+    registrationType: 1,
     gender: null,
     price: '',
     minCapacity: '',
@@ -89,9 +94,6 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
   const [isProvinceOpen, setIsProvinceOpen] = useState(false);
   const [isCityOpen, setIsCityOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [tempImage, setTempImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -102,9 +104,11 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
   const [loadingCities, setLoadingCities] = useState(false);
   const [allFavourites, setAllFavourites] = useState<Favourite[]>([]);
 
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
-  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCapacityUnlimited, setIsCapacityUnlimited] = useState(false);
+  const [isAgeUnlimited, setIsAgeUnlimited] = useState(false);
 
   const toPersian = (date: Date | string | null | undefined): string => {
     if (!date) return '';
@@ -171,6 +175,8 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
         setEvent(eventData);
         setAllFavourites(favouritesData);
         setFormData(mapEventToForm(eventData));
+        setIsCapacityUnlimited(Number(eventData.minCapacity) === 0 && Number(eventData.maxCapacity) === 0);
+        setIsAgeUnlimited(Number(eventData.minAge) === 0 && Number(eventData.maxAge) === 0);
 
         if (eventData.provinceId) {
           const citiesData = await getCityWithProvinceId(eventData.provinceId);
@@ -208,12 +214,6 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     }
   };
 
-  const parseDateFromDateTime = (dateTime: string) => {
-    if (!dateTime) return '';
-    const datePart = dateTime.split('T')[0];
-    return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : '';
-  };
-
   const getImageSrc = (coverAddress: string | null) => {
     if (!coverAddress) return null;
 
@@ -235,7 +235,8 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
       date: eventData.eventTime ? new Date(eventData.eventTime) : new Date(),
       startTime: convertTo24Hour(eventData.startTime || ''), // تبدیل به ۲۴ ساعته
       endTime: convertTo24Hour(eventData.endTime || ''),     // تبدیل به ۲۴ ساعته
-      isPaid: eventData.isFree === false,
+      isPaid: eventData.registrationType === 3,
+      registrationType: eventData.registrationType ?? (eventData.isFree ? 2 : 3),
       gender: null,
       price: eventData.price != null ? String(eventData.price) : '',
       minCapacity: eventData.minCapacity != null ? String(eventData.minCapacity) : '',
@@ -278,18 +279,18 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
       newErrors.endTime = 'زمان پایان باید بعد از زمان شروع باشد';
     }
-    if (formData.isPaid) {
+    if (formData.registrationType === 3) {
       if (!formData.price) newErrors.price = 'مبلغ الزامی است';
       else if (Number(formData.price) <= 0) newErrors.price = 'مبلغ باید معتبر باشد';
     }
-    if (!formData.minCapacity) newErrors.minCapacity = 'حداقل ظرفیت الزامی است';
-    if (!formData.maxCapacity) newErrors.maxCapacity = 'حداکثر ظرفیت الزامی است';
-    if (formData.minCapacity && formData.maxCapacity && Number(formData.maxCapacity) < Number(formData.minCapacity)) {
+    if (!isCapacityUnlimited && !formData.minCapacity) newErrors.minCapacity = 'حداقل ظرفیت الزامی است';
+    if (!isCapacityUnlimited && !formData.maxCapacity) newErrors.maxCapacity = 'حداکثر ظرفیت الزامی است';
+    if (!isCapacityUnlimited && formData.minCapacity && formData.maxCapacity && Number(formData.maxCapacity) < Number(formData.minCapacity)) {
       newErrors.maxCapacity = 'حداکثر ظرفیت نباید کمتر از حداقل باشد';
     }
-    if (!formData.minAge) newErrors.minAge = 'حداقل سن الزامی است';
-    if (!formData.maxAge) newErrors.maxAge = 'حداکثر سن الزامی است';
-    if (formData.minAge && formData.maxAge && Number(formData.maxAge) < Number(formData.minAge)) {
+    if (!isAgeUnlimited && !formData.minAge) newErrors.minAge = 'حداقل سن الزامی است';
+    if (!isAgeUnlimited && !formData.maxAge) newErrors.maxAge = 'حداکثر سن الزامی است';
+    if (!isAgeUnlimited && formData.minAge && formData.maxAge && Number(formData.maxAge) < Number(formData.minAge)) {
       newErrors.maxAge = 'حداکثر سن نباید کمتر از حداقل باشد';
     }
     if (!formData.provinceId) newErrors.provinceId = 'استان الزامی است';
@@ -298,16 +299,6 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  // const toggleInterest = (interest: number) => {
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     interests: prev.favouriteIds.includes(interest)
-  //       ? prev.favouriteIds.filter(i => i !== interest)
-  //       : [...prev.favouriteIds, interest],
-  //   }));
-  // };
-
   const toggleInterest = (interestId: number) => {
     setFormData(prev => ({
       ...prev,
@@ -317,20 +308,6 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     }));
   };
 
-  // const toggleInterest = (interest: number) => {
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     interests: prev.interests.includes(interest)
-  //       ? prev.interests.filter(i => i !== interest)
-  //       : [...prev.interests, interest]
-  //   }));
-  // };
-
-  // const getInterestTitle = (id: number) => {
-  //   const favourite = allFavourites.find(f => f.id === id);
-  //   return favourite?.title || String(id);
-  // };
-
   const getInterestTitle = (id: number) => {
     const favourite = allFavourites.find(f => f.id === id);
     return favourite?.title || id;
@@ -338,12 +315,32 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setTempImage(reader.result as string);
-        setIsCropperOpen(true);
+        setIsPreviewOpen(true);
       });
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePreviewConfirm = () => {
+    if (tempImage) {
+      setFormData({ ...formData, coverAddress: tempImage });
+      setIsPreviewOpen(false);
+      setTempImage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handlePreviewClose = () => {
+    setIsPreviewOpen(false);
+    setTempImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -351,21 +348,16 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
     if (!formData.title) return false;
     if (!formData.description) return false;
     if (!formData.categoryId) return false;
-    // if (formData.isOnline) {
-    //   if (!formData.onlineLink) return false;
-    // } else {
-    //   if (!formData.address) return false;
-    // }
     if (!formData.date) return false;
     if (!formData.startTime || !formData.endTime) return false;
     if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) return false;
-    if (formData.isPaid && (!formData.price || Number(formData.price) <= 0)) return false;
-    if (!formData.minCapacity) return false;
-    if (!formData.maxCapacity) return false;
-    if (formData.minCapacity && formData.maxCapacity && Number(formData.maxCapacity) < Number(formData.minCapacity)) return false;
-    if (!formData.minAge) return false;
-    if (!formData.maxAge) return false;
-    if (formData.minAge && formData.maxAge && Number(formData.maxAge) < Number(formData.minAge)) return false;
+    if (formData.registrationType === 3 && (!formData.price || Number(formData.price) <= 0)) return false;
+    if (!isCapacityUnlimited && !formData.minCapacity) return false;
+    if (!isCapacityUnlimited && !formData.maxCapacity) return false;
+    if (!isCapacityUnlimited && formData.minCapacity && formData.maxCapacity && Number(formData.maxCapacity) < Number(formData.minCapacity)) return false;
+    if (!isAgeUnlimited && !formData.minAge) return false;
+    if (!isAgeUnlimited && !formData.maxAge) return false;
+    if (!isAgeUnlimited && formData.minAge && formData.maxAge && Number(formData.maxAge) < Number(formData.minAge)) return false;
     if (!formData.provinceId) return false;
     if (!formData.city) return false;
     return true;
@@ -383,10 +375,10 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
 
     try {
       const result = await updateEvent(eventId, formData);
-      setIsSuccess(true);
-      if (result) {
+      if (result.ok) {
         setEvent(event ? { ...event, ...result } as EventDetailsForUpdateResponse : event);
       }
+      onSaved();
     } catch (error) {
       console.error('Failed to update event:', error);
     } finally {
@@ -460,7 +452,7 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-        <div className="px-6 py-6 space-y-6">
+        <div className="pt-1 px-6 space-y-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-500 mr-2">تصویر رویداد</label>
             <input
@@ -759,25 +751,37 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
           <div className="space-y-4 bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
             <div className="flex items-center justify-between">
               <label className="text-xs font-black text-gray-500">نوع رویداد</label>
-              <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+              <div className="flex flex-wrap justify-end bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
                 <button
-                  onClick={() => setFormData({ ...formData, isPaid: false })}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
+                  onClick={() => setFormData({ ...formData, registrationType: 1, isPaid: false, price: '' })}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 1 ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
+                >
+                  حضور آزاد
+                </button>
+                <button
+                  onClick={() => setFormData({ ...formData, registrationType: 2, isPaid: false, price: '' })}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 2 ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
                 >
                   رایگان
                 </button>
                 <button
-                  onClick={() => setFormData({ ...formData, isPaid: true })}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
+                  onClick={() => setFormData({ ...formData, registrationType: 3, isPaid: true })}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 3 ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
                 >
                   هزینه‌دار
                 </button>
               </div>
             </div>
-            {formData.isPaid && (
+            <p className="text-[10px] font-bold text-gray-400 leading-relaxed">
+              {formData.registrationType === 1 && 'حضور آزاد برای رویدادهای اطلاع‌رسانی بدون ثبت نام هست.'}
+              {formData.registrationType === 2 && 'ثبت‌نام رایگان برای رویدادهایی که هزینه‌ای ندارند.'}
+              {formData.registrationType === 3 && 'ثبت‌نام با پرداخت هزینه برای رویدادهای آموزشی و کارگاه‌ها.'}
+            </p>
+            {formData.registrationType === 3 && (
               <FormInput
                 label="مبلغ به ازای هر نفر (تومان)"
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="مثلا: ۵۰,۰۰۰"
                 value={formData.price}
                 onChange={(val) => { setFormData({ ...formData, price: val }); if (errors.price) setErrors({ ...errors, price: '' }); }}
@@ -816,26 +820,57 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs font-black text-gray-500 mr-2">ظرفیت رویداد (نفر)</label>
-            <div className="flex gap-4">
-              <StepperInput
-                label="حداقل"
-                value={formData.minCapacity}
-                onChange={(val) => { setFormData({ ...formData, minCapacity: val }); if (errors.minCapacity) setErrors({ ...errors, minCapacity: '' }); }}
-                error={errors.minCapacity}
-                className="flex-1"
-                min={1}
-              />
-              <StepperInput
-                label="حداکثر"
-                value={formData.maxCapacity}
-                onChange={(val) => { setFormData({ ...formData, maxCapacity: val }); if (errors.maxCapacity) setErrors({ ...errors, maxCapacity: '' }); }}
-                error={errors.maxCapacity}
-                className="flex-1"
-                min={Number(formData.minCapacity) || 1}
-              />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500">ظرفیت رویداد (نفر)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-black px-2.5 py-1 rounded-lg">
+                  ظرفیت آزاد
+                </span>
+                <button
+                  onClick={() => {
+                    const nextValue = !isCapacityUnlimited;
+                    setIsCapacityUnlimited(nextValue);
+                    if (nextValue) {
+                      setFormData({ ...formData, minCapacity: '0', maxCapacity: '0' });
+                    }
+                  }}
+                  className={`w-12 h-6 rounded-full transition-all relative ${isCapacityUnlimited ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                >
+                  <motion.div
+                    animate={{ x: isCapacityUnlimited ? -24 : 0 }}
+                    className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                  />
+                </button>
+              </div>
             </div>
-            <div className="space-y-3 px-2 pt-2">
+
+            {!isCapacityUnlimited && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex gap-4">
+                  <StepperInput
+                    label="حداقل"
+                    value={formData.minCapacity}
+                    onChange={(val) => { setFormData({ ...formData, minCapacity: val }); if (errors.minCapacity) setErrors({ ...errors, minCapacity: '' }); }}
+                    error={errors.minCapacity}
+                    className="flex-1"
+                    min={1}
+                  />
+                  <StepperInput
+                    label="حداکثر"
+                    value={formData.maxCapacity}
+                    onChange={(val) => { setFormData({ ...formData, maxCapacity: val }); if (errors.maxCapacity) setErrors({ ...errors, maxCapacity: '' }); }}
+                    error={errors.maxCapacity}
+                    className="flex-1"
+                    min={Number(formData.minCapacity) || 1}
+                  />
+                </div>
+                {/* <div className="space-y-3 px-2 pt-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-gray-700">فعال کردن لیست انتظار</span>
                 <button
@@ -851,36 +886,69 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
                 با فعال‌سازی این گزینه، در صورت تکمیل ظرفیت رویداد، ثبت‌نام‌های جدید وارد لیست انتظار خواهند شد.
               </p>
-            </div>
+            </div> */}
+              </motion.div>
+            )}
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs font-black text-gray-500 mr-2">بازه سنی</label>
-            <div className="flex gap-4">
-              <StepperInput
-                label="از سن"
-                value={formData.minAge}
-                onChange={(val) => { setFormData({ ...formData, minAge: val }); if (errors.minAge) setErrors({ ...errors, minAge: '' }); }}
-                error={errors.minAge}
-                className="flex-1"
-                min={1}
-                max={120}
-              />
-              <StepperInput
-                label="تا سن"
-                value={formData.maxAge}
-                onChange={(val) => { setFormData({ ...formData, maxAge: val }); if (errors.maxAge) setErrors({ ...errors, maxAge: '' }); }}
-                error={errors.maxAge}
-                className="flex-1"
-                min={Number(formData.minAge) || 1}
-                max={120}
-              />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500">بازه سنی</label>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-black px-2.5 py-1 rounded-lg">
+                  بدون محدودیت سنی
+                </span>
+                <button
+                  onClick={() => {
+                    const nextValue = !isAgeUnlimited;
+                    setIsAgeUnlimited(nextValue);
+                    if (nextValue) {
+                      setFormData({ ...formData, minAge: '0', maxAge: '0' });
+                    }
+                  }}
+                  className={`w-12 h-6 rounded-full transition-all relative ${isAgeUnlimited ? 'bg-gray-800 shadow-inner' : 'bg-gray-200'}`}
+                >
+                  <motion.div
+                    animate={{ x: isAgeUnlimited ? -24 : 0 }}
+                    className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                  />
+                </button>
+              </div>
             </div>
+
+            {!isAgeUnlimited && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex gap-4"
+              >
+                <StepperInput
+                  label="از سن"
+                  value={formData.minAge}
+                  onChange={(val) => { setFormData({ ...formData, minAge: val }); if (errors.minAge) setErrors({ ...errors, minAge: '' }); }}
+                  error={errors.minAge}
+                  className="flex-1"
+                  min={1}
+                  max={120}
+                />
+                <StepperInput
+                  label="تا سن"
+                  value={formData.maxAge}
+                  onChange={(val) => { setFormData({ ...formData, maxAge: val }); if (errors.maxAge) setErrors({ ...errors, maxAge: '' }); }}
+                  error={errors.maxAge}
+                  className="flex-1"
+                  min={Number(formData.minAge) || 1}
+                  max={120}
+                />
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full px-6 py-6 bg-gradient-to-t from-white via-white to-transparent pt-10 pointer-events-none">
+      <div className="absolute bottom-0 left-0 w-full px-6 py-10 bg-gradient-to-t from-white via-white to-transparent pt-10 pointer-events-none">
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={handleSubmit}
@@ -993,7 +1061,16 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
         }}
       />
 
-      <ImageCropperDrawer
+      <ImagePreviewModal
+        image={tempImage}
+        isOpen={isPreviewOpen}
+        onClose={handlePreviewClose}
+        onConfirm={handlePreviewConfirm}
+        title="پیش‌نمایش تصویر"
+        confirmText="تایید تصویر"
+      />
+
+      {/* <ImageCropperDrawer
         image={tempImage}
         isOpen={isCropperOpen}
         onClose={() => {
@@ -1002,26 +1079,19 @@ function EditEvent({ eventId, onBack }: EditEventProps) {
           if (fileInputRef.current) fileInputRef.current.value = '';
         }}
         onCropComplete={(croppedImage) => setFormData({ ...formData, coverAddress: croppedImage })}
-      />
-
-      {/* <ImageCropperDrawer
-        image={tempImage}
-        isOpen={isCropperOpen}
-        onClose={() => { setIsCropperOpen(false); setTempImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-        onCropComplete={(croppedImage) => setFormData({ ...formData, coverAddress: croppedImage })}
       /> */}
 
-      {!isFormValid() && (
+      {/* {!isFormValid() && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gray-900/90 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] font-bold z-30 shadow-xl border border-white/10 opacity-70">
           لطفا تمامی فیلدهای الزامی را پر کنید
         </div>
-      )}
+      )} */}
 
       <AnimatePresence>
         {isConfirmDrawerOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsConfirmDrawerOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" />
-            <motion.div initial={{ y: '100%', x: '-50%' }} animate={{ y: 0, x: '-50%' }} exit={{ y: '100%', x: '-50%' }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsConfirmDrawerOpen(false)} className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]" />
+            <motion.div initial={{ y: '100%', x: '-50%' }} animate={{ y: 0, x: '-50%' }} exit={{ y: '100%', x: '-50%' }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
               <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto" />
               <div className="text-center space-y-2">
                 <h3 className="text-xl font-black text-gray-900">آیا از ثبت تغییرات مطمئن هستید؟</h3>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Cropper, { Area, Point } from 'react-easy-crop';
 import * as LucideIcons from 'lucide-react';
@@ -17,11 +17,63 @@ export function ImageCropperDrawer({
   isOpen,
   onClose,
   onCropComplete,
-  aspectRatio = 16 / 9,
+  aspectRatio = 1, // مقدار پیش‌فرض
 }: ImageCropperDrawerProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cropSize, setCropSize] = useState({ width: 0, height: 0 });
+
+  // محاسبه اندازه viewport برای نمایش کامل تصویر
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const updateSize = () => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          // با در نظر گرفتن padding و فضای خالی
+          const padding = 24;
+          const width = rect.width - padding * 2;
+          const height = rect.height - padding * 2;
+          
+          // تنظیم اندازه بر اساس aspect ratio
+          let cropWidth = width;
+          let cropHeight = height;
+          
+          if (aspectRatio > 1) {
+            cropHeight = width / aspectRatio;
+            if (cropHeight > height) {
+              cropHeight = height;
+              cropWidth = height * aspectRatio;
+            }
+          } else {
+            cropWidth = height * aspectRatio;
+            if (cropWidth > width) {
+              cropWidth = width;
+              cropHeight = width / aspectRatio;
+            }
+          }
+          
+          setCropSize({
+            width: cropWidth,
+            height: cropHeight,
+          });
+        }
+      };
+
+      updateSize();
+      window.addEventListener('resize', updateSize);
+      return () => window.removeEventListener('resize', updateSize);
+    }
+  }, [isOpen, aspectRatio]);
+
+  useEffect(() => {
+    if (isOpen && image) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+    }
+  }, [image, isOpen]);
 
   const onCropChange = (newCrop: Point) => {
     setCrop(newCrop);
@@ -51,7 +103,6 @@ export function ImageCropperDrawer({
     <AnimatePresence>
       {isOpen && image && (
         <>
-          {/* Premium backdrop blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -60,7 +111,6 @@ export function ImageCropperDrawer({
             className="fixed inset-0 bg-black/50 z-[200] backdrop-blur-[4px]"
           />
 
-          {/* Elegant bottom sheet matching Login/City selectors */}
           <motion.div
             initial={{ y: '100%', x: '-50%' }}
             animate={{ y: 0, x: '-50%' }}
@@ -69,10 +119,8 @@ export function ImageCropperDrawer({
             className="fixed bottom-0 left-1/2 w-full max-w-[480px] h-[80vh] bg-[#F8F9FC] z-[210] rounded-t-[30px] shadow-[0_-10px_35px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col"
             dir="rtl"
           >
-            {/* Elegant drag accent line */}
             <div className="w-10 h-1.5 bg-gray-300/60 rounded-full mx-auto mt-3.5 mb-2 shrink-0" />
 
-            {/* Header section matching other premium drawers */}
             <div className="px-6 pt-3 pb-4 border-b border-gray-100 bg-white shrink-0 flex items-center justify-between">
               <div className="flex flex-col text-right">
                 <h3 className="text-base font-black text-gray-900 tracking-tight">برش تصویر</h3>
@@ -87,22 +135,33 @@ export function ImageCropperDrawer({
               </button>
             </div>
 
-            {/* Cropper viewport container */}
-            <div className="flex-1 relative bg-gray-950/90 overflow-hidden mx-5 mt-5 rounded-2xl border border-gray-100 shadow-inner">
-              <Cropper
-                image={image}
-                crop={crop}
-                zoom={zoom}
-                aspect={aspectRatio}
-                onCropChange={onCropChange}
-                onCropComplete={onCropCompleteInternal}
-                onZoomChange={onZoomChange}
-              />
+            {/* Cropper viewport container - با ref برای اندازه‌گیری */}
+            <div 
+              ref={containerRef}
+              className="flex-1 relative bg-gray-950/90 overflow-hidden mx-5 mt-5 rounded-2xl border border-gray-100 shadow-inner"
+            >
+              {cropSize.width > 0 && cropSize.height > 0 && (
+                <Cropper
+                  image={image}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspectRatio}
+                  onCropChange={onCropChange}
+                  onCropComplete={onCropCompleteInternal}
+                  onZoomChange={onZoomChange}
+                  cropShape="rect"
+                  showGrid={false}
+                  cropSize={cropSize}
+                  // این تنظیمات برای نمایش کامل تصویر ضروری هستند
+                  objectFit="contain"
+                  restrictPosition={false}
+                  minZoom={0.5}
+                  maxZoom={3}
+                />
+              )}
             </div>
 
-            {/* Lower controls area with Zoom and Done Action */}
             <div className="p-6 space-y-5 bg-white border-t border-gray-100 mt-5 shrink-0">
-              {/* Zoom control with custom stylings */}
               <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/60">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-gray-700 flex items-center gap-1.5">
@@ -116,7 +175,7 @@ export function ImageCropperDrawer({
                 <input
                   type="range"
                   value={zoom}
-                  min={1}
+                  min={0.5}
                   max={3}
                   step={0.1}
                   aria-labelledby="Zoom"
@@ -125,7 +184,6 @@ export function ImageCropperDrawer({
                 />
               </div>
 
-              {/* Action Button matching other filters / drawers (Black/Charcoal minimal styling) */}
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={handleDone}

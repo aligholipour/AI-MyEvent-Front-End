@@ -1,10 +1,10 @@
 // CustomerEventsPage.tsx
 import { useState, useEffect, useRef } from "react";
-import { AppEvent, AppUser, CustomerGuestBahamResponse, CustomerHostedBahamResponse } from "../../types";
+import { AppUser, CustomerGuestBahamResponse, CustomerHostedBahamResponse } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Ticket, ShieldCheck, AlertCircle, ChevronLeft, Clock, Plus,
-  MapPin, X, Loader, User, Timer, Users, Edit3, Mail, Phone,
+  MapPin, X, Loader, User, Users, Edit3, Phone,
   PlusCircle, CalendarHeart, ArrowRight, CheckCircle2, XCircle,
   PauseCircle, Compass, RefreshCw, Download, Share2, Sparkles,
   MessageSquare, HelpCircle
@@ -15,7 +15,6 @@ import { formatEventTime, getEventDurationLabel, toPersianDigits } from "../../l
 
 type EventParticipant = Awaited<ReturnType<typeof getEventParticipants>>["data"][number];
 
-// Helper component for status badges
 function EventStatusBadge({ status, isActive }: { status?: number; isActive?: boolean }) {
   // isActive = true means disabled
   if (isActive) {
@@ -102,20 +101,10 @@ function CustomerEventsPage({
     }
   }, [activeSubTabProp]);
 
-  // const [eventRegistrations, setEventRegistrations] = useState<Record<string, string[]>>({
-  //   '1': ['1', '2', '3'],
-  //   '2': ['2', '4'],
-  //   '3': ['1', '3', '4'],
-  //   '4': ['2', '3'],
-  //   '5': ['1', '4'],
-  // });
-
-  // State for re-request modal
   const [selectedEventForRejection, setSelectedEventForRejection] = useState<CustomerHostedBahamResponse | null>(null);
   const [reRequestNote, setReRequestNote] = useState('');
   const [reRequestSubmitted, setReRequestSubmitted] = useState(false);
 
-  // دریافت رویدادهای ثبت‌نام شده
   const fetchRegisteredEvents = async (page: number, isRefresh = false) => {
     try {
       const result = await getRegisteredEvents({ pageNumber: page, pageSize: 10 });
@@ -453,7 +442,23 @@ function CustomerEventsPage({
                             </div>
                           </button>
 
-                          <button
+                          {new Date(event.endTime) > new Date() && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEventToCancel(event.id);
+                                setIsCancelConfirmOpen(true);
+                              }}
+                              className="px-3 py-2 bg-white hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-xl text-[10px] font-black transition-all cursor-pointer border border-gray-200/80 hover:border-rose-200 shadow-2xs flex items-center gap-1 shrink-0"
+                              title="لغو ثبت‌نام"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">لغو</span>
+                            </button>
+                          )}
+
+                          {/* <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -465,7 +470,7 @@ function CustomerEventsPage({
                           >
                             <X className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">لغو</span>
-                          </button>
+                          </button> */}
                         </div>
                       )}
                     </div>

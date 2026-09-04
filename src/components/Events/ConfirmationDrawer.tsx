@@ -82,7 +82,7 @@ function SwipeButton({ onConfirm }: { onConfirm: () => void }) {
                 className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 font-black text-xs select-none z-0"
                 dir="rtl"
             >
-                <span>⟫ بکشید برای تایید حضور</span>
+                <span>برای تایید نهایی دکمه را بکشید</span>
             </motion.div>
 
             {/* Draggable slider handle */}
@@ -95,7 +95,7 @@ function SwipeButton({ onConfirm }: { onConfirm: () => void }) {
                 onDragEnd={handleDragEnd}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-12 h-12 bg-[#ED1C24] rounded-full flex items-center justify-center text-white shadow-md cursor-grab active:cursor-grabbing z-10 border border-red-600/10 shrink-0"
+                className="w-12 h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-full flex items-center justify-center text-white shadow-md cursor-grab active:cursor-grabbing z-10 border border-red-600/10 shrink-0"
             >
                 {isSuccess ? (
                     <Check className="w-5 h-5 text-white animate-bounce" />

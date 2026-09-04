@@ -9,7 +9,6 @@ import RichTextEditor from '../Shared/RichTextEditor'
 import StepperInput from '../Shared/StepperInput'
 import MapPickerDrawer from '../Shared/MapPickerDrawer'
 import InterestsDrawer from '../../components/Shared/InterestsDrawer'
-import ImageCropperDrawer from '../../components/Shared/ImageCropperDrawer'
 import SelectionDrawer from '../../components/Shared/SelectionDrawer'
 import CategoryDrawer from '../../components/Shared/CategoryDrawer'
 import { toJalaali, toGregorian } from '../../lib/dateUtils';
@@ -24,10 +23,11 @@ import {
 } from 'lucide-react';
 import JalaliDatePicker from '../Shared/JalaliDatePicker';
 import JalaliTimePicker from '../Shared/JalaliTimePicker';
+import ImagePreviewModal from '../Shared/ImagePreviewModal';
 
-
-function CreateEvent({ onBack }: {
+function CreateEvent({ onBack, onViewHostedEvents }: {
     onBack: () => void;
+    onViewHostedEvents: () => void;
     // onSave: (event: any) => void;
     key?: React.Key
 }) {
@@ -56,6 +56,7 @@ function CreateEvent({ onBack }: {
         onlineLink: '',
         image: null as string | null,
         location: null as { lat: number; lng: number } | null,
+        registrationType: 1 as number
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -67,7 +68,6 @@ function CreateEvent({ onBack }: {
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [isCropperOpen, setIsCropperOpen] = useState(false);
     const [tempImage, setTempImage] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -79,7 +79,20 @@ function CreateEvent({ onBack }: {
 
     const [isCapacityUnlimited, setIsCapacityUnlimited] = useState(false);
     const [isAgeUnlimited, setIsAgeUnlimited] = useState(false);
+    const [displayPrice, setDisplayPrice] = useState('');
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const handleConfirmImage = () => {
+        if (tempImage) {
+            setFormData({ ...formData, image: tempImage });
+            setIsPreviewOpen(false);
+            setTempImage(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     useEffect(() => {
         getAllProvince()
@@ -145,21 +158,25 @@ function CreateEvent({ onBack }: {
             else if (Number(formData.price) <= 0) newErrors.price = 'مبلغ باید معتبر باشد';
         }
 
-        if (!formData.minCapacity) newErrors.minCapacity = 'حداقل ظرفیت الزامی است';
-        if (!formData.maxCapacity) newErrors.maxCapacity = 'حداکثر ظرفیت الزامی است';
+        if (!isCapacityUnlimited) {
+            if (!formData.minCapacity) newErrors.minCapacity = 'حداقل ظرفیت الزامی است';
+            if (!formData.maxCapacity) newErrors.maxCapacity = 'حداکثر ظرفیت الزامی است';
+        }
 
         // Capacity validation: Max must be >= Min
-        if (formData.minCapacity && formData.maxCapacity) {
+        if (!isCapacityUnlimited && formData.minCapacity && formData.maxCapacity) {
             if (Number(formData.maxCapacity) < Number(formData.minCapacity)) {
                 newErrors.maxCapacity = 'حداکثر ظرفیت نباید کمتر از حداقل باشد';
             }
         }
 
-        if (!formData.minAge) newErrors.minAge = 'حداقل سن الزامی است';
-        if (!formData.maxAge) newErrors.maxAge = 'حداکثر سن الزامی است';
+        if (!isAgeUnlimited) {
+            if (!formData.minAge) newErrors.minAge = 'حداقل سن الزامی است';
+            if (!formData.maxAge) newErrors.maxAge = 'حداکثر سن الزامی است';
+        }
 
         // Age validation: Max must be >= Min
-        if (formData.minAge && formData.maxAge) {
+        if (!isAgeUnlimited && formData.minAge && formData.maxAge) {
             if (Number(formData.maxAge) < Number(formData.minAge)) {
                 newErrors.maxAge = 'حداکثر سن نباید کمتر از حداقل باشد';
             }
@@ -192,12 +209,13 @@ function CreateEvent({ onBack }: {
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
             const reader = new FileReader();
             reader.addEventListener('load', () => {
                 setTempImage(reader.result as string);
-                setIsCropperOpen(true);
+                setIsPreviewOpen(true); // باز کردن preview به جای cropper
             });
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
         }
     };
 
@@ -209,11 +227,17 @@ function CreateEvent({ onBack }: {
 
         if (validate()) {
             setIsConfirmDrawerOpen(true);
-            setIsLoading(true);
         }
     };
 
+    const closeConfirmation = () => {
+        setIsConfirmDrawerOpen(false);
+        setIsLoading(false);
+    };
+
     const handleConfirm = async () => {
+
+        if (isLoading) return;
 
         console.log("handleConfirm");
 
@@ -248,19 +272,45 @@ function CreateEvent({ onBack }: {
             isActive: true, // Pending events are disabled by default
             eventTime: '',
             cityId: formData.cityId,
+            latitude: formData.location?.lat,
+            longitude: formData.location?.lng,
             isCanceled: false,
-            category: ''
+            category: '',
+            registrationType: formData.registrationType
         };
 
         console.log(newEvent);
 
         var response = await createEvent(newEvent);
-        if (response?.name) {
+        if (response.isSuccess) {
             // onSave(newEvent);
             setIsLoading(false);
             setIsSuccess(true);
         }
     };
+
+    const parsePrice = (value: string): string => {
+        if (!value) return '';
+        // فقط عدد و کاما رو نگه می‌داریم، بعد کاماها رو حذف می‌کنیم
+        return value.replace(/[^0-9]/g, '');
+    };
+
+    const formatPrice = (value: string | number): string => {
+        if (value === '' || value === null || value === undefined) return '';
+        const num = typeof value === 'string' ? value.replace(/,/g, '') : value.toString();
+        if (!num || isNaN(Number(num))) return '';
+        return Number(num).toLocaleString('en-US');
+    };
+
+    // داخل کامپوننت
+
+    useEffect(() => {
+        if (formData.price !== undefined && formData.price !== null && formData.price !== '') {
+            setDisplayPrice(formatPrice(formData.price));
+        } else {
+            setDisplayPrice('');
+        }
+    }, [formData.price]);
 
     if (isSuccess) {
         return (
@@ -276,6 +326,13 @@ function CreateEvent({ onBack }: {
                 <p className="text-gray-500 font-bold leading-relaxed">
                     رویداد بعد از تایید نمایش داده خواهد شد.
                 </p>
+                <button
+                    type="button"
+                    onClick={onViewHostedEvents}
+                    className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg transition-all hover:bg-gray-800 active:scale-95"
+                >
+                    میزبانی‌های من
+                </button>
             </div>
         );
     }
@@ -553,23 +610,64 @@ function CreateEvent({ onBack }: {
                             <label className="text-xs font-black text-gray-500">نوع رویداد</label>
                             <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
                                 <button
-                                    onClick={() => setFormData({ ...formData, isPaid: false })}
-                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${!formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
-                                >رایگان</button>
+                                    onClick={() => setFormData({ ...formData, registrationType: 1 })}
+                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 1
+                                        ? 'bg-gray-800 text-white'
+                                        : 'text-gray-400 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    حضور آزاد
+                                </button>
                                 <button
-                                    onClick={() => setFormData({ ...formData, isPaid: true })}
-                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.isPaid ? 'bg-gray-800 text-white' : 'text-gray-400'}`}
-                                >هزینه‌دار</button>
+                                    onClick={() => setFormData({ ...formData, registrationType: 2 })}
+                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 2
+                                        ? 'bg-gray-800 text-white'
+                                        : 'text-gray-400 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    رایگان
+                                </button>
+                                <button
+                                    onClick={() => setFormData({ ...formData, registrationType: 3 })}
+                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.registrationType === 3
+                                        ? 'bg-gray-800 text-white'
+                                        : 'text-gray-400 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    هزینه‌دار
+                                </button>
                             </div>
                         </div>
 
-                        {formData.isPaid && (
+                        <p className="text-[10px] font-bold text-gray-400 leading-relaxed">
+                            {formData.registrationType === 1 && 'حضور آزاد برای رویدادهای اطلاع‌رسانی بدون ثبت نام هست.'}
+                            {formData.registrationType === 2 && 'ثبت‌نام رایگان برای رویدادهایی که هزینه‌ای ندارند.'}
+                            {formData.registrationType === 3 && 'ثبت‌نام با پرداخت هزینه برای رویدادهای آموزشی و کارگاه‌ها.'}
+                        </p>
+
+                        {formData.registrationType === 3 && (
                             <FormInput
                                 label="مبلغ به ازای هر نفر (تومان)"
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 placeholder="مثلا: ۵۰,۰۰۰"
-                                value={formData.price}
-                                onChange={(val) => { setFormData({ ...formData, price: val }); if (errors.price) setErrors({ ...errors, price: '' }); }}
+                                value={displayPrice}
+                                onChange={(val: string) => {
+                                    const cleanValue = parsePrice(val);
+
+                                    if (cleanValue === '') {
+                                        setFormData({ ...formData, price: '' });
+                                        setDisplayPrice('');
+                                        return;
+                                    }
+
+                                    if (cleanValue.length > 12) return;
+
+                                    setFormData({ ...formData, price: cleanValue });
+                                    setDisplayPrice(formatPrice(cleanValue));
+
+                                    if (errors.price) setErrors({ ...errors, price: '' });
+                                }}
                                 error={errors.price}
                             />
                         )}
@@ -745,8 +843,8 @@ function CreateEvent({ onBack }: {
             <MapPickerDrawer
                 isOpen={isMapOpen}
                 onClose={() => setIsMapOpen(false)}
-                onSelect={(location, address) => {
-                    setFormData({ ...formData, location, address });
+                onSelect={(location) => {
+                    setFormData({ ...formData, location });
                     if (errors.address) setErrors({ ...errors, address: '' });
                 }}
             />
@@ -840,12 +938,38 @@ function CreateEvent({ onBack }: {
                 }}
             />
 
-            <ImageCropperDrawer
+            {/* <ImageCropperDrawer
+                image={tempImage}
+                isOpen={isCropperOpen}
+                onClose={() => {
+                    setIsCropperOpen(false);
+                    setTempImage(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                onCropComplete={(croppedImage) => setFormData({ ...formData, image: croppedImage })}
+            /> */}
+
+            <ImagePreviewModal
+                image={tempImage}
+                isOpen={isPreviewOpen}
+                onClose={() => {
+                    setIsPreviewOpen(false);
+                    setTempImage(null);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                }}
+                onConfirm={handleConfirmImage}
+                title="پیش‌نمایش تصویر"
+                confirmText="تایید تصویر"
+            />
+
+            {/* <ImageCropperDrawer
                 image={tempImage}
                 isOpen={isCropperOpen}
                 onClose={() => { setIsCropperOpen(false); setTempImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                 onCropComplete={(croppedImage) => setFormData({ ...formData, image: croppedImage })}
-            />
+            /> */}
 
             {/* Validation Warning */}
             {!isFormValid && (
@@ -858,16 +982,22 @@ function CreateEvent({ onBack }: {
             <AnimatePresence>
                 {isConfirmDrawerOpen && (
                     <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsConfirmDrawerOpen(false)} className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-[2px]" />
-                        <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[110] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeConfirmation} className="fixed inset-0 bg-black/40 z-[200] backdrop-blur-[2px]" />
+                        <motion.div initial={{ y: "100%", x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: "100%", x: "-50%" }} className="fixed bottom-0 left-1/2 w-full max-w-[480px] bg-white z-[210] rounded-t-[2.5rem] p-8 space-y-6 shadow-2xl" dir="rtl">
                             <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto" />
                             <div className="text-center space-y-2">
                                 <h3 className="text-xl font-black text-gray-900">آیا از ایجاد این رویداد مطمئن هستید؟</h3>
                                 <p className="text-sm font-bold text-gray-500 leading-relaxed">پس از تایید، رویداد شما در برنامه نمایش داده میشود.</p>
                             </div>
                             <div className="flex gap-4 pt-2">
-                                <button onClick={() => setIsConfirmDrawerOpen(false)} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black transition-all">انصراف</button>
-                                <button onClick={handleConfirm} className="flex-1 bg-[#ED1C24] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all">تایید و ایجاد</button>
+                                <button onClick={closeConfirmation} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black transition-all">انصراف</button>
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={isLoading}
+                                    className="flex-1 bg-[#ED1C24] text-white py-4 rounded-2xl font-black shadow-lg shadow-[#ED1C24]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? 'در حال ایجاد...' : 'تایید و ایجاد'}
+                                </button>
                             </div>
                         </motion.div>
                     </>

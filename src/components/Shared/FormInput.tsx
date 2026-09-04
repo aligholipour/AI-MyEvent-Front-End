@@ -13,7 +13,8 @@ function FormInput({
   onSelectClick,
   disabled = false,
   error,
-  dir = 'rtl'
+  dir = 'rtl',
+  inputMode,
 }: {
   label: string;
   placeholder?: string;
@@ -27,6 +28,7 @@ function FormInput({
   disabled?: boolean;
   error?: string;
   dir?: 'rtl' | 'ltr';
+  inputMode?: 'none' | 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url';
 }) {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -45,11 +47,18 @@ function FormInput({
       <div className={`relative transition-all ${disabled ? 'opacity-50' : ''}`}>
         {isSelect ? (
           <button
-            onClick={(e) => { e.preventDefault(); if (!disabled) onSelectClick?.(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              if (!disabled) onSelectClick?.();
+            }}
             disabled={disabled}
-            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold flex items-center justify-between transition-all outline-none text-right ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold flex items-center justify-between transition-all outline-none text-right ${
+              error ? 'border-[#ED1C24]' : 'border-gray-100'
+            } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}
           >
-            <span className={value ? 'text-gray-900' : 'text-gray-400'}>{value || placeholder || 'انتخاب کنید'}</span>
+            <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+              {value || placeholder || 'انتخاب کنید'}
+            </span>
             <ChevronDown className="w-4 h-4 text-gray-400" />
           </button>
         ) : isTextarea ? (
@@ -59,7 +68,9 @@ function FormInput({
             placeholder={placeholder}
             disabled={disabled}
             dir={dir}
-             className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none min-h-[120px] resize-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none min-h-[120px] resize-none ${
+              error ? 'border-[#ED1C24]' : 'border-gray-100'
+            } ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
           />
         ) : (
           <input
@@ -69,7 +80,10 @@ function FormInput({
             placeholder={placeholder}
             disabled={disabled}
             dir={dir}
-            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none ${error ? 'border-[#ED1C24]' : 'border-gray-100'} ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
+            inputMode={inputMode}          // ← اضافه شد
+            className={`w-full bg-gray-100 border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-gray-900/5 transition-all outline-none ${
+              error ? 'border-[#ED1C24]' : 'border-gray-100'
+            } ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
           />
         )}
       </div>

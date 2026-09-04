@@ -6,6 +6,7 @@ import axiosInstance from './Auth/AxiosConfigs';
 import { EventDetailForAdminResponse } from '../types';
 import { User } from './Auth/Auth';
 import { authenticatedFetch } from './Auth/authenticatedFetch';
+import moment from 'moment-jalaali';
 
 export interface UserEventsResponse {
   registeredEvents: AppEvent[];
@@ -38,6 +39,7 @@ export interface EventDetailsForUpdateResponse {
   onlineLink: string;
   lat: number | null;
   lng: number | null;
+  registrationType: number;
 }
 
 export interface GetUserEventsRequest {
@@ -58,6 +60,32 @@ export interface ResubmissionEventRequest {
   reason: string;
 }
 let runtimeEvents: AppEvent[]
+
+function formatEventDateTime(
+  date: Date | string,
+  time: string,
+): string | null {
+  const normalizedTime = time.replace(/[۰-۹]/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit).toString());
+  const timeParts = normalizedTime.match(/^(\d{1,2}):(\d{2})$/);
+  if (!timeParts) return null;
+
+  let dateMoment: any = typeof date === 'string'
+    ? date.includes('/')
+      ? moment(date, 'jYYYY/jMM/jDD', true)
+      : moment(date)
+    : moment(date);
+
+  if (!dateMoment.isValid()) return null;
+
+  dateMoment.set({
+    hour: Number(timeParts[1]),
+    minute: Number(timeParts[2]),
+    second: 0,
+    millisecond: 0,
+  });
+
+  return dateMoment.isValid() ? dateMoment.format('YYYY-MM-DDTHH:mm:ss') : null;
+}
 
 export async function initEventsLates() {
   try {
@@ -106,21 +134,23 @@ export async function createEvent(eventData: any) {
     formData.append('toAge', String(eventData.maxAge || 0));
     formData.append('minCapacity', String(eventData.minCapacity || 0));
     formData.append('maxCapacity', String(eventData.maxCapacity || 0));
-    formData.append('address', !eventData.isOnline ? (eventData.address || '') : '');
-    formData.append('latitude', String(eventData.location?.lat || 0));
-    formData.append('longitude', String(eventData.location?.lng || 0));
+    formData.append('address', !eventData.isOnline ? (eventData.address || '') : eventData.onlineLink);
+    formData.append('latitude', String(eventData.latitude ?? eventData.location?.lat ?? 0));
+    formData.append('longitude', String(eventData.longitude ?? eventData.location?.lng ?? 0));
     formData.append('cityId', String(eventData.cityId || eventData.cityId || 0));
     formData.append('organizerId', String(eventData.organizerId || 0));
     formData.append('gender', eventData.gender || 0);
     formData.append('categoryId', eventData.categoryId || 0);
+    formData.append('isOnline', eventData.isOnline);
+    formData.append('RegistrationType', String(eventData.registrationType ?? eventData.registerationType ?? 0));
 
     if (eventData.date && eventData.startTime) {
-      const fromDateTime = new Date(`${eventData.date}T${eventData.startTime}`);
-      formData.append('fromEventDateTime', fromDateTime.toISOString());
+      const fromDateTime = formatEventDateTime(eventData.date, eventData.startTime);
+      if (fromDateTime) formData.append('fromEventDateTime', fromDateTime);
     }
     if (eventData.date && eventData.endTime) {
-      const toDateTime = new Date(`${eventData.date}T${eventData.endTime}`);
-      formData.append('toEventDateTime', toDateTime.toISOString());
+      const toDateTime = formatEventDateTime(eventData.date, eventData.endTime);
+      if (toDateTime) formData.append('toEventDateTime', toDateTime);
     }
     if (eventData.image) {
       const imageFile = dataURLtoFile(eventData.image, 'event-image.jpg');
@@ -172,16 +202,27 @@ export async function updateEvent(bahamId: number, eventData: any) {
     formData.append('organizerId', String(eventData.organizerId || 0));
     formData.append('gender', eventData.gender || 0);
     formData.append('categoryId', eventData.categoryId || 0);
+    formData.append('RegistrationType', String(eventData.registrationType ?? eventData.registerationType ?? 0));
+    formData.append('price', String(eventData.registrationType === 3 ? eventData.price || 0 : 0));
     formData.append('image', eventData.coverAddress || 0);
 
     if (eventData.date && eventData.startTime) {
-      const fromDateTime = new Date(`${eventData.date}T${eventData.startTime}`);
-      formData.append('fromEventDateTime', fromDateTime.toISOString());
+      const fromDateTime = formatEventDateTime(eventData.date, eventData.startTime);
+      if (fromDateTime) formData.append('fromEventDateTime', fromDateTime);
     }
     if (eventData.date && eventData.endTime) {
-      const toDateTime = new Date(`${eventData.date}T${eventData.endTime}`);
-      formData.append('toEventDateTime', toDateTime.toISOString());
+      const toDateTime = formatEventDateTime(eventData.date, eventData.endTime);
+      if (toDateTime) formData.append('toEventDateTime', toDateTime);
     }
+
+    // if (eventData.date && eventData.startTime) {
+    //   const fromDateTime = new Date(`${eventData.date}T${eventData.startTime}`);
+    //   formData.append('fromEventDateTime', fromDateTime.toISOString());
+    // }
+    // if (eventData.date && eventData.endTime) {
+    //   const toDateTime = new Date(`${eventData.date}T${eventData.endTime}`);
+    //   formData.append('toEventDateTime', toDateTime.toISOString());
+    // }
     if (eventData.coverAddress && eventData.coverAddress.startsWith && eventData.coverAddress.startsWith('data:')) {
       const imageFile = dataURLtoFile(eventData.coverAddress, 'event-image.jpg');
       formData.append('image', imageFile);
@@ -197,8 +238,8 @@ export async function updateEvent(bahamId: number, eventData: any) {
       throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const result = await response.json();
-    return result;
+    // const result = await response.json();
+    return response;
   } catch (err) {
     console.error('Failed to update event:', err);
     throw err;
@@ -275,14 +316,6 @@ export async function getEventById(id: number): Promise<EventDetailsResponse> {
         'Accept': 'application/json',
       },
     });
-
-    // const response = await fetch(`${process.env.API_BaseURL}/Baham/Get/${id}/${userId}`, {
-    //   method: 'GET',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Accept': 'application/json',
-    //   },
-    // });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
