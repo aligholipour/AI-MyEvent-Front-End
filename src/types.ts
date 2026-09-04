@@ -27,6 +27,8 @@ export interface AppEvent {
   price?: string;
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   categoryId: number | null;
   status: number;
   rejectionReason?: string;
@@ -51,6 +53,7 @@ export interface AppEvent {
   reasons?: CustomerBahamRejected[];
   isCanceled: boolean;
   category: string;
+  registrationType: number;
 }
 export interface CustomerGuestBahamResponse {
   id: number;

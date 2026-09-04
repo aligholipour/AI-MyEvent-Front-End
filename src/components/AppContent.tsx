@@ -253,6 +253,11 @@ function AppContent() {
         setActiveTab('my-events');
     };
 
+    const openHostedEvents = () => {
+        setCustomerEventsSubTab('hosted');
+        openCustomerEvent();
+    };
+
     const openEditEvent = (eventId: number) => {
         setSelectedEventId(null);
         setIsCreateEventOpen(false);
@@ -392,6 +397,7 @@ function AppContent() {
                         <CreateEvent
                             key="create-event"
                             onBack={() => setIsCreateEventOpen(false)}
+                            onViewHostedEvents={openHostedEvents}
                         />
                     ) : isRegisterPageOpen ? (
                         <RegisterPage
@@ -423,6 +429,7 @@ function AppContent() {
                             key={`edit-event-${editingEventId}`}
                             eventId={editingEventId}
                             onBack={() => setEditingEventId(null)}
+                            onSaved={openHostedEvents}
                         />
                     ) : isOrganizerAnalyticsOpen ? (
                         <OrganizerAnalyticsPage
